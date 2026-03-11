@@ -53,28 +53,31 @@ export const paymentService = {
   },
 
   async create(data, userId) {
-    const db = getConnection();
+    const db = await getConnection();
     
     try {
-      db.exec('BEGIN TRANSACTION');
+      await db.beginTransaction();
 
       const paymentNo = generatePaymentNo();
       const retailer = await retailerService.findById(data.retailer_id);
       if (!retailer) throw new Error('Retailer not found');
 
-      db.prepare(
+      const [result] = await db.execute(
         `INSERT INTO payments (payment_no, retailer_id, amount, payment_method, reference_no, notes, collected_by, payment_date)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?)`
-      ).run(paymentNo, data.retailer_id, data.amount, data.payment_method || 'cash', data.reference_no || null, data.notes || null, userId, data.payment_date || new Date().toISOString().split('T')[0]);
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+        [paymentNo, data.retailer_id, data.amount, data.payment_method || 'cash', data.reference_no || null, data.notes || null, userId, data.payment_date || new Date().toISOString().split('T')[0]]
+      );
+      const paymentId = result.insertId;
 
       await retailerService.updateOutstanding(data.retailer_id, -data.amount);
 
       if (data.invoice_id) {
         await invoiceService.updatePayment(data.invoice_id, data.amount, userId);
       } else {
-        const dueInvoices = db.prepare(
-          `SELECT id, due_amount FROM invoices WHERE retailer_id = ? AND status IN ('due', 'partial') ORDER BY invoice_date ASC`
-        ).all(data.retailer_id);
+        const [dueInvoices] = await db.execute(
+          `SELECT id, due_amount FROM invoices WHERE retailer_id = ? AND status IN ('due', 'partial') ORDER BY invoice_date ASC`,
+          [data.retailer_id]
+        );
 
         let remainingAmount = data.amount;
         for (const invoice of dueInvoices) {
@@ -86,13 +89,14 @@ export const paymentService = {
         }
       }
 
-      db.exec('COMMIT');
+      await db.commit();
       
-      const payments = await query('SELECT last_insert_rowid() as id');
-      return this.findById(payments[0].id);
+      return this.findById(paymentId);
     } catch (error) {
-      db.exec('ROLLBACK');
+      await db.rollback();
       throw error;
+    } finally {
+      db.release();
     }
   },
 

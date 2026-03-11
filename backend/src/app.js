@@ -14,13 +14,8 @@ import stockRoutes from './routes/stockRoutes.js';
 import companyRoutes from './routes/companyRoutes.js';
 
 import { errorHandler, notFound } from './middleware/errorHandler.js';
-import { initializeDatabase } from './config/database.js';
 
 dotenv.config();
-
-// Initialize database
-initializeDatabase();
-console.log('Database initialized successfully');
 
 const app = express();
 

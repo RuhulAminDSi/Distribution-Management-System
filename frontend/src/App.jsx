@@ -3,12 +3,15 @@ import { useAuth } from './context/AuthContext';
 import MainLayout from './components/layout/MainLayout';
 import Login from './pages/Login';
 import Dashboard from './pages/Dashboard';
+import Companies from './pages/Companies';
 import Products from './pages/Products';
 import Retailers from './pages/Retailers';
 import Sales from './pages/Sales';
 import Payments from './pages/Payments';
 import Stock from './pages/Stock';
 import Reports from './pages/Reports';
+import Users from './pages/Users';
+import Settings from './pages/Settings';
 
 function PrivateRoute({ children }) {
   const { user, loading } = useAuth();
@@ -30,12 +33,15 @@ export default function App() {
         </PrivateRoute>
       }>
         <Route index element={<Dashboard />} />
+        <Route path="companies" element={<Companies />} />
         <Route path="products" element={<Products />} />
         <Route path="retailers" element={<Retailers />} />
         <Route path="sales" element={<Sales />} />
         <Route path="payments" element={<Payments />} />
         <Route path="stock" element={<Stock />} />
         <Route path="reports" element={<Reports />} />
+        <Route path="users" element={<Users />} />
+        <Route path="settings" element={<Settings />} />
       </Route>
     </Routes>
   );

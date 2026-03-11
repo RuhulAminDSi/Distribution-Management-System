@@ -10,18 +10,23 @@ import {
   Warehouse, 
   FileText, 
   Settings,
+  Building2,
+  UserCircle,
   LogOut,
   Menu
 } from 'lucide-react';
 
 const navItems = [
   { path: '/', icon: LayoutDashboard, label: 'Dashboard' },
+  { path: '/companies', icon: Building2, label: 'Companies' },
   { path: '/products', icon: Package, label: 'Products' },
   { path: '/retailers', icon: Users, label: 'Retailers' },
   { path: '/sales', icon: ShoppingCart, label: 'Sales' },
   { path: '/payments', icon: CreditCard, label: 'Payments' },
   { path: '/stock', icon: Warehouse, label: 'Stock' },
   { path: '/reports', icon: FileText, label: 'Reports' },
+  { path: '/users', icon: UserCircle, label: 'Users' },
+  { path: '/settings', icon: Settings, label: 'Settings' },
 ];
 
 export default function MainLayout() {

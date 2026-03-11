@@ -17,7 +17,7 @@ export const companyService = {
       'INSERT INTO companies (name, code, contact_person, phone, address, due_limit) VALUES (?, ?, ?, ?, ?, ?)',
       [data.name, code, data.contact_person || null, data.phone || null, data.address || null, data.due_limit || 0]
     );
-    return this.findById(result.lastInsertRowid);
+    return this.findById(result.insertId);
   },
 
   async update(id, data) {
@@ -67,7 +67,7 @@ export const categoryService = {
       'INSERT INTO categories (name, company_id, description) VALUES (?, ?, ?)',
       [data.name, data.company_id || null, data.description || null]
     );
-    return this.findById(result.lastInsertRowid);
+    return this.findById(result.insertId);
   },
 
   async update(id, data) {

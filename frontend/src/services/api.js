@@ -21,7 +21,10 @@ api.interceptors.response.use(
 export const authService = {
   login: (username, password) => api.post('/auth/login', { username, password }),
   me: () => api.get('/auth/me'),
-  register: (data) => api.post('/auth/register', data)
+  register: (data) => api.post('/auth/register', data),
+  getUsers: () => api.get('/auth/users'),
+  updateUser: (id, data) => api.put(`/auth/users/${id}`, data),
+  deleteUser: (id) => api.delete(`/auth/users/${id}`)
 };
 
 export const productService = {

@@ -70,7 +70,7 @@ export const productService = {
       data.unit || 'piece',
       data.pack_size || 1
     ]);
-    return this.findById(result.lastInsertRowid);
+    return this.findById(result.insertId);
   },
 
   async update(id, data) {

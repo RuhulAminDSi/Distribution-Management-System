@@ -39,71 +39,80 @@ export const stockService = {
     const poNo = generatePONo();
     const totalAmount = data.items.reduce((sum, item) => sum + (item.quantity * item.rate), 0);
 
-    const db = getConnection();
+    const db = await getConnection();
     
     try {
-      db.exec('BEGIN TRANSACTION');
+      await db.beginTransaction();
 
-      db.prepare(
+      const [result] = await db.execute(
         `INSERT INTO purchase_orders (po_no, company_id, total_amount, status, notes, order_date, created_by)
-         VALUES (?, ?, ?, ?, ?, ?, ?)`
-      ).run(poNo, data.company_id, totalAmount, 'pending', data.notes || null, data.order_date || new Date().toISOString().split('T')[0], userId);
-
-      const poResult = db.prepare('SELECT last_insert_rowid() as id').get();
-      const poId = poResult.id;
+         VALUES (?, ?, ?, ?, ?, ?, ?)`,
+        [poNo, data.company_id, totalAmount, 'pending', data.notes || null, data.order_date || new Date().toISOString().split('T')[0], userId]
+      );
+      const poId = result.insertId;
 
       for (const item of data.items) {
-        db.prepare(
-          'INSERT INTO purchase_order_items (purchase_order_id, product_id, quantity, rate, amount) VALUES (?, ?, ?, ?, ?)'
-        ).run(poId, item.product_id, item.quantity, item.rate, item.quantity * item.rate);
+        await db.execute(
+          'INSERT INTO purchase_order_items (purchase_order_id, product_id, quantity, rate, amount) VALUES (?, ?, ?, ?, ?)',
+          [poId, item.product_id, item.quantity, item.rate, item.quantity * item.rate]
+        );
       }
 
-      db.exec('COMMIT');
+      await db.commit();
       
       const po = await query('SELECT * FROM purchase_orders WHERE id = ?', [poId]);
       return po[0];
     } catch (error) {
-      db.exec('ROLLBACK');
+      await db.rollback();
       throw error;
+    } finally {
+      db.release();
     }
   },
 
   async receivePurchaseOrder(id, userId) {
-    const db = getConnection();
+    const db = await getConnection();
     
     try {
-      db.exec('BEGIN TRANSACTION');
+      await db.beginTransaction();
 
-      const po = db.prepare('SELECT * FROM purchase_orders WHERE id = ?').get(id);
+      const [poRows] = await db.execute('SELECT * FROM purchase_orders WHERE id = ?', [id]);
+      const po = poRows[0];
       if (!po) throw new Error('Purchase order not found');
 
-      const items = db.prepare('SELECT * FROM purchase_order_items WHERE purchase_order_id = ?').all(id);
+      const [itemRows] = await db.execute('SELECT * FROM purchase_order_items WHERE purchase_order_id = ?', [id]);
 
-      for (const item of items) {
-        db.prepare(
-          'UPDATE products SET stock_quantity = stock_quantity + ? WHERE id = ?'
-        ).run(item.quantity, item.product_id);
+      for (const item of itemRows) {
+        await db.execute(
+          'UPDATE products SET stock_quantity = stock_quantity + ? WHERE id = ?',
+          [item.quantity, item.product_id]
+        );
 
-        db.prepare(
-          'INSERT INTO stock_logs (product_id, quantity, type, reference_type, reference_id, notes, created_by) VALUES (?, ?, ?, ?, ?, ?, ?)'
-        ).run(item.product_id, item.quantity, 'IN', 'purchase_order', id, `PO: ${po.po_no}`, userId);
+        await db.execute(
+          'INSERT INTO stock_logs (product_id, quantity, type, reference_type, reference_id, notes, created_by) VALUES (?, ?, ?, ?, ?, ?, ?)',
+          [item.product_id, item.quantity, 'IN', 'purchase_order', id, `PO: ${po.po_no}`, userId]
+        );
 
-        db.prepare(
-          'UPDATE purchase_order_items SET received_quantity = ? WHERE id = ?'
-        ).run(item.quantity, item.id);
+        await db.execute(
+          'UPDATE purchase_order_items SET received_quantity = ? WHERE id = ?',
+          [item.quantity, item.id]
+        );
       }
 
-      db.prepare(
-        'UPDATE purchase_orders SET status = ? WHERE id = ?'
-      ).run('received', id);
+      await db.execute(
+        'UPDATE purchase_orders SET status = ? WHERE id = ?',
+        ['received', id]
+      );
 
-      db.exec('COMMIT');
+      await db.commit();
       
       const updatedPO = await query('SELECT * FROM purchase_orders WHERE id = ?', [id]);
       return updatedPO[0];
     } catch (error) {
-      db.exec('ROLLBACK');
+      await db.rollback();
       throw error;
+    } finally {
+      db.release();
     }
   },
 

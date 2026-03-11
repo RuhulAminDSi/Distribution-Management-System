@@ -7,8 +7,8 @@ const router = express.Router();
 router.get('/', authenticate, productController.findAll);
 router.get('/low-stock', authenticate, productController.getLowStock);
 router.get('/:id', authenticate, productController.findById);
-router.post('/', authenticate, authorize('admin'), productController.create);
-router.put('/:id', authenticate, authorize('admin'), productController.update);
-router.delete('/:id', authenticate, authorize('admin'), productController.delete);
+router.post('/', authenticate, authorize('system_admin', 'admin'), productController.create);
+router.put('/:id', authenticate, authorize('system_admin', 'admin'), productController.update);
+router.delete('/:id', authenticate, authorize('system_admin', 'admin'), productController.delete);
 
 export default router;

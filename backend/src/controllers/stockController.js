@@ -4,7 +4,7 @@ export const stockController = {
   async getHistory(req, res, next) {
     try {
       const { product_id, start_date, end_date } = req.query;
-      const history = await stockService.getHistory(
+      const history = await stockService.getStockHistory(
         product_id ? parseInt(product_id) : null,
         start_date,
         end_date

@@ -69,10 +69,10 @@ export const invoiceService = {
   },
 
   async create(data, userId) {
-    const db = getConnection();
+    const db = await getConnection();
     
     try {
-      db.exec('BEGIN TRANSACTION');
+      await db.beginTransaction();
 
       const invoiceNo = generateInvoiceNo();
       const subtotal = data.items.reduce((sum, item) => sum + (item.quantity * item.rate), 0);
@@ -93,47 +93,55 @@ export const invoiceService = {
       const paidAmount = data.paid_amount || 0;
       const invoiceStatus = paidAmount >= totalAmount ? 'paid' : (paidAmount > 0 ? 'partial' : 'due');
 
-      db.prepare(
+      const [result] = await db.execute(
         `INSERT INTO invoices (invoice_no, retailer_id, created_by, subtotal, discount_percent, discount_amount, total_amount, paid_amount, due_amount, status, notes, invoice_date)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
-      ).run(invoiceNo, data.retailer_id, userId, subtotal, data.discount_percent || 0, discountAmount, totalAmount, paidAmount, totalAmount - paidAmount, invoiceStatus, data.notes || null, invoiceDate);
-
-      const insertId = db.prepare('SELECT last_insert_rowid() as id').get().id;
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        [invoiceNo, data.retailer_id, userId, subtotal, data.discount_percent || 0, discountAmount, totalAmount, paidAmount, totalAmount - paidAmount, invoiceStatus, data.notes || null, invoiceDate]
+      );
+      const insertId = result.insertId;
 
       for (const item of data.items) {
-        const product = db.prepare('SELECT stock_quantity FROM products WHERE id = ?').get(item.product_id);
+        const [productRows] = await db.execute('SELECT stock_quantity FROM products WHERE id = ?', [item.product_id]);
+        const product = productRows[0];
         
         if (!product) throw new Error(`Product not found: ${item.product_id}`);
         if (product.stock_quantity < item.quantity) throw new Error(`Insufficient stock for product: ${item.product_id}`);
 
-        db.prepare(
-          'INSERT INTO invoice_items (invoice_id, product_id, quantity, rate, amount) VALUES (?, ?, ?, ?, ?)'
-        ).run(insertId, item.product_id, item.quantity, item.rate, item.quantity * item.rate);
+        await db.execute(
+          'INSERT INTO invoice_items (invoice_id, product_id, quantity, rate, amount) VALUES (?, ?, ?, ?, ?)',
+          [insertId, item.product_id, item.quantity, item.rate, item.quantity * item.rate]
+        );
 
-        db.prepare(
-          'UPDATE products SET stock_quantity = stock_quantity - ? WHERE id = ?'
-        ).run(item.quantity, item.product_id);
+        await db.execute(
+          'UPDATE products SET stock_quantity = stock_quantity - ? WHERE id = ?',
+          [item.quantity, item.product_id]
+        );
 
-        db.prepare(
-          'INSERT INTO stock_logs (product_id, quantity, type, reference_type, reference_id, created_by) VALUES (?, ?, ?, ?, ?, ?)'
-        ).run(item.product_id, -item.quantity, 'OUT', 'invoice', insertId, userId);
+        await db.execute(
+          'INSERT INTO stock_logs (product_id, quantity, type, reference_type, reference_id, created_by) VALUES (?, ?, ?, ?, ?, ?)',
+          [item.product_id, -item.quantity, 'OUT', 'invoice', insertId, userId]
+        );
       }
 
       if (paidAmount > 0) {
-        db.prepare(
-          'UPDATE retailers SET outstanding_balance = outstanding_balance + ? WHERE id = ?'
-        ).run(totalAmount - paidAmount, data.retailer_id);
+        await db.execute(
+          'UPDATE retailers SET outstanding_balance = outstanding_balance + ? WHERE id = ?',
+          [totalAmount - paidAmount, data.retailer_id]
+        );
       } else {
-        db.prepare(
-          'UPDATE retailers SET outstanding_balance = outstanding_balance + ? WHERE id = ?'
-        ).run(totalAmount, data.retailer_id);
+        await db.execute(
+          'UPDATE retailers SET outstanding_balance = outstanding_balance + ? WHERE id = ?',
+          [totalAmount, data.retailer_id]
+        );
       }
 
-      db.exec('COMMIT');
+      await db.commit();
       return this.findById(insertId);
     } catch (error) {
-      db.exec('ROLLBACK');
+      await db.rollback();
       throw error;
+    } finally {
+      db.release();
     }
   },
 

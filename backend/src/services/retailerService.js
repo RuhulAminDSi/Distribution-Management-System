@@ -51,7 +51,7 @@ export const retailerService = {
       data.credit_limit || 0,
       data.due_limit || 0
     ]);
-    return this.findById(result.lastInsertRowid);
+    return this.findById(result.insertId);
   },
 
   async update(id, data) {
