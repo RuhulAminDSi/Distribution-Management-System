@@ -108,7 +108,8 @@ export const retailerService = {
 
   async updateOutstanding(id, amount) {
     await query('UPDATE retailers SET outstanding_balance = outstanding_balance + ? WHERE id = ?', [amount, id]);
-    return this.findById(id);
+    const retailers = await query('SELECT * FROM retailers WHERE id = ?', [id]);
+    return retailers[0] || null;
   },
 
   async getAllAreas() {

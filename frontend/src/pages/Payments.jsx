@@ -24,7 +24,7 @@ export default function Payments() {
   const fetchPayments = async () => {
     try {
       const response = await paymentService.getAll({ limit: 50 });
-      setPayments(response.data.data);
+      setPayments(response.data?.data || []);
     } catch (error) {
       console.error('Failed to fetch payments:', error);
     } finally {
@@ -35,7 +35,7 @@ export default function Payments() {
   const fetchRetailers = async () => {
     try {
       const response = await retailerService.getAll({ limit: 100 });
-      setRetailers(response.data.data);
+      setRetailers(response.data?.data || []);
     } catch (error) {
       console.error('Failed to fetch retailers:', error);
     }
@@ -48,16 +48,30 @@ export default function Payments() {
       return;
     }
 
+    console.log('Submitting payment:', formData);
+    
     try {
-      await paymentService.create(formData);
+      const paymentData = {
+        retailer_id: parseInt(formData.retailer_id),
+        amount: parseFloat(formData.amount),
+        payment_method: formData.payment_method,
+        reference_no: formData.reference_no || null,
+        notes: formData.notes || null,
+        payment_date: formData.payment_date
+      };
+      console.log('Payment data:', paymentData);
+      const result = await paymentService.create(paymentData);
+      console.log('Payment created:', result);
       setShowModal(false);
       fetchPayments();
+      fetchRetailers();
       setFormData({
         retailer_id: '', amount: 0, payment_method: 'cash',
         reference_no: '', payment_date: new Date().toISOString().split('T')[0], notes: ''
       });
     } catch (error) {
-      alert('Failed to record payment');
+      console.error('Failed to record payment:', error);
+      alert(error.response?.data?.message || error.message || 'Failed to record payment');
     }
   };
 
@@ -119,9 +133,9 @@ export default function Payments() {
                     required
                   >
                     <option value="">Select Retailer</option>
-                    {retailers.filter(r => r.outstanding_balance > 0).map(r => (
+                    {retailers.map(r => (
                       <option key={r.id} value={r.id}>
-                        {r.name} - Due: {formatCurrency(r.outstanding_balance)}
+                        {r.name} - Due: {formatCurrency(r.outstanding_balance || 0)}
                       </option>
                     ))}
                   </select>
