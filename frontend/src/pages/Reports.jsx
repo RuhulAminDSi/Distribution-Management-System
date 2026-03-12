@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { reportService } from '../services/api';
-import { useLanguage } from '../context/LanguageContext';
+import { useLanguage, formatCurrency, formatNumber } from '../context/LanguageContext';
 import { FileText, FileSpreadsheet } from 'lucide-react';
 import { jsPDF } from 'jspdf';
 import autoTable from 'jspdf-autotable';
@@ -8,20 +8,8 @@ import * as XLSX from 'xlsx';
 import { saveAs } from 'file-saver';
 import html2pdf from 'html2pdf.js';
 
-const formatCurrency = (amount) => {
-  if (amount === null || amount === undefined || isNaN(amount)) return 'BDT 0';
-  return 'BDT ' + new Intl.NumberFormat('en-BD', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(amount);
-};
-
-const formatDate = (dateStr) => {
-  if (!dateStr) return '-';
-  const date = new Date(dateStr);
-  if (isNaN(date.getTime())) return dateStr;
-  return date.toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit', year: 'numeric' });
-};
-
 export default function Reports() {
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
   const [activeTab, setActiveTab] = useState('daily');
   const [data, setData] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -139,19 +127,11 @@ export default function Reports() {
         tableData = data.map(item => [
           item.invoice_no,
           item.retailer_name,
-          formatCurrency(item.total_amount),
-          formatCurrency(item.paid_amount),
-          formatCurrency(item.due_amount),
-          item.status
-        ]);
-        break;
-      case 'product':
-        columns = [['Product', 'Company', 'Quantity', 'Amount']];
-        tableData = data.map(item => [
-          item.product_name,
-          item.company_name || '-',
+          formatCurrency(item.total_amount, language),
+          formatCurrency(item.paid_amount, language),
+          formatCurrency(item.due_amount, language),
           item.total_quantity,
-          formatCurrency(item.total_amount)
+          formatCurrency(item.total_amount, language)
         ]);
         break;
       case 'company':
@@ -160,19 +140,11 @@ export default function Reports() {
           item.company_name,
           item.total_invoices,
           item.total_quantity,
-          formatCurrency(item.total_sales),
-          formatCurrency(item.total_profit)
-        ]);
-        break;
-      case 'profit':
-        columns = [['Invoice No', 'Date', 'Retailer', 'Sales', 'Cost', 'Profit']];
-        tableData = data.map(item => [
-          item.invoice_no,
-          formatDate(item.invoice_date),
-          item.retailer_name,
-          formatCurrency(item.sales_amount),
-          formatCurrency(item.cost_amount),
-          formatCurrency(item.profit)
+          formatCurrency(item.total_sales, language),
+          formatCurrency(item.total_profit, language)
+          formatCurrency(item.sales_amount, language),
+          formatCurrency(item.cost_amount, language),
+          formatCurrency(item.profit, language)
         ]);
         break;
       case 'stock':
@@ -180,9 +152,9 @@ export default function Reports() {
         tableData = data.map(item => [
           item.name,
           item.company_name || '-',
-          `${item.stock_quantity} ${item.unit}`,
-          formatCurrency(item.stock_value),
-          formatCurrency(item.dealer_price)
+          `${formatNumber(item.stock_quantity, language)} ${item.unit}`,
+          formatCurrency(item.stock_value, language),
+          formatCurrency(item.dealer_price, language)
         ]);
         break;
       case 'due':
@@ -191,9 +163,9 @@ export default function Reports() {
           item.retailer_name,
           item.phone,
           item.area || '-',
-          formatCurrency(item.credit_limit),
-          formatCurrency(item.outstanding_balance),
-          item.total_invoices
+          formatCurrency(item.credit_limit, language),
+          formatCurrency(item.outstanding_balance, language),
+          formatNumber(item.total_invoices, language)
         ]);
         break;
       default:
@@ -535,17 +507,17 @@ export default function Reports() {
               <div className="stat-card">
                 <div className="stat-icon blue"><FileText size={24} /></div>
                 <div className="stat-label">{t('TotalSales')}</div>
-                <div className="stat-value">{formatCurrency(summary.total)}</div>
+                <div className="stat-value">{formatCurrency(summary.total, language)}</div>
               </div>
               <div className="stat-card">
                 <div className="stat-icon green"><FileText size={24} /></div>
                 <div className="stat-label">{t('Collected')}</div>
-                <div className="stat-value">{formatCurrency(summary.paid)}</div>
+                <div className="stat-value">{formatCurrency(summary.paid, language)}</div>
               </div>
               <div className="stat-card">
                 <div className="stat-icon red"><FileText size={24} /></div>
                 <div className="stat-label">{t('Due')}</div>
-                <div className="stat-value">{formatCurrency(summary.due)}</div>
+                <div className="stat-value">{formatCurrency(summary.due, language)}</div>
               </div>
             </>
           )}
@@ -554,12 +526,12 @@ export default function Reports() {
               <div className="stat-card">
                 <div className="stat-icon blue"><FileText size={24} /></div>
                 <div className="stat-label">{t('Total')}</div>
-                <div className="stat-value">{formatCurrency(summary.total)}</div>
+                <div className="stat-value">{formatCurrency(summary.total, language)}</div>
               </div>
               <div className="stat-card">
                 <div className="stat-icon green"><FileText size={24} /></div>
                 <div className="stat-label">{t('Quantity')}</div>
-                <div className="stat-value">{summary.quantity}</div>
+                <div className="stat-value">{formatNumber(summary.quantity, language)}</div>
               </div>
             </>
           )}
@@ -568,12 +540,12 @@ export default function Reports() {
               <div className="stat-card">
                 <div className="stat-icon blue"><FileText size={24} /></div>
                 <div className="stat-label">{t('TotalSales')}</div>
-                <div className="stat-value">{formatCurrency(summary.sales)}</div>
+                <div className="stat-value">{formatCurrency(summary.sales, language)}</div>
               </div>
               <div className="stat-card">
                 <div className="stat-icon green"><FileText size={24} /></div>
                 <div className="stat-label">{t('Profit')}</div>
-                <div className="stat-value">{formatCurrency(summary.profit)}</div>
+                <div className="stat-value">{formatCurrency(summary.profit, language)}</div>
               </div>
             </>
           )}
@@ -582,12 +554,12 @@ export default function Reports() {
               <div className="stat-card">
                 <div className="stat-icon blue"><FileText size={24} /></div>
                 <div className="stat-label">{t('TotalSales')}</div>
-                <div className="stat-value">{formatCurrency(summary.sales)}</div>
+                <div className="stat-value">{formatCurrency(summary.sales, language)}</div>
               </div>
               <div className="stat-card">
                 <div className="stat-icon green"><FileText size={24} /></div>
                 <div className="stat-label">{t('Profit')}</div>
-                <div className="stat-value">{formatCurrency(summary.profit)}</div>
+                <div className="stat-value">{formatCurrency(summary.profit, language)}</div>
               </div>
             </>
           )}
@@ -596,12 +568,12 @@ export default function Reports() {
               <div className="stat-card">
                 <div className="stat-icon blue"><FileText size={24} /></div>
                 <div className="stat-label">{t('StockValue')}</div>
-                <div className="stat-value">{formatCurrency(summary.value)}</div>
+                <div className="stat-value">{formatCurrency(summary.value, language)}</div>
               </div>
               <div className="stat-card">
                 <div className="stat-icon green"><FileText size={24} /></div>
                 <div className="stat-label">{t('Quantity')}</div>
-                <div className="stat-value">{summary.quantity}</div>
+                <div className="stat-value">{formatNumber(summary.quantity, language)}</div>
               </div>
             </>
           )}
@@ -609,7 +581,7 @@ export default function Reports() {
             <div className="stat-card">
               <div className="stat-icon red"><FileText size={24} /></div>
               <div className="stat-label">{t('TotalOutstanding')}</div>
-              <div className="stat-value">{formatCurrency(summary.due)}</div>
+              <div className="stat-value">{formatCurrency(summary.due, language)}</div>
             </div>
           )}
         </div>
@@ -677,8 +649,8 @@ export default function Reports() {
                       <td>{item.product_name}</td>
                       <td>{item.company_name || '-'}</td>
                       <td>{item.category_name || '-'}</td>
-                      <td className="text-right">{item.total_quantity}</td>
-                      <td className="text-right">{formatCurrency(item.total_amount)}</td>
+                      <td className="text-right">{formatNumber(item.total_quantity, language)}</td>
+                      <td className="text-right">{formatCurrency(item.total_amount, language)}</td>
                     </tr>
                   ))}
                 </tbody>
@@ -700,10 +672,10 @@ export default function Reports() {
                   {data.map(item => (
                     <tr key={item.company_id}>
                       <td>{item.company_name}</td>
-                      <td className="text-right">{item.total_invoices}</td>
-                      <td className="text-right">{item.total_quantity}</td>
-                      <td className="text-right">{formatCurrency(item.total_sales)}</td>
-                      <td className="text-right text-success">{formatCurrency(item.total_profit)}</td>
+                      <td className="text-right">{formatNumber(item.total_invoices, language)}</td>
+                      <td className="text-right">{formatNumber(item.total_quantity, language)}</td>
+                      <td className="text-right">{formatCurrency(item.total_sales, language)}</td>
+                      <td className="text-right text-success">{formatCurrency(item.total_profit, language)}</td>
                     </tr>
                   ))}
                 </tbody>
@@ -728,9 +700,9 @@ export default function Reports() {
                       <td>{item.invoice_no}</td>
                       <td>{formatDate(item.invoice_date)}</td>
                       <td>{item.retailer_name}</td>
-                      <td className="text-right">{formatCurrency(item.sales_amount)}</td>
-                      <td className="text-right">{formatCurrency(item.cost_amount)}</td>
-                      <td className="text-right text-success">{formatCurrency(item.profit)}</td>
+                      <td className="text-right">{formatCurrency(item.sales_amount, language)}</td>
+                      <td className="text-right">{formatCurrency(item.cost_amount, language)}</td>
+                      <td className="text-right text-success">{formatCurrency(item.profit, language)}</td>
                     </tr>
                   ))}
                 </tbody>
@@ -753,9 +725,9 @@ export default function Reports() {
                     <tr key={item.id}>
                       <td>{item.name}</td>
                       <td>{item.company_name || '-'}</td>
-                      <td className="text-right">{item.stock_quantity} {item.unit}</td>
-                      <td className="text-right">{formatCurrency(item.stock_value)}</td>
-                      <td className="text-right">{formatCurrency(item.dealer_price)}</td>
+                      <td className="text-right">{formatNumber(item.stock_quantity, language)} {item.unit}</td>
+                      <td className="text-right">{formatCurrency(item.stock_value, language)}</td>
+                      <td className="text-right">{formatCurrency(item.dealer_price, language)}</td>
                     </tr>
                   ))}
                 </tbody>

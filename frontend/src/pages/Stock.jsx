@@ -1,32 +1,10 @@
 import { useState, useEffect } from 'react';
 import { stockService, companyService, productService } from '../services/api';
-import { useLanguage } from '../context/LanguageContext';
+import { useLanguage, formatCurrency, formatNumber } from '../context/LanguageContext';
 import { Plus, ArrowDownToLine } from 'lucide-react';
 
-const formatCurrency = (amount) => {
-  if (amount === null || amount === undefined || isNaN(amount)) return 'BDT 0';
-  return 'BDT ' + new Intl.NumberFormat('en-BD', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(amount);
-};
-
-const formatDateTime = (dateStr) => {
-  if (!dateStr) return '-';
-  const date = new Date(dateStr);
-  if (isNaN(date.getTime())) return dateStr;
-  return date.toLocaleString('en-GB', { 
-    day: '2-digit', month: '2-digit', year: 'numeric',
-    hour: '2-digit', minute: '2-digit'
-  });
-};
-
-const formatDate = (dateStr) => {
-  if (!dateStr) return '-';
-  const date = new Date(dateStr);
-  if (isNaN(date.getTime())) return dateStr;
-  return date.toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit', year: 'numeric' });
-};
-
 export default function Stock() {
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
   const [activeTab, setActiveTab] = useState('history');
   const [history, setHistory] = useState([]);
   const [purchaseOrders, setPurchaseOrders] = useState([]);
@@ -178,7 +156,7 @@ export default function Stock() {
                         {log.type}
                       </span>
                     </td>
-                    <td className="text-right">{log.quantity}</td>
+                    <td className="text-right">{formatNumber(log.quantity, language)}</td>
                     <td>{log.reference_type}</td>
                     <td>{log.created_by_name}</td>
                   </tr>
@@ -209,7 +187,7 @@ export default function Stock() {
                     <td>{po.po_no}</td>
                     <td>{po.order_date}</td>
                     <td>{po.company_name}</td>
-                    <td className="text-right">{formatCurrency(po.total_amount)}</td>
+                    <td className="text-right">{formatCurrency(po.total_amount, language)}</td>
                     <td>
                       <span className={`badge badge-${po.status === 'received' ? 'success' : po.status === 'pending' ? 'warning' : 'danger'}`}>
                         {po.status}

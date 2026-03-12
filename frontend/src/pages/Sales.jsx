@@ -1,32 +1,10 @@
 import { useState, useEffect } from 'react';
 import { invoiceService, retailerService, productService } from '../services/api';
-import { useLanguage } from '../context/LanguageContext';
+import { useLanguage, formatCurrency, formatNumber } from '../context/LanguageContext';
 import { Plus, Search, Eye, Printer } from 'lucide-react';
 
-const formatCurrency = (amount) => {
-  if (amount === null || amount === undefined || isNaN(amount)) return 'BDT 0';
-  return 'BDT ' + new Intl.NumberFormat('en-BD', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(amount);
-};
-
-const formatDate = (dateStr) => {
-  if (!dateStr) return '-';
-  const date = new Date(dateStr);
-  if (isNaN(date.getTime())) return dateStr;
-  return date.toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit', year: 'numeric' });
-};
-
-const formatDateTime = (dateStr) => {
-  if (!dateStr) return '-';
-  const date = new Date(dateStr);
-  if (isNaN(date.getTime())) return dateStr;
-  return date.toLocaleString('en-GB', { 
-    day: '2-digit', month: '2-digit', year: 'numeric',
-    hour: '2-digit', minute: '2-digit'
-  });
-};
-
 export default function Sales() {
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
   const [invoices, setInvoices] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
@@ -176,9 +154,9 @@ export default function Sales() {
                   <td>{formatDate(invoice.invoice_date)}</td>
                   <td>{formatDateTime(invoice.created_at)}</td>
                   <td>{invoice.retailer_name}</td>
-                  <td className="text-right">{formatCurrency(invoice.total_amount)}</td>
-                  <td className="text-right">{formatCurrency(invoice.paid_amount)}</td>
-                  <td className="text-right">{formatCurrency(invoice.due_amount)}</td>
+<td className="text-right">{formatCurrency(invoice.total_amount, language)}</td>
+                      <td className="text-right">{formatCurrency(invoice.paid_amount, language)}</td>
+                      <td className="text-right">{formatCurrency(invoice.due_amount, language)}</td>
                   <td>
                     <span className={`badge badge-${invoice.status === 'paid' ? 'success' : invoice.status === 'partial' ? 'warning' : 'danger'}`}>
                       {invoice.status}
@@ -258,7 +236,7 @@ export default function Sales() {
                       >
                         <option value="">{t('SelectProduct')}</option>
                         {products.filter(p => p.stock_quantity > 0).map(p => (
-                          <option key={p.id} value={p.id}>{p.name} (Stock: {p.stock_quantity})</option>
+                          <option key={p.id} value={p.id}>{p.name} (Stock: {formatNumber(p.stock_quantity, language)})</option>
                         ))}
                       </select>
                       <input
@@ -316,15 +294,13 @@ export default function Sales() {
                   <div className="card-body">
                     <div className="flex justify-between mb-2">
                       <span>{t('Subtotal')}:</span>
-                      <span>{formatCurrency(subtotal)}</span>
+                    <span>{formatCurrency(subtotal, language)}</span>
                     </div>
-                    <div className="flex justify-between mb-2">
-                      <span>{t('Discount')}:</span>
-                      <span>- {formatCurrency(discount)}</span>
+                    <div className="flex justify-between">
+                      <span>- {formatCurrency(discount, language)}</span>
                     </div>
-                    <div className="flex justify-between" style={{ fontWeight: '600', fontSize: '18px' }}>
-                      <span>{t('Total')}:</span>
-                      <span>{formatCurrency(total)}</span>
+                    <div className="flex justify-between">
+                      <span>{formatCurrency(total, language)}</span>
                     </div>
                   </div>
                 </div>

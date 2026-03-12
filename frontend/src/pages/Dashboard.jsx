@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useLanguage, formatCurrency } from '../context/LanguageContext';
+import { useLanguage, formatCurrency, formatNumber } from '../context/LanguageContext';
 import { dashboardService } from '../services/api';
 import { DollarSign, Users, Package, AlertTriangle, TrendingUp } from 'lucide-react';
 
@@ -60,7 +60,7 @@ export default function Dashboard() {
           <div className="stat-icon green">
             <Package size={24} />
           </div>
-          <div className="stat-value">{data?.totalProducts || 0}</div>
+          <div className="stat-value">{formatNumber(data?.totalProducts, language)}</div>
           <div className="stat-label">{t('TotalProducts')}</div>
         </div>
 
@@ -68,7 +68,7 @@ export default function Dashboard() {
           <div className="stat-icon red">
             <AlertTriangle size={24} />
           </div>
-          <div className="stat-value">{data?.lowStockCount || 0}</div>
+          <div className="stat-value">{formatNumber(data?.lowStockCount, language)}</div>
           <div className="stat-label">{t('LowStockAlerts')}</div>
         </div>
       </div>
@@ -132,7 +132,7 @@ export default function Dashboard() {
                     <tr key={product.id}>
                       <td>{product.name}</td>
                       <td>{product.code}</td>
-                      <td className="text-right">{product.stock_quantity}</td>
+                      <td className="text-right">{formatNumber(product.stock_quantity, language)}</td>
                       <td>
                         <span className="badge badge-danger">{t('LowStockAlerts')}</span>
                       </td>

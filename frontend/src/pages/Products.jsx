@@ -1,15 +1,10 @@
 import { useState, useEffect } from 'react';
 import { productService, companyService } from '../services/api';
-import { useLanguage } from '../context/LanguageContext';
+import { useLanguage, formatCurrency, formatNumber } from '../context/LanguageContext';
 import { Plus, Search, Edit, Trash2, AlertTriangle } from 'lucide-react';
 
-const formatCurrency = (amount) => {
-  if (amount === null || amount === undefined || isNaN(amount)) return 'BDT 0';
-  return 'BDT ' + new Intl.NumberFormat('en-BD', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(amount);
-};
-
 export default function Products() {
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
   const [products, setProducts] = useState([]);
   const [companies, setCompanies] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -125,15 +120,15 @@ export default function Products() {
                   <td>{product.code}</td>
                   <td>{product.name}</td>
                   <td>{product.company_name || '-'}</td>
-                  <td className="text-right">{formatCurrency(product.purchase_price)}</td>
-                  <td className="text-right">{formatCurrency(product.dealer_price)}</td>
-                  <td className="text-right">{formatCurrency(product.mrp)}</td>
+                  <td className="text-right">{formatCurrency(product.purchase_price, language)}</td>
+                  <td className="text-right">{formatCurrency(product.dealer_price, language)}</td>
+                  <td className="text-right">{formatCurrency(product.mrp, language)}</td>
                   <td className="text-right">
                     {product.stock_quantity <= product.low_stock_alert ? (
-                      <span className="badge badge-danger" style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
-                        <AlertTriangle size={12} /> {product.stock_quantity}
+                      <span className="text-danger" style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                        <AlertTriangle size={12} /> {formatNumber(product.stock_quantity, language)}
                       </span>
-                    ) : product.stock_quantity}
+                    ) : formatNumber(product.stock_quantity, language)}
                   </td>
                   <td>
                     <div className="flex gap-2">

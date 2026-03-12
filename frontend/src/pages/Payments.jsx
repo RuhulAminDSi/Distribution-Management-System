@@ -1,22 +1,10 @@
 import { useState, useEffect } from 'react';
 import { paymentService, retailerService } from '../services/api';
-import { useLanguage } from '../context/LanguageContext';
+import { useLanguage, formatCurrency } from '../context/LanguageContext';
 import { Plus, Search } from 'lucide-react';
 
-const formatCurrency = (amount) => {
-  if (amount === null || amount === undefined || isNaN(amount)) return 'BDT 0';
-  return 'BDT ' + new Intl.NumberFormat('en-BD', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(amount);
-};
-
-const formatDate = (dateStr) => {
-  if (!dateStr) return '-';
-  const date = new Date(dateStr);
-  if (isNaN(date.getTime())) return dateStr;
-  return date.toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit', year: 'numeric' });
-};
-
 export default function Payments() {
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
   const [payments, setPayments] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
@@ -115,7 +103,7 @@ export default function Payments() {
                   <td>{payment.payment_no}</td>
                   <td>{formatDate(payment.payment_date)}</td>
                   <td>{payment.retailer_name}</td>
-                  <td className="text-right text-success">{formatCurrency(payment.amount)}</td>
+                  <td className="text-right text-success">{formatCurrency(payment.amount, language)}</td>
                   <td>{payment.payment_method}</td>
                   <td>{payment.collected_by_name}</td>
                 </tr>
@@ -145,7 +133,7 @@ export default function Payments() {
                     <option value="">{t('SelectRetailer')}</option>
                     {retailers.map(r => (
                       <option key={r.id} value={r.id}>
-                        {r.name} - Due: {formatCurrency(r.outstanding_balance || 0)}
+                        {r.name} - Due: {formatCurrency(r.outstanding_balance || 0, language)}
                       </option>
                     ))}
                   </select>

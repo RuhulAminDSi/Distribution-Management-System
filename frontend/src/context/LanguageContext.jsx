@@ -475,7 +475,7 @@ export function LanguageProvider({ children }) {
   const t = (key) => translations[language][key] || key;
 
   return (
-    <LanguageContext.Provider value={{ language, setLanguage, t }}>
+    <LanguageContext.Provider value={{ language, setLanguage, t, formatNumber, toBanglaNumber }}>
       {children}
     </LanguageContext.Provider>
   );
@@ -491,7 +491,19 @@ export function useLanguage() {
 
 export function formatCurrency(amount, lang = 'en') {
   if (amount === null || amount === undefined || isNaN(amount)) return lang === 'bn' ? '৳ 0' : 'BDT 0';
-  return (lang === 'bn' ? '৳ ' : 'BDT ') + new Intl.NumberFormat('en-BD', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(amount);
+  const formatted = new Intl.NumberFormat('en-BD', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(amount);
+  return (lang === 'bn' ? '৳ ' : 'BDT ') + (lang === 'bn' ? toBanglaNumber(formatted) : formatted);
+}
+
+export function toBanglaNumber(num) {
+  const banglaDigits = ['০', '১', '২', '৩', '৪', '৫', '৬', '৭', '৮', '৯'];
+  return String(num).replace(/\d/g, (digit) => banglaDigits[digit]);
+}
+
+export function formatNumber(num, lang = 'en') {
+  if (num === null || num === undefined || isNaN(num)) return lang === 'bn' ? '০' : '0';
+  const formatted = new Intl.NumberFormat('en-BD').format(num);
+  return lang === 'bn' ? toBanglaNumber(formatted) : formatted;
 }
 
 export function formatDate(dateStr, lang = 'en') {
