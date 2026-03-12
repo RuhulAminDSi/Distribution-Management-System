@@ -36,6 +36,7 @@ export default function Users() {
       if (editItem) {
         const updateData = {
           full_name: formData.full_name,
+          email: formData.email,
           role: formData.role,
           phone: formData.phone
         };
@@ -80,12 +81,14 @@ export default function Users() {
       username: item.username, 
       password: '', 
       full_name: item.full_name || '', 
+      email: item.email || '',
       role: item.role || 'salesman', 
       phone: item.phone || '' 
     } : { 
       username: '', 
       password: '', 
       full_name: '', 
+      email: '',
       role: 'salesman', 
       phone: '' 
     });
@@ -123,6 +126,7 @@ export default function Users() {
             <tr>
               <th>Username</th>
               <th>Full Name</th>
+              <th>Email</th>
               <th>Role</th>
               <th>Phone</th>
               <th>Status</th>
@@ -130,15 +134,16 @@ export default function Users() {
             </tr>
           </thead>
           <tbody>
-            {loading ? (
-              <tr><td colSpan="6">Loading...</td></tr>
+              {loading ? (
+              <tr><td colSpan="7">Loading...</td></tr>
             ) : !users || users.length === 0 ? (
-              <tr><td colSpan="6">No users found</td></tr>
+              <tr><td colSpan="7">No users found</td></tr>
             ) : (
                 users.map(u => (
                 <tr key={u.id}>
                   <td>{u.username}</td>
                   <td>{u.full_name}</td>
+                  <td>{u.email || '-'}</td>
                   <td><span className={`badge ${getRoleBadgeClass(u.role)}`}>{formatRole(u.role)}</span></td>
                   <td>{u.phone}</td>
                   <td>{u.is_active ? <span className="badge badge-success">Active</span> : <span className="badge badge-danger">Inactive</span>}</td>
@@ -203,6 +208,17 @@ export default function Users() {
                   />
                 </div>
                 <div className="form-group">
+                  <label>Email</label>
+                  <input 
+                    type="email" 
+                    value={formData.email || ''}
+                    onChange={e => setFormData({...formData, email: e.target.value})}
+                    placeholder="email@example.com"
+                  />
+                </div>
+              </div>
+              <div className="form-row">
+                <div className="form-group">
                   <label>Role *</label>
                   <select 
                     value={formData.role || 'salesman'}
@@ -214,15 +230,15 @@ export default function Users() {
                     ))}
                   </select>
                 </div>
-              </div>
-              <div className="form-group">
-                <label>Phone</label>
-                <input 
-                  type="text" 
-                  value={formData.phone || ''}
-                  onChange={e => setFormData({...formData, phone: e.target.value})}
-                  placeholder="Phone number"
-                />
+                <div className="form-group">
+                  <label>Phone</label>
+                  <input 
+                    type="text" 
+                    value={formData.phone || ''}
+                    onChange={e => setFormData({...formData, phone: e.target.value})}
+                    placeholder="Phone number"
+                  />
+                </div>
               </div>
               <div className="modal-footer" style={{ padding: 0, border: 'none', marginTop: '20px' }}>
                 <button type="button" className="btn btn-secondary" onClick={() => setShowModal(false)}>Cancel</button>

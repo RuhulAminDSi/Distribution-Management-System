@@ -1,6 +1,7 @@
-import { useState } from 'react';
-import { Outlet, NavLink, useLocation } from 'react-router-dom';
+import { useState, useRef, useEffect } from 'react';
+import { Outlet, NavLink, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
+import { authService } from '../../services/api';
 import { 
   LayoutDashboard, 
   Package, 
@@ -13,7 +14,9 @@ import {
   Building2,
   UserCircle,
   LogOut,
-  Menu
+  Menu,
+  Key,
+  ChevronDown
 } from 'lucide-react';
 
 const navItems = [
@@ -32,7 +35,60 @@ const navItems = [
 export default function MainLayout() {
   const { user, logout } = useAuth();
   const location = useLocation();
+  const navigate = useNavigate();
   const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [dropdownOpen, setDropdownOpen] = useState(false);
+  const [passwordModalOpen, setPasswordModalOpen] = useState(false);
+  const [passwordData, setPasswordData] = useState({ currentPassword: '', newPassword: '', confirmPassword: '' });
+  const [passwordError, setPasswordError] = useState('');
+  const [passwordSuccess, setPasswordSuccess] = useState('');
+  const dropdownRef = useRef(null);
+
+  useEffect(() => {
+    function handleClickOutside(event) {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+        setDropdownOpen(false);
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  const handleLogout = () => {
+    logout();
+    navigate('/login');
+  };
+
+  const handlePasswordChange = async (e) => {
+    e.preventDefault();
+    setPasswordError('');
+    setPasswordSuccess('');
+    
+    if (passwordData.newPassword !== passwordData.confirmPassword) {
+      setPasswordError('New passwords do not match');
+      return;
+    }
+    
+    if (passwordData.newPassword.length < 6) {
+      setPasswordError('Password must be at least 6 characters');
+      return;
+    }
+
+    try {
+      await authService.changePassword({
+        currentPassword: passwordData.currentPassword,
+        newPassword: passwordData.newPassword
+      });
+      setPasswordSuccess('Password changed successfully');
+      setPasswordData({ currentPassword: '', newPassword: '', confirmPassword: '' });
+      setTimeout(() => {
+        setPasswordModalOpen(false);
+        setPasswordSuccess('');
+      }, 1500);
+    } catch (error) {
+      setPasswordError(error.response?.data?.message || 'Failed to change password');
+    }
+  };
 
   const getPageTitle = () => {
     const item = navItems.find(item => item.path === location.pathname);
@@ -87,14 +143,28 @@ export default function MainLayout() {
           </div>
           
           <div className="header-right">
-            <div className="user-menu">
-              <div className="user-avatar">
+            <div className="user-menu" ref={dropdownRef} style={{ position: 'relative' }}>
+              <div className="user-avatar" onClick={() => setDropdownOpen(!dropdownOpen)} style={{ cursor: 'pointer' }}>
                 {user?.full_name?.charAt(0) || 'U'}
               </div>
-              <div>
+              <div onClick={() => setDropdownOpen(!dropdownOpen)} style={{ cursor: 'pointer' }}>
                 <div style={{ fontWeight: '500', fontSize: '14px' }}>{user?.full_name}</div>
                 <div style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>{user?.role}</div>
               </div>
+              <ChevronDown size={16} style={{ color: 'var(--text-secondary)' }} />
+              
+              {dropdownOpen && (
+                <div className="dropdown-menu">
+                  <button className="dropdown-item" onClick={() => { setDropdownOpen(false); setPasswordModalOpen(true); }}>
+                    <Key size={16} />
+                    Change Password
+                  </button>
+                  <button className="dropdown-item" onClick={handleLogout}>
+                    <LogOut size={16} />
+                    Logout
+                  </button>
+                </div>
+              )}
             </div>
           </div>
         </header>
@@ -103,6 +173,63 @@ export default function MainLayout() {
           <Outlet />
         </div>
       </main>
+
+      {passwordModalOpen && (
+        <div className="modal-overlay" onClick={() => setPasswordModalOpen(false)}>
+          <div className="modal" onClick={e => e.stopPropagation()}>
+            <div className="modal-header">
+              <h3>Change Password</h3>
+              <button className="modal-close" onClick={() => setPasswordModalOpen(false)}>
+                ×
+              </button>
+            </div>
+            <form onSubmit={handlePasswordChange}>
+              <div className="modal-body">
+                {passwordError && <div className="alert alert-danger">{passwordError}</div>}
+                {passwordSuccess && <div className="alert alert-success">{passwordSuccess}</div>}
+                <div className="form-group">
+                  <label className="form-label">Current Password</label>
+                  <input
+                    type="password"
+                    className="form-input"
+                    value={passwordData.currentPassword}
+                    onChange={e => setPasswordData({ ...passwordData, currentPassword: e.target.value })}
+                    required
+                  />
+                </div>
+                <div className="form-group">
+                  <label className="form-label">New Password</label>
+                  <input
+                    type="password"
+                    className="form-input"
+                    value={passwordData.newPassword}
+                    onChange={e => setPasswordData({ ...passwordData, newPassword: e.target.value })}
+                    required
+                  />
+                </div>
+                <div className="form-group">
+                  <label className="form-label">Confirm New Password</label>
+                  <input
+                    type="password"
+                    className="form-input"
+                    value={passwordData.confirmPassword}
+                    onChange={e => setPasswordData({ ...passwordData, confirmPassword: e.target.value })}
+                    required
+                  />
+                </div>
+              </div>
+              <div className="modal-footer">
+                <button type="button" className="btn btn-secondary" onClick={() => setPasswordModalOpen(false)}>
+                  Cancel
+                </button>
+                <button type="submit" className="btn btn-primary">
+                  Change Password
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

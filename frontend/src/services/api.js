@@ -24,7 +24,10 @@ export const authService = {
   register: (data) => api.post('/auth/register', data),
   getUsers: () => api.get('/auth/users'),
   updateUser: (id, data) => api.put(`/auth/users/${id}`, data),
-  deleteUser: (id) => api.delete(`/auth/users/${id}`)
+  deleteUser: (id) => api.delete(`/auth/users/${id}`),
+  changePassword: (data) => api.post('/auth/change-password', data),
+  forgotPassword: (data) => api.post('/auth/forgot-password', data),
+  resetPassword: (data) => api.post('/auth/reset-password', data)
 };
 
 export const productService = {

@@ -34,13 +34,24 @@ export const initializeDatabase = async () => {
         username VARCHAR(255) UNIQUE NOT NULL,
         password_hash VARCHAR(255) NOT NULL,
         full_name VARCHAR(255) NOT NULL,
+        email VARCHAR(255),
         role ENUM('system_admin', 'admin', 'manager', 'salesman', 'accountant', 'driver', 'loader') NOT NULL,
         phone VARCHAR(50),
+        reset_token VARCHAR(255),
+        reset_expires DATETIME,
         is_active TINYINT DEFAULT 1,
         created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
         updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
       )
     `);
+
+    // Add columns if they don't exist
+    try {
+      await connection.execute(`ALTER TABLE users ADD COLUMN reset_token VARCHAR(255)`);
+    } catch (e) {}
+    try {
+      await connection.execute(`ALTER TABLE users ADD COLUMN reset_expires DATETIME`);
+    } catch (e) {}
 
     await connection.execute(`
       CREATE TABLE IF NOT EXISTS companies (

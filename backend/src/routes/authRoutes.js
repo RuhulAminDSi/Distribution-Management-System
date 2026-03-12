@@ -10,5 +10,8 @@ router.post('/register', authenticate, authorize('system_admin', 'admin'), authC
 router.get('/users', authenticate, authorize('system_admin', 'admin'), authController.getAllUsers);
 router.put('/users/:id', authenticate, authorize('system_admin', 'admin'), authController.updateUser);
 router.delete('/users/:id', authenticate, authorize('system_admin', 'admin'), authController.deleteUser);
+router.post('/change-password', authenticate, authController.changePassword);
+router.post('/forgot-password', authController.forgotPassword);
+router.post('/reset-password', authController.resetPassword);
 
 export default router;
