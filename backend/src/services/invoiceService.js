@@ -85,8 +85,10 @@ export const invoiceService = {
       const currentOutstanding = await retailerService.getBalance(data.retailer_id);
       const newOutstanding = (currentOutstanding.outstanding || 0) + totalAmount;
       
-      if (newOutstanding > retailer.credit_limit && retailer.credit_limit > 0) {
-        throw new Error('Credit limit exceeded');
+      // Credit limit check - only if credit_limit is explicitly set (> 0)
+      const creditLimit = parseFloat(retailer.credit_limit) || 0;
+      if (creditLimit > 0 && newOutstanding > creditLimit) {
+        throw new Error('Credit limit exceeded. Available: ' + (creditLimit - newOutstanding + totalAmount));
       }
 
       const invoiceDate = data.invoice_date || new Date().toISOString().split('T')[0];

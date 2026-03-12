@@ -14,6 +14,15 @@ export const dashboardService = {
       WHERE invoice_date = ?
     `, [today]);
 
+    const allTimeSales = await query(`
+      SELECT 
+        COUNT(*) as total_invoices,
+        COALESCE(SUM(total_amount), 0) as total_amount,
+        COALESCE(SUM(paid_amount), 0) as total_collected,
+        COALESCE(SUM(due_amount), 0) as total_due
+      FROM invoices 
+    `);
+
     const totalOutstanding = await query(`
       SELECT COALESCE(SUM(outstanding_balance), 0) as total
       FROM retailers WHERE is_active = 1
@@ -67,6 +76,11 @@ export const dashboardService = {
         totalSales: todaySales[0]?.total_amount || 0,
         totalCollected: todaySales[0]?.total_collected || 0,
         totalDue: todaySales[0]?.total_due || 0
+      },
+      allTime: {
+        totalInvoices: allTimeSales[0]?.total_invoices || 0,
+        totalSales: allTimeSales[0]?.total_amount || 0,
+        totalCollected: allTimeSales[0]?.total_collected || 0
       },
       totalOutstanding: totalOutstanding[0]?.total || 0,
       totalProducts: totalProducts[0]?.total || 0,

@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect } from 'react';
 import { Outlet, NavLink, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
+import { useLanguage } from '../../context/LanguageContext';
 import { authService } from '../../services/api';
 import { 
   LayoutDashboard, 
@@ -16,38 +17,45 @@ import {
   LogOut,
   Menu,
   Key,
-  ChevronDown
+  ChevronDown,
+  Globe
 } from 'lucide-react';
 
 const navItems = [
-  { path: '/', icon: LayoutDashboard, label: 'Dashboard' },
-  { path: '/companies', icon: Building2, label: 'Companies' },
-  { path: '/products', icon: Package, label: 'Products' },
-  { path: '/retailers', icon: Users, label: 'Retailers' },
-  { path: '/sales', icon: ShoppingCart, label: 'Sales' },
-  { path: '/payments', icon: CreditCard, label: 'Payments' },
-  { path: '/stock', icon: Warehouse, label: 'Stock' },
-  { path: '/reports', icon: FileText, label: 'Reports' },
-  { path: '/users', icon: UserCircle, label: 'Users' },
-  { path: '/settings', icon: Settings, label: 'Settings' },
+  { path: '/', icon: LayoutDashboard, labelKey: 'Dashboard' },
+  { path: '/companies', icon: Building2, labelKey: 'Companies' },
+  { path: '/products', icon: Package, labelKey: 'Products' },
+  { path: '/retailers', icon: Users, labelKey: 'Retailers' },
+  { path: '/sales', icon: ShoppingCart, labelKey: 'Sales' },
+  { path: '/payments', icon: CreditCard, labelKey: 'Payments' },
+  { path: '/stock', icon: Warehouse, labelKey: 'Stock' },
+  { path: '/reports', icon: FileText, labelKey: 'Reports' },
+  { path: '/users', icon: UserCircle, labelKey: 'Users' },
+  { path: '/settings', icon: Settings, labelKey: 'Settings' },
 ];
 
 export default function MainLayout() {
   const { user, logout } = useAuth();
+  const { t, language, setLanguage } = useLanguage();
   const location = useLocation();
   const navigate = useNavigate();
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [dropdownOpen, setDropdownOpen] = useState(false);
+  const [langDropdownOpen, setLangDropdownOpen] = useState(false);
   const [passwordModalOpen, setPasswordModalOpen] = useState(false);
   const [passwordData, setPasswordData] = useState({ currentPassword: '', newPassword: '', confirmPassword: '' });
   const [passwordError, setPasswordError] = useState('');
   const [passwordSuccess, setPasswordSuccess] = useState('');
   const dropdownRef = useRef(null);
+  const langDropdownRef = useRef(null);
 
   useEffect(() => {
     function handleClickOutside(event) {
       if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
         setDropdownOpen(false);
+      }
+      if (langDropdownRef.current && !langDropdownRef.current.contains(event.target)) {
+        setLangDropdownOpen(false);
       }
     }
     document.addEventListener('mousedown', handleClickOutside);
@@ -65,12 +73,12 @@ export default function MainLayout() {
     setPasswordSuccess('');
     
     if (passwordData.newPassword !== passwordData.confirmPassword) {
-      setPasswordError('New passwords do not match');
+      setPasswordError(t('PasswordMismatch'));
       return;
     }
     
     if (passwordData.newPassword.length < 6) {
-      setPasswordError('Password must be at least 6 characters');
+      setPasswordError(t('PasswordTooShort'));
       return;
     }
 
@@ -79,20 +87,20 @@ export default function MainLayout() {
         currentPassword: passwordData.currentPassword,
         newPassword: passwordData.newPassword
       });
-      setPasswordSuccess('Password changed successfully');
+      setPasswordSuccess(t('PasswordChanged'));
       setPasswordData({ currentPassword: '', newPassword: '', confirmPassword: '' });
       setTimeout(() => {
         setPasswordModalOpen(false);
         setPasswordSuccess('');
       }, 1500);
     } catch (error) {
-      setPasswordError(error.response?.data?.message || 'Failed to change password');
+      setPasswordError(error.response?.data?.message || t('SaveError'));
     }
   };
 
   const getPageTitle = () => {
     const item = navItems.find(item => item.path === location.pathname);
-    return item?.label || 'Dashboard';
+    return item ? t(item.labelKey) : t('Dashboard');
   };
 
   return (
@@ -107,7 +115,7 @@ export default function MainLayout() {
         
         <nav className="sidebar-nav">
           <div className="nav-section">
-            <div className="nav-section-title">Menu</div>
+            <div className="nav-section-title">{t('Menu')}</div>
             {navItems.map(item => (
               <NavLink 
                 key={item.path} 
@@ -116,7 +124,7 @@ export default function MainLayout() {
                 end={item.path === '/'}
               >
                 <item.icon size={20} />
-                <span>{item.label}</span>
+                <span>{t(item.labelKey)}</span>
               </NavLink>
             ))}
           </div>
@@ -124,12 +132,46 @@ export default function MainLayout() {
 
         <div style={{ padding: '20px', borderTop: '1px solid rgba(255,255,255,0.1)' }}>
           <div style={{ color: 'rgba(255,255,255,0.7)', fontSize: '12px', marginBottom: '8px' }}>
-            Logged in as
+            {t('LoggedInAs')}
           </div>
           <div style={{ fontWeight: '600', marginBottom: '12px' }}>{user?.full_name}</div>
-          <button onClick={logout} className="btn btn-secondary" style={{ width: '100%', color: 'white', borderColor: 'rgba(255,255,255,0.3)' }}>
-            <LogOut size={16} /> Logout
-          </button>
+          
+          <div ref={langDropdownRef} style={{ position: 'relative' }}>
+            <button 
+              onClick={() => setLangDropdownOpen(!langDropdownOpen)}
+              className="btn" 
+              style={{ 
+                width: '100%', 
+                color: 'white', 
+                backgroundColor: '#1976D2',
+                border: 'none',
+                display: 'flex', 
+                alignItems: 'center', 
+                justifyContent: 'center', 
+                gap: '8px' 
+              }}
+            >
+              <Globe size={16} /> {language === 'en' ? t('English') : t('Bangla')}
+            </button>
+            {langDropdownOpen && (
+              <div className="dropdown-menu" style={{ bottom: '100%', top: 'auto', marginBottom: '8px', background: '#2a2a2a' }}>
+                <button 
+                  className="dropdown-item" 
+                  onClick={() => { setLanguage('en'); setLangDropdownOpen(false); }}
+                  style={{ background: language === 'en' ? '#1976D2' : 'transparent' }}
+                >
+                  {t('English')}
+                </button>
+                <button 
+                  className="dropdown-item" 
+                  onClick={() => { setLanguage('bn'); setLangDropdownOpen(false); }}
+                  style={{ background: language === 'bn' ? '#1976D2' : 'transparent' }}
+                >
+                  {t('Bangla')}
+                </button>
+              </div>
+            )}
+          </div>
         </div>
       </aside>
 
@@ -157,11 +199,11 @@ export default function MainLayout() {
                 <div className="dropdown-menu">
                   <button className="dropdown-item" onClick={() => { setDropdownOpen(false); setPasswordModalOpen(true); }}>
                     <Key size={16} />
-                    Change Password
+                    {t('ChangePassword')}
                   </button>
                   <button className="dropdown-item" onClick={handleLogout}>
                     <LogOut size={16} />
-                    Logout
+                    {t('Logout')}
                   </button>
                 </div>
               )}
@@ -178,7 +220,7 @@ export default function MainLayout() {
         <div className="modal-overlay" onClick={() => setPasswordModalOpen(false)}>
           <div className="modal" onClick={e => e.stopPropagation()}>
             <div className="modal-header">
-              <h3>Change Password</h3>
+              <h3>{t('ChangePassword')}</h3>
               <button className="modal-close" onClick={() => setPasswordModalOpen(false)}>
                 ×
               </button>
@@ -188,7 +230,7 @@ export default function MainLayout() {
                 {passwordError && <div className="alert alert-danger">{passwordError}</div>}
                 {passwordSuccess && <div className="alert alert-success">{passwordSuccess}</div>}
                 <div className="form-group">
-                  <label className="form-label">Current Password</label>
+                  <label className="form-label">{t('CurrentPassword')}</label>
                   <input
                     type="password"
                     className="form-input"
@@ -198,7 +240,7 @@ export default function MainLayout() {
                   />
                 </div>
                 <div className="form-group">
-                  <label className="form-label">New Password</label>
+                  <label className="form-label">{t('NewPassword')}</label>
                   <input
                     type="password"
                     className="form-input"
@@ -208,7 +250,7 @@ export default function MainLayout() {
                   />
                 </div>
                 <div className="form-group">
-                  <label className="form-label">Confirm New Password</label>
+                  <label className="form-label">{t('ConfirmPassword')}</label>
                   <input
                     type="password"
                     className="form-input"
@@ -220,10 +262,10 @@ export default function MainLayout() {
               </div>
               <div className="modal-footer">
                 <button type="button" className="btn btn-secondary" onClick={() => setPasswordModalOpen(false)}>
-                  Cancel
+                  {t('Cancel')}
                 </button>
                 <button type="submit" className="btn btn-primary">
-                  Change Password
+                  {t('ChangePassword')}
                 </button>
               </div>
             </form>

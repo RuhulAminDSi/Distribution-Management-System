@@ -1,13 +1,15 @@
 import { useState } from 'react';
+import { useLanguage } from '../context/LanguageContext';
 import { Shield, Key, Clock, Database } from 'lucide-react';
 
 export default function Settings() {
+  const { t } = useLanguage();
   const [activeTab, setActiveTab] = useState('general');
 
   return (
     <div>
       <div className="page-header">
-        <h2>Settings</h2>
+        <h2>{t('Settings')}</h2>
       </div>
 
       <div className="tabs">
@@ -15,19 +17,19 @@ export default function Settings() {
           className={`tab ${activeTab === 'general' ? 'active' : ''}`}
           onClick={() => setActiveTab('general')}
         >
-          General
+          {t('GeneralSettings')}
         </button>
         <button 
           className={`tab ${activeTab === 'access' ? 'active' : ''}`}
           onClick={() => setActiveTab('access')}
         >
-          Role Access
+          {t('Role')}
         </button>
       </div>
 
       {activeTab === 'general' && (
         <div className="card">
-          <h3 style={{ marginBottom: '20px' }}>General Settings</h3>
+          <h3 style={{ marginBottom: '20px' }}>{t('GeneralSettings')}</h3>
           
           <div className="settings-section">
             <div className="settings-item">
@@ -64,7 +66,7 @@ export default function Settings() {
 
       {activeTab === 'access' && (
         <div className="card">
-          <h3 style={{ marginBottom: '20px' }}>Role Access Control</h3>
+          <h3 style={{ marginBottom: '20px' }}>{t('Role')} {t('Access')}</h3>
           
           <div className="role-grid">
             {[

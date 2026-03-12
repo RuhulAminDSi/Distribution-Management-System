@@ -1,5 +1,6 @@
 import { Routes, Route, Navigate } from 'react-router-dom';
 import { useAuth } from './context/AuthContext';
+import { LanguageProvider } from './context/LanguageContext';
 import MainLayout from './components/layout/MainLayout';
 import Login from './pages/Login';
 import ResetPassword from './pages/ResetPassword';
@@ -26,25 +27,27 @@ function PrivateRoute({ children }) {
 
 export default function App() {
   return (
-    <Routes>
-      <Route path="/login" element={<Login />} />
-      <Route path="/reset-password" element={<ResetPassword />} />
-      <Route path="/" element={
-        <PrivateRoute>
-          <MainLayout />
-        </PrivateRoute>
-      }>
-        <Route index element={<Dashboard />} />
-        <Route path="companies" element={<Companies />} />
-        <Route path="products" element={<Products />} />
-        <Route path="retailers" element={<Retailers />} />
-        <Route path="sales" element={<Sales />} />
-        <Route path="payments" element={<Payments />} />
-        <Route path="stock" element={<Stock />} />
-        <Route path="reports" element={<Reports />} />
-        <Route path="users" element={<Users />} />
-        <Route path="settings" element={<Settings />} />
-      </Route>
-    </Routes>
+    <LanguageProvider>
+      <Routes>
+        <Route path="/login" element={<Login />} />
+        <Route path="/reset-password" element={<ResetPassword />} />
+        <Route path="/" element={
+          <PrivateRoute>
+            <MainLayout />
+          </PrivateRoute>
+        }>
+          <Route index element={<Dashboard />} />
+          <Route path="companies" element={<Companies />} />
+          <Route path="products" element={<Products />} />
+          <Route path="retailers" element={<Retailers />} />
+          <Route path="sales" element={<Sales />} />
+          <Route path="payments" element={<Payments />} />
+          <Route path="stock" element={<Stock />} />
+          <Route path="reports" element={<Reports />} />
+          <Route path="users" element={<Users />} />
+          <Route path="settings" element={<Settings />} />
+        </Route>
+      </Routes>
+    </LanguageProvider>
   );
 }

@@ -1,8 +1,10 @@
 import { useState, useEffect } from 'react';
+import { useLanguage } from '../context/LanguageContext';
 import { companyService } from '../services/api';
 import { X, Plus, Pencil, Trash2 } from 'lucide-react';
 
 export default function Companies() {
+  const { t } = useLanguage();
   const [companies, setCompanies] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
@@ -45,12 +47,12 @@ export default function Companies() {
   };
 
   const handleDelete = async (id) => {
-    if (!confirm('Are you sure you want to delete this company?')) return;
+    if (!confirm(t('ConfirmDelete'))) return;
     try {
       await companyService.deleteCompany(id);
       fetchCompanies();
     } catch (error) {
-      alert('Failed to delete');
+      alert(t('DeleteError'));
     }
   };
 
@@ -63,9 +65,9 @@ export default function Companies() {
   return (
     <div>
       <div className="page-header">
-        <h2>Companies</h2>
+        <h2>{t('Companies')}</h2>
         <button className="btn btn-primary" onClick={() => openModal()}>
-          <Plus size={18} /> Add Company
+          <Plus size={18} /> {t('AddCompany')}
         </button>
       </div>
 
@@ -73,19 +75,19 @@ export default function Companies() {
         <table className="table">
           <thead>
             <tr>
-              <th>Code</th>
-              <th>Name</th>
-              <th>Contact Person</th>
-              <th>Phone</th>
-              <th>Due Limit</th>
-              <th>Actions</th>
+              <th>{t('Code')}</th>
+              <th>{t('Name')}</th>
+              <th>{t('ContactPerson')}</th>
+              <th>{t('Phone')}</th>
+              <th>{t('DueLimit')}</th>
+              <th>{t('Actions')}</th>
             </tr>
           </thead>
           <tbody>
             {loading ? (
-              <tr><td colSpan="6">Loading...</td></tr>
+              <tr><td colSpan="6">{t('Loading')}</td></tr>
             ) : !companies || companies.length === 0 ? (
-              <tr><td colSpan="6">No companies found</td></tr>
+              <tr><td colSpan="6">{t('NoDataFound')}</td></tr>
             ) : (
               companies.map(c => (
                 <tr key={c.id}>
@@ -109,7 +111,7 @@ export default function Companies() {
         <div className="modal-overlay" onClick={() => setShowModal(false)}>
           <div className="modal" onClick={e => e.stopPropagation()}>
             <div className="modal-header">
-              <h3>{editItem ? 'Edit Company' : 'Add Company'}</h3>
+              <h3>{editItem ? t('EditCompany') : t('AddCompany')}</h3>
               <button className="modal-close" onClick={() => setShowModal(false)}>
                 <X size={20} />
               </button>
@@ -117,56 +119,56 @@ export default function Companies() {
             <form onSubmit={handleSubmit} className="modal-body">
               <div className="form-row">
                 <div className="form-group">
-                  <label>Name *</label>
+                  <label>{t('CompanyName')} *</label>
                   <input 
                     type="text" 
                     value={formData.name || ''}
                     onChange={e => setFormData({...formData, name: e.target.value})}
                     required 
-                    placeholder="Company name"
+                    placeholder={t('CompanyName')}
                   />
                 </div>
                 <div className="form-group">
-                  <label>Code</label>
+                  <label>{t('Code')}</label>
                   <input 
                     type="text" 
                     value={formData.code || ''}
                     onChange={e => setFormData({...formData, code: e.target.value})}
-                    placeholder="Auto-generated if empty"
+                    placeholder="Auto"
                   />
                 </div>
               </div>
               <div className="form-row">
                 <div className="form-group">
-                  <label>Contact Person</label>
+                  <label>{t('ContactPerson')}</label>
                   <input 
                     type="text" 
                     value={formData.contact_person || ''}
                     onChange={e => setFormData({...formData, contact_person: e.target.value})}
-                    placeholder="Contact person"
+                    placeholder={t('ContactPerson')}
                   />
                 </div>
                 <div className="form-group">
-                  <label>Phone</label>
+                  <label>{t('Phone')}</label>
                   <input 
                     type="text" 
                     value={formData.phone || ''}
                     onChange={e => setFormData({...formData, phone: e.target.value})}
-                    placeholder="Phone number"
+                    placeholder={t('Phone')}
                   />
                 </div>
               </div>
               <div className="form-group">
-                <label>Address</label>
+                <label>{t('Address')}</label>
                 <textarea 
                   value={formData.address || ''}
                   onChange={e => setFormData({...formData, address: e.target.value})}
-                  placeholder="Full address"
+                  placeholder={t('Address')}
                   rows={2}
                 />
               </div>
               <div className="form-group">
-                <label>Due Limit</label>
+                <label>{t('DueLimit')}</label>
                 <input 
                   type="number" 
                   value={formData.due_limit || 0}
@@ -174,8 +176,8 @@ export default function Companies() {
                 />
               </div>
               <div className="modal-footer" style={{ padding: 0, border: 'none', marginTop: '20px' }}>
-                <button type="button" className="btn btn-secondary" onClick={() => setShowModal(false)}>Cancel</button>
-                <button type="submit" className="btn btn-primary">{editItem ? 'Update' : 'Create'}</button>
+                <button type="button" className="btn btn-secondary" onClick={() => setShowModal(false)}>{t('Cancel')}</button>
+                <button type="submit" className="btn btn-primary">{editItem ? t('UpdateSuccess') : t('Save')}</button>
               </div>
             </form>
           </div>

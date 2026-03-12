@@ -1,12 +1,15 @@
 import { useState, useEffect } from 'react';
 import { productService, companyService } from '../services/api';
+import { useLanguage } from '../context/LanguageContext';
 import { Plus, Search, Edit, Trash2, AlertTriangle } from 'lucide-react';
 
 const formatCurrency = (amount) => {
-  return new Intl.NumberFormat('en-BD', { style: 'currency', currency: 'BDT' }).format(amount || 0);
+  if (amount === null || amount === undefined || isNaN(amount)) return 'BDT 0';
+  return 'BDT ' + new Intl.NumberFormat('en-BD', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(amount);
 };
 
 export default function Products() {
+  const { t } = useLanguage();
   const [products, setProducts] = useState([]);
   const [companies, setCompanies] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -59,7 +62,7 @@ export default function Products() {
         low_stock_alert: 10, unit: 'piece', pack_size: 1
       });
     } catch (error) {
-      alert('Failed to save product');
+      alert(t('SaveError'));
     }
   };
 
@@ -69,24 +72,24 @@ export default function Products() {
   };
 
   const handleDelete = async (id) => {
-    if (confirm('Are you sure you want to delete this product?')) {
+    if (confirm(t('ConfirmDelete'))) {
       try {
         await productService.delete(id);
         fetchProducts();
       } catch (error) {
-        alert('Failed to delete product');
+        alert(t('DeleteError'));
       }
     }
   };
 
-  if (loading) return <div>Loading...</div>;
+  if (loading) return <div>{t('Loading')}</div>;
 
   return (
     <div>
       <div className="page-header">
-        <h1 className="page-title">Products</h1>
+        <h1 className="page-title">{t('Products')}</h1>
         <button className="btn btn-primary" onClick={() => setShowModal(true)}>
-          <Plus size={18} /> Add Product
+          <Plus size={18} /> {t('AddProduct')}
         </button>
       </div>
 
@@ -96,7 +99,7 @@ export default function Products() {
             <Search size={18} />
             <input
               type="text"
-              placeholder="Search products..."
+              placeholder={t('Search') + '...'}
               value={search}
               onChange={(e) => setSearch(e.target.value)}
             />
@@ -106,13 +109,13 @@ export default function Products() {
           <table className="table">
             <thead>
               <tr>
-                <th>Code</th>
-                <th>Name</th>
-                <th>Company</th>
-                <th className="text-right">Purchase</th>
-                <th className="text-right">Dealer</th>
-                <th className="text-right">MRP</th>
-                <th className="text-right">Stock</th>
+                <th>{t('Code')}</th>
+                <th>{t('Name')}</th>
+                <th>{t('Company')}</th>
+                <th className="text-right">{t('PurchasePrice')}</th>
+                <th className="text-right">{t('DealerPrice')}</th>
+                <th className="text-right">{t('MRP')}</th>
+                <th className="text-right">{t('Stock')}</th>
                 <th></th>
               </tr>
             </thead>
@@ -153,14 +156,14 @@ export default function Products() {
         <div className="modal-overlay" onClick={() => setShowModal(false)}>
           <div className="modal" onClick={e => e.stopPropagation()}>
             <div className="modal-header">
-              <h2 className="modal-title">{formData.id ? 'Edit Product' : 'Add Product'}</h2>
+              <h2 className="modal-title">{formData.id ? t('EditProduct') : t('AddProduct')}</h2>
               <button className="modal-close" onClick={() => setShowModal(false)}>×</button>
             </div>
             <form onSubmit={handleSubmit}>
               <div className="modal-body">
                 <div className="grid-2">
                   <div className="form-group">
-                    <label className="form-label">Product Name *</label>
+                    <label className="form-label">{t('ProductName')} *</label>
                     <input
                       type="text"
                       className="form-input"
@@ -170,7 +173,7 @@ export default function Products() {
                     />
                   </div>
                   <div className="form-group">
-                    <label className="form-label">Code</label>
+                    <label className="form-label">{t('Code')}</label>
                     <input
                       type="text"
                       className="form-input"
@@ -181,13 +184,13 @@ export default function Products() {
                 </div>
 
                 <div className="form-group">
-                  <label className="form-label">Company</label>
+                  <label className="form-label">{t('Company')}</label>
                   <select
                     className="form-select"
                     value={formData.company_id}
                     onChange={(e) => setFormData({ ...formData, company_id: e.target.value })}
                   >
-                    <option value="">Select Company</option>
+                    <option value="">{t('SelectCompany')}</option>
                     {companies.map(c => (
                       <option key={c.id} value={c.id}>{c.name}</option>
                     ))}
@@ -196,7 +199,7 @@ export default function Products() {
 
                 <div className="grid-3">
                   <div className="form-group">
-                    <label className="form-label">Purchase Price *</label>
+                    <label className="form-label">{t('PurchasePrice')} *</label>
                     <input
                       type="number"
                       step="0.01"
@@ -207,7 +210,7 @@ export default function Products() {
                     />
                   </div>
                   <div className="form-group">
-                    <label className="form-label">Dealer Price *</label>
+                    <label className="form-label">{t('DealerPrice')} *</label>
                     <input
                       type="number"
                       step="0.01"
@@ -218,7 +221,7 @@ export default function Products() {
                     />
                   </div>
                   <div className="form-group">
-                    <label className="form-label">MRP *</label>
+                    <label className="form-label">{t('MRP')} *</label>
                     <input
                       type="number"
                       step="0.01"
@@ -232,7 +235,7 @@ export default function Products() {
 
                 <div className="grid-3">
                   <div className="form-group">
-                    <label className="form-label">Initial Stock</label>
+                    <label className="form-label">{t('Stock')}</label>
                     <input
                       type="number"
                       className="form-input"
@@ -241,7 +244,7 @@ export default function Products() {
                     />
                   </div>
                   <div className="form-group">
-                    <label className="form-label">Low Stock Alert</label>
+                    <label className="form-label">{t('LowStockAlert')}</label>
                     <input
                       type="number"
                       className="form-input"
@@ -250,7 +253,7 @@ export default function Products() {
                     />
                   </div>
                   <div className="form-group">
-                    <label className="form-label">Unit</label>
+                    <label className="form-label">{t('Unit')}</label>
                     <input
                       type="text"
                       className="form-input"
@@ -261,8 +264,8 @@ export default function Products() {
                 </div>
               </div>
               <div className="modal-footer">
-                <button type="button" className="btn btn-secondary" onClick={() => setShowModal(false)}>Cancel</button>
-                <button type="submit" className="btn btn-primary">Save</button>
+                <button type="button" className="btn btn-secondary" onClick={() => setShowModal(false)}>{t('Cancel')}</button>
+                <button type="submit" className="btn btn-primary">{t('Save')}</button>
               </div>
             </form>
           </div>

@@ -3,8 +3,14 @@ import { reportService } from '../services/reportService.js';
 export const reportController = {
   async dailySales(req, res, next) {
     try {
-      const { date } = req.query;
-      const sales = await reportService.dailySales(date || new Date().toISOString().split('T')[0]);
+      const { start_date, end_date } = req.query;
+      const today = new Date();
+      const firstDay = new Date(today.getFullYear(), today.getMonth(), 1);
+      
+      const start = start_date || firstDay.toISOString().split('T')[0];
+      const end = end_date || today.toISOString().split('T')[0];
+      
+      const sales = await reportService.dailySales(start, end);
       res.json(sales);
     } catch (error) {
       next(error);

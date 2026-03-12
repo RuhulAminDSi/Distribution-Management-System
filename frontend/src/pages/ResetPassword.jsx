@@ -1,9 +1,11 @@
 import { useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
+import { useLanguage } from '../context/LanguageContext';
 import { authService } from '../services/api';
 import { Warehouse, Eye, EyeOff } from 'lucide-react';
 
 export default function ResetPassword() {
+  const { t } = useLanguage();
   const [searchParams] = useSearchParams();
   const token = searchParams.get('token');
   const navigate = useNavigate();
@@ -20,12 +22,12 @@ export default function ResetPassword() {
     setError('');
 
     if (password !== confirmPassword) {
-      setError('Passwords do not match');
+      setError(t('PasswordMismatch'));
       return;
     }
 
     if (password.length < 6) {
-      setError('Password must be at least 6 characters');
+      setError(t('PasswordTooShort'));
       return;
     }
 
@@ -33,10 +35,10 @@ export default function ResetPassword() {
 
     try {
       await authService.resetPassword({ token, newPassword: password });
-      setSuccess('Password reset successfully! Redirecting to login...');
+      setSuccess(t('PasswordChanged') + '! ' + t('Redirecting') + '...');
       setTimeout(() => navigate('/login'), 2000);
     } catch (err) {
-      setError(err.response?.data?.message || 'Failed to reset password');
+      setError(err.response?.data?.message || t('SaveError'));
     } finally {
       setLoading(false);
     }
@@ -50,9 +52,9 @@ export default function ResetPassword() {
             <Warehouse size={48} />
             <h1>DMS</h1>
           </div>
-          <div className="alert alert-danger">Invalid reset token. Please request a new password reset.</div>
+          <div className="alert alert-danger">{t('InvalidCredentials')}. {t('TryAgain')}.</div>
           <button className="btn btn-primary" onClick={() => navigate('/login')} style={{ width: '100%' }}>
-            Back to Login
+            {t('BackToLogin')}
           </button>
         </div>
       </div>
@@ -64,8 +66,8 @@ export default function ResetPassword() {
       <div className="login-card">
         <div className="login-logo">
           <Warehouse size={48} />
-          <h1>Reset Password</h1>
-          <p style={{ color: 'var(--text-secondary)' }}>Enter your new password</p>
+          <h1>{t('ResetPassword')}</h1>
+          <p style={{ color: 'var(--text-secondary)' }}>{t('EnterAmount')} your new {t('Password')}</p>
         </div>
 
         {error && <div className="alert alert-danger">{error}</div>}
@@ -73,14 +75,14 @@ export default function ResetPassword() {
 
         <form onSubmit={handleSubmit}>
           <div className="form-group">
-            <label className="form-label">New Password</label>
+            <label className="form-label">{t('NewPassword')}</label>
             <div style={{ position: 'relative' }}>
               <input
                 type={showPassword ? 'text' : 'password'}
                 className="form-input"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                placeholder="Enter new password"
+                placeholder={t('NewPassword')}
                 required
                 style={{ paddingRight: '40px' }}
               />
@@ -105,19 +107,19 @@ export default function ResetPassword() {
           </div>
 
           <div className="form-group">
-            <label className="form-label">Confirm New Password</label>
+            <label className="form-label">{t('ConfirmPassword')}</label>
             <input
               type="password"
               className="form-input"
               value={confirmPassword}
               onChange={(e) => setConfirmPassword(e.target.value)}
-              placeholder="Confirm new password"
+              placeholder={t('ConfirmPassword')}
               required
             />
           </div>
 
           <button type="submit" className="btn btn-primary" style={{ width: '100%' }} disabled={loading}>
-            {loading ? 'Resetting...' : 'Reset Password'}
+            {loading ? t('Loading') + '...' : t('ResetPassword')}
           </button>
 
           <button
@@ -126,7 +128,7 @@ export default function ResetPassword() {
             style={{ width: '100%', marginTop: '10px' }}
             onClick={() => navigate('/login')}
           >
-            Back to Login
+            {t('BackToLogin')}
           </button>
         </form>
       </div>

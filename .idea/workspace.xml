@@ -3,14 +3,23 @@
   <component name="ChangeListManager">
     <list default="true" id="ffb4b2a9-5c96-4d1b-95a9-e85987fc5056" name="Changes" comment="">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/backend/src/config/database.js" beforeDir="false" afterPath="$PROJECT_DIR$/backend/src/config/database.js" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/package-lock.json" beforeDir="false" afterPath="$PROJECT_DIR$/backend/package-lock.json" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/package.json" beforeDir="false" afterPath="$PROJECT_DIR$/backend/package.json" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/backend/src/controllers/authController.js" beforeDir="false" afterPath="$PROJECT_DIR$/backend/src/controllers/authController.js" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/backend/src/routes/authRoutes.js" beforeDir="false" afterPath="$PROJECT_DIR$/backend/src/routes/authRoutes.js" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/src/controllers/reportController.js" beforeDir="false" afterPath="$PROJECT_DIR$/backend/src/controllers/reportController.js" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/src/routes/retailerRoutes.js" beforeDir="false" afterPath="$PROJECT_DIR$/backend/src/routes/retailerRoutes.js" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/src/services/dashboardService.js" beforeDir="false" afterPath="$PROJECT_DIR$/backend/src/services/dashboardService.js" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/src/services/invoiceService.js" beforeDir="false" afterPath="$PROJECT_DIR$/backend/src/services/invoiceService.js" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/src/services/reportService.js" beforeDir="false" afterPath="$PROJECT_DIR$/backend/src/services/reportService.js" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/frontend/src/components/layout/MainLayout.jsx" beforeDir="false" afterPath="$PROJECT_DIR$/frontend/src/components/layout/MainLayout.jsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/frontend/src/pages/Dashboard.jsx" beforeDir="false" afterPath="$PROJECT_DIR$/frontend/src/pages/Dashboard.jsx" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/frontend/src/pages/Login.jsx" beforeDir="false" afterPath="$PROJECT_DIR$/frontend/src/pages/Login.jsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/frontend/src/pages/Users.jsx" beforeDir="false" afterPath="$PROJECT_DIR$/frontend/src/pages/Users.jsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/frontend/src/services/api.js" beforeDir="false" afterPath="$PROJECT_DIR$/frontend/src/services/api.js" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/frontend/src/styles/index.css" beforeDir="false" afterPath="$PROJECT_DIR$/frontend/src/styles/index.css" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/frontend/src/pages/Payments.jsx" beforeDir="false" afterPath="$PROJECT_DIR$/frontend/src/pages/Payments.jsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/frontend/src/pages/Products.jsx" beforeDir="false" afterPath="$PROJECT_DIR$/frontend/src/pages/Products.jsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/frontend/src/pages/Reports.jsx" beforeDir="false" afterPath="$PROJECT_DIR$/frontend/src/pages/Reports.jsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/frontend/src/pages/Retailers.jsx" beforeDir="false" afterPath="$PROJECT_DIR$/frontend/src/pages/Retailers.jsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/frontend/src/pages/Sales.jsx" beforeDir="false" afterPath="$PROJECT_DIR$/frontend/src/pages/Sales.jsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/frontend/src/pages/Stock.jsx" beforeDir="false" afterPath="$PROJECT_DIR$/frontend/src/pages/Stock.jsx" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -92,7 +101,7 @@
       <updated>1773143954645</updated>
       <workItem from="1773143955653" duration="3293000" />
       <workItem from="1773203007988" duration="16491000" />
-      <workItem from="1773247507560" duration="3790000" />
+      <workItem from="1773247507560" duration="12543000" />
     </task>
     <servers />
   </component>

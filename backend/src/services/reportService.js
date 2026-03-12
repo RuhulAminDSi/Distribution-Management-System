@@ -1,7 +1,7 @@
 import { query } from '../config/database.js';
 
 export const reportService = {
-  async dailySales(date) {
+  async dailySales(startDate, endDate) {
     const sql = `
       SELECT 
         i.id,
@@ -16,10 +16,10 @@ export const reportService = {
       FROM invoices i
       LEFT JOIN retailers r ON i.retailer_id = r.id
       LEFT JOIN users u ON i.created_by = u.id
-      WHERE i.invoice_date = ?
-      ORDER BY i.id DESC
+      WHERE i.invoice_date BETWEEN ? AND ?
+      ORDER BY i.invoice_date DESC, i.id DESC
     `;
-    return query(sql, [date]);
+    return query(sql, [startDate, endDate]);
   },
 
   async productSales(startDate, endDate, productId = null) {

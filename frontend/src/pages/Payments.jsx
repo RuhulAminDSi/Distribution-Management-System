@@ -1,12 +1,22 @@
 import { useState, useEffect } from 'react';
 import { paymentService, retailerService } from '../services/api';
+import { useLanguage } from '../context/LanguageContext';
 import { Plus, Search } from 'lucide-react';
 
 const formatCurrency = (amount) => {
-  return new Intl.NumberFormat('en-BD', { style: 'currency', currency: 'BDT' }).format(amount || 0);
+  if (amount === null || amount === undefined || isNaN(amount)) return 'BDT 0';
+  return 'BDT ' + new Intl.NumberFormat('en-BD', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(amount);
+};
+
+const formatDate = (dateStr) => {
+  if (!dateStr) return '-';
+  const date = new Date(dateStr);
+  if (isNaN(date.getTime())) return dateStr;
+  return date.toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit', year: 'numeric' });
 };
 
 export default function Payments() {
+  const { t } = useLanguage();
   const [payments, setPayments] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
@@ -44,7 +54,7 @@ export default function Payments() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!formData.retailer_id || !formData.amount) {
-      alert('Please select retailer and enter amount');
+      alert(t('SelectRetailer') + ' ' + t('EnterAmount'));
       return;
     }
 
@@ -75,14 +85,14 @@ export default function Payments() {
     }
   };
 
-  if (loading) return <div>Loading...</div>;
+  if (loading) return <div>{t('Loading')}</div>;
 
   return (
     <div>
       <div className="page-header">
-        <h1 className="page-title">Payments / Collections</h1>
+        <h1 className="page-title">{t('Payments')}</h1>
         <button className="btn btn-primary" onClick={() => setShowModal(true)}>
-          <Plus size={18} /> Record Payment
+          <Plus size={18} /> {t('RecordPayment')}
         </button>
       </div>
 
@@ -91,19 +101,19 @@ export default function Payments() {
           <table className="table">
             <thead>
               <tr>
-                <th>Payment No</th>
-                <th>Date</th>
-                <th>Retailer</th>
-                <th className="text-right">Amount</th>
-                <th>Method</th>
-                <th>Collected By</th>
+                <th>{t('PaymentNo')}</th>
+                <th>{t('Date')}</th>
+                <th>{t('Retailer')}</th>
+                <th className="text-right">{t('Amount')}</th>
+                <th>{t('PaymentMethod')}</th>
+                <th>{t('CollectedBy')}</th>
               </tr>
             </thead>
             <tbody>
               {payments.map(payment => (
                 <tr key={payment.id}>
                   <td>{payment.payment_no}</td>
-                  <td>{payment.payment_date}</td>
+                  <td>{formatDate(payment.payment_date)}</td>
                   <td>{payment.retailer_name}</td>
                   <td className="text-right text-success">{formatCurrency(payment.amount)}</td>
                   <td>{payment.payment_method}</td>
@@ -119,20 +129,20 @@ export default function Payments() {
         <div className="modal-overlay" onClick={() => setShowModal(false)}>
           <div className="modal" onClick={e => e.stopPropagation()}>
             <div className="modal-header">
-              <h2 className="modal-title">Record Payment</h2>
+              <h2 className="modal-title">{t('RecordPayment')}</h2>
               <button className="modal-close" onClick={() => setShowModal(false)}>×</button>
             </div>
             <form onSubmit={handleSubmit}>
               <div className="modal-body">
                 <div className="form-group">
-                  <label className="form-label">Retailer *</label>
+                  <label className="form-label">{t('Retailer')} *</label>
                   <select
                     className="form-select"
                     value={formData.retailer_id}
                     onChange={(e) => setFormData({ ...formData, retailer_id: e.target.value })}
                     required
                   >
-                    <option value="">Select Retailer</option>
+                    <option value="">{t('SelectRetailer')}</option>
                     {retailers.map(r => (
                       <option key={r.id} value={r.id}>
                         {r.name} - Due: {formatCurrency(r.outstanding_balance || 0)}
@@ -143,7 +153,7 @@ export default function Payments() {
 
                 <div className="grid-2">
                   <div className="form-group">
-                    <label className="form-label">Amount *</label>
+                    <label className="form-label">{t('Amount')} *</label>
                     <input
                       type="number"
                       step="0.01"
@@ -154,23 +164,23 @@ export default function Payments() {
                     />
                   </div>
                   <div className="form-group">
-                    <label className="form-label">Payment Method</label>
+                    <label className="form-label">{t('PaymentMethod')}</label>
                     <select
                       className="form-select"
                       value={formData.payment_method}
                       onChange={(e) => setFormData({ ...formData, payment_method: e.target.value })}
                     >
-                      <option value="cash">Cash</option>
-                      <option value="bank">Bank</option>
-                      <option value="mobile_banking">Mobile Banking</option>
-                      <option value="cheque">Cheque</option>
+                      <option value="cash">{t('Cash')}</option>
+                      <option value="bank">{t('Bank')}</option>
+                      <option value="mobile_banking">{t('MobileBanking')}</option>
+                      <option value="cheque">{t('Cheque')}</option>
                     </select>
                   </div>
                 </div>
 
                 <div className="grid-2">
                   <div className="form-group">
-                    <label className="form-label">Date</label>
+                    <label className="form-label">{t('Date')}</label>
                     <input
                       type="date"
                       className="form-input"
@@ -179,7 +189,7 @@ export default function Payments() {
                     />
                   </div>
                   <div className="form-group">
-                    <label className="form-label">Reference No</label>
+                    <label className="form-label">{t('ReferenceNo')}</label>
                     <input
                       type="text"
                       className="form-input"
@@ -190,7 +200,7 @@ export default function Payments() {
                 </div>
 
                 <div className="form-group">
-                  <label className="form-label">Notes</label>
+                  <label className="form-label">{t('Notes')}</label>
                   <input
                     type="text"
                     className="form-input"
@@ -200,8 +210,8 @@ export default function Payments() {
                 </div>
               </div>
               <div className="modal-footer">
-                <button type="button" className="btn btn-secondary" onClick={() => setShowModal(false)}>Cancel</button>
-                <button type="submit" className="btn btn-primary">Record Payment</button>
+                <button type="button" className="btn btn-secondary" onClick={() => setShowModal(false)}>{t('Cancel')}</button>
+                <button type="submit" className="btn btn-primary">{t('RecordPayment')}</button>
               </div>
             </form>
           </div>

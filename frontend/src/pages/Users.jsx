@@ -1,8 +1,10 @@
 import { useState, useEffect } from 'react';
 import { authService } from '../services/api';
+import { useLanguage } from '../context/LanguageContext';
 import { X, Plus, Pencil, Trash2 } from 'lucide-react';
 
 export default function Users() {
+  const { t } = useLanguage();
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
@@ -59,10 +61,10 @@ export default function Users() {
   };
 
   const handleDelete = async (id, username) => {
-    if (!confirm('Are you sure you want to delete this user?')) return;
+    if (!confirm(t('ConfirmDelete'))) return;
     
     if (username === 'admin') {
-      alert('System admin cannot be deleted');
+      alert(t('SystemAdmin') + ' ' + t('DeleteError'));
       return;
     }
     
@@ -70,7 +72,7 @@ export default function Users() {
       await authService.deleteUser(id);
       fetchUsers();
     } catch (error) {
-      alert('Failed to delete');
+      alert(t('DeleteError'));
     }
   };
 
@@ -114,9 +116,9 @@ export default function Users() {
   return (
     <div>
       <div className="page-header">
-        <h2>Users</h2>
+        <h2>{t('Users')}</h2>
         <button className="btn btn-primary" onClick={() => openModal()}>
-          <Plus size={18} /> Add User
+          <Plus size={18} /> {t('AddUser')}
         </button>
       </div>
 
@@ -124,20 +126,20 @@ export default function Users() {
         <table className="table">
           <thead>
             <tr>
-              <th>Username</th>
-              <th>Full Name</th>
-              <th>Email</th>
-              <th>Role</th>
-              <th>Phone</th>
-              <th>Status</th>
-              <th>Actions</th>
+              <th>{t('Username')}</th>
+              <th>{t('FullName')}</th>
+              <th>{t('Email')}</th>
+              <th>{t('Role')}</th>
+              <th>{t('Phone')}</th>
+              <th>{t('Status')}</th>
+              <th>{t('Actions')}</th>
             </tr>
           </thead>
           <tbody>
               {loading ? (
-              <tr><td colSpan="7">Loading...</td></tr>
+              <tr><td colSpan="7">{t('Loading')}</td></tr>
             ) : !users || users.length === 0 ? (
-              <tr><td colSpan="7">No users found</td></tr>
+              <tr><td colSpan="7">{t('NoUsersFound')}</td></tr>
             ) : (
                 users.map(u => (
                 <tr key={u.id}>
@@ -146,14 +148,14 @@ export default function Users() {
                   <td>{u.email || '-'}</td>
                   <td><span className={`badge ${getRoleBadgeClass(u.role)}`}>{formatRole(u.role)}</span></td>
                   <td>{u.phone}</td>
-                  <td>{u.is_active ? <span className="badge badge-success">Active</span> : <span className="badge badge-danger">Inactive</span>}</td>
+                  <td>{u.is_active ? <span className="badge badge-success">{t('Active')}</span> : <span className="badge badge-danger">{t('Inactive')}</span>}</td>
                   <td>
                     <button className="btn btn-sm" onClick={() => openModal(u)}><Pencil size={14} /></button>
                     <button 
                       className="btn btn-sm btn-danger" 
                       onClick={() => handleDelete(u.id, u.username)}
                       disabled={u.username === 'admin'}
-                      title={u.username === 'admin' ? 'System admin cannot be deleted' : 'Delete'}
+                      title={u.username === 'admin' ? t('SystemAdmin') + ' ' + t('DeleteError') : t('Delete')}
                     ><Trash2 size={14} /></button>
                   </td>
                 </tr>
@@ -167,7 +169,7 @@ export default function Users() {
         <div className="modal-overlay" onClick={() => setShowModal(false)}>
           <div className="modal" onClick={e => e.stopPropagation()}>
             <div className="modal-header">
-              <h3>{editItem ? 'Edit User' : 'Add User'}</h3>
+              <h3>{editItem ? t('EditUser') : t('AddUser')}</h3>
               <button className="modal-close" onClick={() => setShowModal(false)}>
                 <X size={20} />
               </button>
@@ -175,51 +177,51 @@ export default function Users() {
             <form onSubmit={handleSubmit} className="modal-body">
               <div className="form-row">
                 <div className="form-group">
-                  <label>Username *</label>
+                  <label>{t('Username')} *</label>
                   <input 
                     type="text" 
                     value={formData.username || ''}
                     onChange={e => setFormData({...formData, username: e.target.value})}
                     required 
-                    placeholder="Unique username"
+                    placeholder={t('Username')}
                     disabled={editItem}
                   />
                 </div>
                 <div className="form-group">
-                  <label>Password {editItem ? '' : '*'}</label>
+                  <label>{t('Password')} {editItem ? '' : '*'}</label>
                   <input 
                     type="password" 
                     value={formData.password || ''}
                     onChange={e => setFormData({...formData, password: e.target.value})}
                     required={!editItem}
-                    placeholder={editItem ? "Leave blank to keep" : "Enter password"}
+                    placeholder={editItem ? t('Optional') : t('Password')}
                   />
                 </div>
               </div>
               <div className="form-row">
                 <div className="form-group">
-                  <label>Full Name *</label>
+                  <label>{t('FullName')} *</label>
                   <input 
                     type="text" 
                     value={formData.full_name || ''}
                     onChange={e => setFormData({...formData, full_name: e.target.value})}
                     required 
-                    placeholder="Full name"
+                    placeholder={t('FullName')}
                   />
                 </div>
                 <div className="form-group">
-                  <label>Email</label>
+                  <label>{t('Email')}</label>
                   <input 
                     type="email" 
                     value={formData.email || ''}
                     onChange={e => setFormData({...formData, email: e.target.value})}
-                    placeholder="email@example.com"
+                    placeholder={t('Email')}
                   />
                 </div>
               </div>
               <div className="form-row">
                 <div className="form-group">
-                  <label>Role *</label>
+                  <label>{t('Role')} *</label>
                   <select 
                     value={formData.role || 'salesman'}
                     onChange={e => setFormData({...formData, role: e.target.value})}
@@ -231,18 +233,18 @@ export default function Users() {
                   </select>
                 </div>
                 <div className="form-group">
-                  <label>Phone</label>
+                  <label>{t('Phone')}</label>
                   <input 
                     type="text" 
                     value={formData.phone || ''}
                     onChange={e => setFormData({...formData, phone: e.target.value})}
-                    placeholder="Phone number"
+                    placeholder={t('Phone')}
                   />
                 </div>
               </div>
               <div className="modal-footer" style={{ padding: 0, border: 'none', marginTop: '20px' }}>
-                <button type="button" className="btn btn-secondary" onClick={() => setShowModal(false)}>Cancel</button>
-                <button type="submit" className="btn btn-primary">{editItem ? 'Update' : 'Create'}</button>
+                <button type="button" className="btn btn-secondary" onClick={() => setShowModal(false)}>{t('Cancel')}</button>
+                <button type="submit" className="btn btn-primary">{editItem ? t('Save') : t('AddUser')}</button>
               </div>
             </form>
           </div>

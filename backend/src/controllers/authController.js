@@ -1,6 +1,7 @@
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import { query } from '../config/database.js';
+import { sendPasswordResetEmail } from '../services/emailService.js';
 
 export const authController = {
   async login(req, res, next) {
@@ -217,14 +218,20 @@ export const authController = {
       const { email } = req.body;
 
       if (!email) {
-        return res.status(400).json({ message: 'Email or phone is required' });
+        return res.status(400).json({ message: 'Email is required' });
       }
 
       const users = await query('SELECT id, email, phone FROM users WHERE email = ? OR phone = ?', [email, email]);
       
       // Always return success to prevent enumeration
       if (users.length === 0) {
-        return res.json({ message: 'If an account exists with this email/phone, a password reset link will be sent' });
+        return res.json({ message: 'If an account exists with this email, a password reset link will be sent to your email' });
+      }
+
+      const user = users[0];
+      
+      if (!user.email) {
+        return res.json({ message: 'No email address on file. Please contact administrator.' });
       }
 
       // Generate reset token
@@ -234,17 +241,23 @@ export const authController = {
 
       await query(
         'UPDATE users SET reset_token = ?, reset_expires = ? WHERE id = ?',
-        [resetToken, resetExpires, users[0].id]
+        [resetToken, resetExpires, user.id]
       );
 
-      const resetLink = `/reset-password?token=${resetToken}`;
+      // Send email
+      const emailResult = await sendPasswordResetEmail(user.email, resetToken);
       
-      res.json({ 
-        message: 'Password reset link generated',
-        resetLink: resetLink,
-        token: resetToken,
-        note: 'In production, this link would be sent to your email'
-      });
+      if (emailResult.success) {
+        res.json({ message: 'Password reset link has been sent to your email' });
+      } else if (emailResult.resetLink) {
+        // If email fails, show link in response for testing
+        res.json({ 
+          message: 'Email service not configured. Use the link below:',
+          resetLink: emailResult.resetLink
+        });
+      } else {
+        res.json({ message: 'Failed to send email. Please contact administrator.' });
+      }
     } catch (error) {
       next(error);
     }

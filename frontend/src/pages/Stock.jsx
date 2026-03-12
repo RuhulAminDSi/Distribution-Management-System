@@ -1,12 +1,32 @@
 import { useState, useEffect } from 'react';
 import { stockService, companyService, productService } from '../services/api';
+import { useLanguage } from '../context/LanguageContext';
 import { Plus, ArrowDownToLine } from 'lucide-react';
 
 const formatCurrency = (amount) => {
-  return new Intl.NumberFormat('en-BD', { style: 'currency', currency: 'BDT' }).format(amount || 0);
+  if (amount === null || amount === undefined || isNaN(amount)) return 'BDT 0';
+  return 'BDT ' + new Intl.NumberFormat('en-BD', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(amount);
+};
+
+const formatDateTime = (dateStr) => {
+  if (!dateStr) return '-';
+  const date = new Date(dateStr);
+  if (isNaN(date.getTime())) return dateStr;
+  return date.toLocaleString('en-GB', { 
+    day: '2-digit', month: '2-digit', year: 'numeric',
+    hour: '2-digit', minute: '2-digit'
+  });
+};
+
+const formatDate = (dateStr) => {
+  if (!dateStr) return '-';
+  const date = new Date(dateStr);
+  if (isNaN(date.getTime())) return dateStr;
+  return date.toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit', year: 'numeric' });
 };
 
 export default function Stock() {
+  const { t } = useLanguage();
   const [activeTab, setActiveTab] = useState('history');
   const [history, setHistory] = useState([]);
   const [purchaseOrders, setPurchaseOrders] = useState([]);
@@ -99,38 +119,38 @@ export default function Stock() {
         notes: '', items: [{ product_id: '', quantity: 1, rate: 0 }]
       });
     } catch (error) {
-      alert('Failed to create purchase order');
+      alert(t('SaveError'));
     }
   };
 
   const handleReceive = async (id) => {
-    if (confirm('Receive this stock?')) {
+    if (confirm(t('Received') + '?')) {
       try {
         await stockService.receivePurchaseOrder(id);
         fetchPurchaseOrders();
       } catch (error) {
-        alert('Failed to receive stock');
+        alert(t('Error'));
       }
     }
   };
 
-  if (loading) return <div>Loading...</div>;
+  if (loading) return <div>{t('Loading')}</div>;
 
   return (
     <div>
       <div className="page-header">
-        <h1 className="page-title">Stock Management</h1>
+        <h1 className="page-title">{t('Stock')}</h1>
         <button className="btn btn-primary" onClick={() => setShowModal(true)}>
-          <Plus size={18} /> Purchase Order
+          <Plus size={18} /> {t('NewPurchaseOrder')}
         </button>
       </div>
 
       <div className="flex gap-2 mb-4">
         <button className={`btn ${activeTab === 'history' ? 'btn-primary' : 'btn-secondary'}`} onClick={() => setActiveTab('history')}>
-          Stock History
+          {t('StockHistory')}
         </button>
         <button className={`btn ${activeTab === 'orders' ? 'btn-primary' : 'btn-secondary'}`} onClick={() => setActiveTab('orders')}>
-          Purchase Orders
+          {t('PurchaseOrders')}
         </button>
       </div>
 
@@ -140,18 +160,18 @@ export default function Stock() {
             <table className="table">
               <thead>
                 <tr>
-                  <th>Date</th>
-                  <th>Product</th>
-                  <th>Type</th>
-                  <th className="text-right">Quantity</th>
-                  <th>Reference</th>
-                  <th>By</th>
+                  <th>{t('Date')}</th>
+                  <th>{t('Product')}</th>
+                  <th>{t('Type')}</th>
+                  <th className="text-right">{t('Quantity')}</th>
+                  <th>{t('Reference')}</th>
+                  <th>{t('CollectedBy')}</th>
                 </tr>
               </thead>
               <tbody>
                 {history.map(log => (
                   <tr key={log.id}>
-                    <td>{new Date(log.created_at).toLocaleString()}</td>
+                    <td>{formatDateTime(log.created_at)}</td>
                     <td>{log.product_name}</td>
                     <td>
                       <span className={`badge badge-${log.type === 'IN' ? 'success' : log.type === 'OUT' ? 'danger' : 'warning'}`}>
@@ -175,11 +195,11 @@ export default function Stock() {
             <table className="table">
               <thead>
                 <tr>
-                  <th>PO No</th>
-                  <th>Date</th>
-                  <th>Company</th>
-                  <th className="text-right">Total</th>
-                  <th>Status</th>
+                  <th>{t('OrderNo')}</th>
+                  <th>{t('OrderDate')}</th>
+                  <th>{t('Company')}</th>
+                  <th className="text-right">{t('Total')}</th>
+                  <th>{t('Status')}</th>
                   <th></th>
                 </tr>
               </thead>
@@ -198,7 +218,7 @@ export default function Stock() {
                     <td>
                       {po.status === 'pending' && (
                         <button className="btn btn-success btn-sm" onClick={() => handleReceive(po.id)}>
-                          <ArrowDownToLine size={14} /> Receive
+                          <ArrowDownToLine size={14} /> {t('Received')}
                         </button>
                       )}
                     </td>
@@ -214,28 +234,28 @@ export default function Stock() {
         <div className="modal-overlay" onClick={() => setShowModal(false)}>
           <div className="modal" style={{ maxWidth: '700px' }} onClick={e => e.stopPropagation()}>
             <div className="modal-header">
-              <h2 className="modal-title">Purchase Order</h2>
+              <h2 className="modal-title">{t('NewPurchaseOrder')}</h2>
               <button className="modal-close" onClick={() => setShowModal(false)}>×</button>
             </div>
             <form onSubmit={handleSubmit}>
               <div className="modal-body">
                 <div className="grid-2">
                   <div className="form-group">
-                    <label className="form-label">Company *</label>
+                    <label className="form-label">{t('Company')} *</label>
                     <select
                       className="form-select"
                       value={formData.company_id}
                       onChange={(e) => setFormData({ ...formData, company_id: e.target.value })}
                       required
                     >
-                      <option value="">Select Company</option>
+                      <option value="">{t('SelectCompany')}</option>
                       {companies.map(c => (
                         <option key={c.id} value={c.id}>{c.name}</option>
                       ))}
                     </select>
                   </div>
                   <div className="form-group">
-                    <label className="form-label">Order Date</label>
+                    <label className="form-label">{t('OrderDate')}</label>
                     <input
                       type="date"
                       className="form-input"
@@ -246,7 +266,7 @@ export default function Stock() {
                 </div>
 
                 <div className="form-group">
-                  <label className="form-label">Products</label>
+                  <label className="form-label">{t('Products')}</label>
                   {formData.items.map((item, index) => (
                     <div key={index} className="flex gap-2 mb-2" style={{ alignItems: 'flex-end' }}>
                       <select
@@ -255,7 +275,7 @@ export default function Stock() {
                         value={item.product_id}
                         onChange={(e) => updateItem(index, 'product_id', e.target.value)}
                       >
-                        <option value="">Select Product</option>
+                        <option value="">{t('SelectProduct')}</option>
                         {products.map(p => (
                           <option key={p.id} value={p.id}>{p.name}</option>
                         ))}
@@ -264,7 +284,7 @@ export default function Stock() {
                         type="number"
                         className="form-input"
                         style={{ flex: 1 }}
-                        placeholder="Qty"
+                        placeholder={t('Quantity')}
                         value={item.quantity}
                         onChange={(e) => updateItem(index, 'quantity', parseInt(e.target.value) || 0)}
                       />
@@ -272,18 +292,18 @@ export default function Stock() {
                         type="number"
                         className="form-input"
                         style={{ flex: 1 }}
-                        placeholder="Rate"
+                        placeholder={t('Price')}
                         value={item.rate}
                         onChange={(e) => updateItem(index, 'rate', parseFloat(e.target.value) || 0)}
                       />
                       <button type="button" className="btn btn-danger btn-sm" onClick={() => removeItem(index)}>×</button>
                     </div>
                   ))}
-                  <button type="button" className="btn btn-secondary btn-sm" onClick={addItem}>+ Add Item</button>
+                  <button type="button" className="btn btn-secondary btn-sm" onClick={addItem}>+ {t('AddItem')}</button>
                 </div>
 
                 <div className="form-group">
-                  <label className="form-label">Notes</label>
+                  <label className="form-label">{t('Notes')}</label>
                   <input
                     type="text"
                     className="form-input"
@@ -293,8 +313,8 @@ export default function Stock() {
                 </div>
               </div>
               <div className="modal-footer">
-                <button type="button" className="btn btn-secondary" onClick={() => setShowModal(false)}>Cancel</button>
-                <button type="submit" className="btn btn-primary">Create PO</button>
+                <button type="button" className="btn btn-secondary" onClick={() => setShowModal(false)}>{t('Cancel')}</button>
+                <button type="submit" className="btn btn-primary">{t('NewPurchaseOrder')}</button>
               </div>
             </form>
           </div>

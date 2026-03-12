@@ -1,12 +1,10 @@
 import { useState, useEffect } from 'react';
+import { useLanguage, formatCurrency } from '../context/LanguageContext';
 import { dashboardService } from '../services/api';
 import { DollarSign, Users, Package, AlertTriangle, TrendingUp } from 'lucide-react';
 
-const formatCurrency = (amount) => {
-  return new Intl.NumberFormat('en-BD', { style: 'currency', currency: 'BDT' }).format(amount || 0);
-};
-
 export default function Dashboard() {
+  const { t, language } = useLanguage();
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
 
@@ -25,12 +23,12 @@ export default function Dashboard() {
     }
   };
 
-  if (loading) return <div>Loading...</div>;
+  if (loading) return <div>{t('Loading')}</div>;
 
   return (
     <div>
       <div className="page-header">
-        <h1 className="page-title">Welcome to DMS</h1>
+        <h1 className="page-title">{t('WelcomeToDMS')}</h1>
       </div>
 
       <div className="stats-grid">
@@ -38,16 +36,24 @@ export default function Dashboard() {
           <div className="stat-icon blue">
             <DollarSign size={24} />
           </div>
-          <div className="stat-value">{formatCurrency(data?.today?.totalSales)}</div>
-          <div className="stat-label">Today's Sales</div>
+          <div className="stat-value">{formatCurrency(data?.today?.totalSales, language)}</div>
+          <div className="stat-label">{t('TodaySales')}</div>
+        </div>
+
+        <div className="stat-card">
+          <div className="stat-icon green">
+            <TrendingUp size={24} />
+          </div>
+          <div className="stat-value">{formatCurrency(data?.allTime?.totalSales, language)}</div>
+          <div className="stat-label">{t('TotalSalesAllTime')}</div>
         </div>
 
         <div className="stat-card">
           <div className="stat-icon orange">
-            <TrendingUp size={24} />
+            <DollarSign size={24} />
           </div>
-          <div className="stat-value">{formatCurrency(data?.totalOutstanding)}</div>
-          <div className="stat-label">Total Outstanding</div>
+          <div className="stat-value">{formatCurrency(data?.totalOutstanding, language)}</div>
+          <div className="stat-label">{t('TotalOutstanding')}</div>
         </div>
 
         <div className="stat-card">
@@ -55,7 +61,7 @@ export default function Dashboard() {
             <Package size={24} />
           </div>
           <div className="stat-value">{data?.totalProducts || 0}</div>
-          <div className="stat-label">Total Products</div>
+          <div className="stat-label">{t('TotalProducts')}</div>
         </div>
 
         <div className="stat-card">
@@ -63,24 +69,24 @@ export default function Dashboard() {
             <AlertTriangle size={24} />
           </div>
           <div className="stat-value">{data?.lowStockCount || 0}</div>
-          <div className="stat-label">Low Stock Alerts</div>
+          <div className="stat-label">{t('LowStockAlerts')}</div>
         </div>
       </div>
 
       <div className="grid-2">
         <div className="card">
           <div className="card-header">
-            <h3 className="card-title">Recent Sales</h3>
+            <h3 className="card-title">{t('RecentSales')}</h3>
           </div>
           <div className="card-body" style={{ padding: 0 }}>
             {data?.recentInvoices?.length > 0 ? (
               <table className="table">
                 <thead>
                   <tr>
-                    <th>Invoice</th>
-                    <th>Retailer</th>
-                    <th className="text-right">Amount</th>
-                    <th>Status</th>
+                    <th>{t('Invoice')}</th>
+                    <th>{t('Retailer')}</th>
+                    <th className="text-right">{t('Amount')}</th>
+                    <th>{t('Status')}</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -88,10 +94,10 @@ export default function Dashboard() {
                     <tr key={invoice.id}>
                       <td>{invoice.invoice_no}</td>
                       <td>{invoice.retailer_name}</td>
-                      <td className="text-right">{formatCurrency(invoice.total_amount)}</td>
+                      <td className="text-right">{formatCurrency(invoice.total_amount, language)}</td>
                       <td>
                         <span className={`badge badge-${invoice.status === 'paid' ? 'success' : invoice.status === 'partial' ? 'warning' : 'danger'}`}>
-                          {invoice.status}
+                          {invoice.status === 'paid' ? t('Paid') : invoice.status === 'partial' ? t('Partial') : t('Due')}
                         </span>
                       </td>
                     </tr>
@@ -100,7 +106,7 @@ export default function Dashboard() {
               </table>
             ) : (
               <div className="empty-state">
-                <p>No sales today</p>
+                <p>{t('NoSalesToday')}</p>
               </div>
             )}
           </div>
@@ -108,17 +114,17 @@ export default function Dashboard() {
 
         <div className="card">
           <div className="card-header">
-            <h3 className="card-title">Low Stock Products</h3>
+            <h3 className="card-title">{t('LowStockProducts')}</h3>
           </div>
           <div className="card-body" style={{ padding: 0 }}>
             {data?.lowStockProducts?.length > 0 ? (
               <table className="table">
                 <thead>
                   <tr>
-                    <th>Product</th>
-                    <th>Code</th>
-                    <th className="text-right">Stock</th>
-                    <th>Alert</th>
+                    <th>{t('Product')}</th>
+                    <th>{t('Code')}</th>
+                    <th className="text-right">{t('Stock')}</th>
+                    <th>{t('Status')}</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -128,7 +134,7 @@ export default function Dashboard() {
                       <td>{product.code}</td>
                       <td className="text-right">{product.stock_quantity}</td>
                       <td>
-                        <span className="badge badge-danger">Low</span>
+                        <span className="badge badge-danger">{t('LowStockAlerts')}</span>
                       </td>
                     </tr>
                   ))}
@@ -136,7 +142,7 @@ export default function Dashboard() {
               </table>
             ) : (
               <div className="empty-state">
-                <p>All products are well stocked</p>
+                <p>{t('AllProductsWellStocked')}</p>
               </div>
             )}
           </div>

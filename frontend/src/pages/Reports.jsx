@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { reportService } from '../services/api';
+import { useLanguage } from '../context/LanguageContext';
 import { FileText, FileSpreadsheet } from 'lucide-react';
 import { jsPDF } from 'jspdf';
 import autoTable from 'jspdf-autotable';
@@ -8,18 +9,23 @@ import { saveAs } from 'file-saver';
 import html2pdf from 'html2pdf.js';
 
 const formatCurrency = (amount) => {
-  return new Intl.NumberFormat('en-BD', { style: 'currency', currency: 'BDT' }).format(amount || 0);
+  if (amount === null || amount === undefined || isNaN(amount)) return 'BDT 0';
+  return 'BDT ' + new Intl.NumberFormat('en-BD', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(amount);
 };
 
-const formatDate = (date) => {
-  if (!date) return '';
-  return new Date(date).toLocaleDateString('en-BD');
+const formatDate = (dateStr) => {
+  if (!dateStr) return '-';
+  const date = new Date(dateStr);
+  if (isNaN(date.getTime())) return dateStr;
+  return date.toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit', year: 'numeric' });
 };
 
 export default function Reports() {
+  const { t } = useLanguage();
   const [activeTab, setActiveTab] = useState('daily');
   const [data, setData] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
   const [dateRange, setDateRange] = useState({
     start_date: new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString().split('T')[0],
     end_date: new Date().toISOString().split('T')[0]
@@ -31,20 +37,33 @@ export default function Reports() {
 
   const fetchReport = async () => {
     setLoading(true);
+    setError('');
     try {
       let response;
       switch (activeTab) {
         case 'daily':
-          response = await reportService.dailySales({ date: dateRange.start_date });
+          response = await reportService.dailySales({ 
+            start_date: dateRange.start_date,
+            end_date: dateRange.end_date 
+          });
           break;
         case 'product':
-          response = await reportService.productSales(dateRange);
+          response = await reportService.productSales({
+            start_date: dateRange.start_date,
+            end_date: dateRange.end_date
+          });
           break;
         case 'company':
-          response = await reportService.companySales(dateRange);
+          response = await reportService.companySales({
+            start_date: dateRange.start_date,
+            end_date: dateRange.end_date
+          });
           break;
         case 'profit':
-          response = await reportService.profit(dateRange);
+          response = await reportService.profit({
+            start_date: dateRange.start_date,
+            end_date: dateRange.end_date
+          });
           break;
         case 'stock':
           response = await reportService.stock();
@@ -55,9 +74,11 @@ export default function Reports() {
         default:
           break;
       }
+      console.log('Report response:', activeTab, response.data);
       setData(response.data || []);
-    } catch (error) {
-      console.error('Failed to fetch report:', error);
+    } catch (err) {
+      console.error('Failed to fetch report:', err);
+      setError(err.response?.data?.message || 'Failed to load report');
     } finally {
       setLoading(false);
     }
@@ -147,7 +168,7 @@ export default function Reports() {
         columns = [['Invoice No', 'Date', 'Retailer', 'Sales', 'Cost', 'Profit']];
         tableData = data.map(item => [
           item.invoice_no,
-          item.invoice_date,
+          formatDate(item.invoice_date),
           item.retailer_name,
           formatCurrency(item.sales_amount),
           formatCurrency(item.cost_amount),
@@ -247,7 +268,7 @@ export default function Reports() {
         data.forEach(item => {
           tableHTML += `<tr>
             <td>${item.invoice_no}</td>
-            <td>${item.invoice_date}</td>
+            <td>${formatDate(item.invoice_date)}</td>
             <td>${item.retailer_name}</td>
             <td>${formatCurrency(item.sales_amount)}</td>
             <td>${formatCurrency(item.cost_amount)}</td>
@@ -322,7 +343,7 @@ export default function Reports() {
       case 'daily':
         sheetData = data.map(item => ({
           'Invoice No': item.invoice_no,
-          'Date': item.invoice_date,
+          'Date': formatDate(item.invoice_date),
           'Retailer': item.retailer_name,
           'Total': item.total_amount,
           'Paid': item.paid_amount,
@@ -354,7 +375,7 @@ export default function Reports() {
       case 'profit':
         sheetData = data.map(item => ({
           'Invoice No': item.invoice_no,
-          'Date': item.invoice_date,
+          'Date': formatDate(item.invoice_date),
           'Retailer': item.retailer_name,
           'Sales Amount': item.sales_amount,
           'Cost Amount': item.cost_amount,
@@ -439,18 +460,18 @@ export default function Reports() {
   const summary = getSummary();
 
   const tabs = [
-    { id: 'daily', label: 'Daily Sales' },
-    { id: 'product', label: 'Product-wise' },
-    { id: 'company', label: 'Company-wise' },
-    { id: 'profit', label: 'Profit' },
-    { id: 'stock', label: 'Stock' },
-    { id: 'due', label: 'Due' }
+    { id: 'daily', label: t('DailySales') },
+    { id: 'product', label: t('ProductWise') },
+    { id: 'company', label: t('CompanyWise') },
+    { id: 'profit', label: t('Profit') },
+    { id: 'stock', label: t('Stock') },
+    { id: 'due', label: t('Due') }
   ];
 
   return (
     <div>
       <div className="page-header">
-        <h1 className="page-title">Reports</h1>
+        <h1 className="page-title">{t('Reports')}</h1>
         <div className="flex gap-2">
           <button className="btn btn-primary" onClick={exportToPDF} disabled={loading || !data.length}>
             <FileText size={18} /> PDF
@@ -464,11 +485,17 @@ export default function Reports() {
         </div>
       </div>
 
+      {error && (
+        <div className="alert alert-danger" style={{ marginBottom: '16px' }}>
+          {error}
+        </div>
+      )}
+
       <div className="card mb-4">
         <div className="card-body">
           <div className="flex gap-4 items-center">
             <div>
-              <label className="form-label">Start Date</label>
+              <label className="form-label">{t('StartDate')}</label>
               <input
                 type="date"
                 className="form-input"
@@ -477,7 +504,7 @@ export default function Reports() {
               />
             </div>
             <div>
-              <label className="form-label">End Date</label>
+              <label className="form-label">{t('EndDate')}</label>
               <input
                 type="date"
                 className="form-input"
@@ -507,17 +534,17 @@ export default function Reports() {
             <>
               <div className="stat-card">
                 <div className="stat-icon blue"><FileText size={24} /></div>
-                <div className="stat-label">Total Sales</div>
+                <div className="stat-label">{t('TotalSales')}</div>
                 <div className="stat-value">{formatCurrency(summary.total)}</div>
               </div>
               <div className="stat-card">
                 <div className="stat-icon green"><FileText size={24} /></div>
-                <div className="stat-label">Collected</div>
+                <div className="stat-label">{t('Collected')}</div>
                 <div className="stat-value">{formatCurrency(summary.paid)}</div>
               </div>
               <div className="stat-card">
                 <div className="stat-icon red"><FileText size={24} /></div>
-                <div className="stat-label">Due</div>
+                <div className="stat-label">{t('Due')}</div>
                 <div className="stat-value">{formatCurrency(summary.due)}</div>
               </div>
             </>
@@ -526,12 +553,12 @@ export default function Reports() {
             <>
               <div className="stat-card">
                 <div className="stat-icon blue"><FileText size={24} /></div>
-                <div className="stat-label">Total Amount</div>
+                <div className="stat-label">{t('Total')}</div>
                 <div className="stat-value">{formatCurrency(summary.total)}</div>
               </div>
               <div className="stat-card">
                 <div className="stat-icon green"><FileText size={24} /></div>
-                <div className="stat-label">Total Quantity</div>
+                <div className="stat-label">{t('Quantity')}</div>
                 <div className="stat-value">{summary.quantity}</div>
               </div>
             </>
@@ -540,12 +567,12 @@ export default function Reports() {
             <>
               <div className="stat-card">
                 <div className="stat-icon blue"><FileText size={24} /></div>
-                <div className="stat-label">Total Sales</div>
+                <div className="stat-label">{t('TotalSales')}</div>
                 <div className="stat-value">{formatCurrency(summary.sales)}</div>
               </div>
               <div className="stat-card">
                 <div className="stat-icon green"><FileText size={24} /></div>
-                <div className="stat-label">Total Profit</div>
+                <div className="stat-label">{t('Profit')}</div>
                 <div className="stat-value">{formatCurrency(summary.profit)}</div>
               </div>
             </>
@@ -554,12 +581,12 @@ export default function Reports() {
             <>
               <div className="stat-card">
                 <div className="stat-icon blue"><FileText size={24} /></div>
-                <div className="stat-label">Total Sales</div>
+                <div className="stat-label">{t('TotalSales')}</div>
                 <div className="stat-value">{formatCurrency(summary.sales)}</div>
               </div>
               <div className="stat-card">
                 <div className="stat-icon green"><FileText size={24} /></div>
-                <div className="stat-label">Total Profit</div>
+                <div className="stat-label">{t('Profit')}</div>
                 <div className="stat-value">{formatCurrency(summary.profit)}</div>
               </div>
             </>
@@ -568,12 +595,12 @@ export default function Reports() {
             <>
               <div className="stat-card">
                 <div className="stat-icon blue"><FileText size={24} /></div>
-                <div className="stat-label">Stock Value</div>
+                <div className="stat-label">{t('StockValue')}</div>
                 <div className="stat-value">{formatCurrency(summary.value)}</div>
               </div>
               <div className="stat-card">
                 <div className="stat-icon green"><FileText size={24} /></div>
-                <div className="stat-label">Total Items</div>
+                <div className="stat-label">{t('Quantity')}</div>
                 <div className="stat-value">{summary.quantity}</div>
               </div>
             </>
@@ -581,7 +608,7 @@ export default function Reports() {
           {activeTab === 'due' && (
             <div className="stat-card">
               <div className="stat-icon red"><FileText size={24} /></div>
-              <div className="stat-label">Total Outstanding</div>
+              <div className="stat-label">{t('TotalOutstanding')}</div>
               <div className="stat-value">{formatCurrency(summary.due)}</div>
             </div>
           )}
@@ -589,7 +616,20 @@ export default function Reports() {
       )}
 
       {loading ? (
-        <div>Loading...</div>
+        <div>{t('Loading')}</div>
+      ) : !data.length ? (
+        <div className="card">
+          <div className="card-body text-center" style={{ padding: '40px', color: 'var(--text-secondary)' }}>
+            <FileText size={48} style={{ opacity: 0.3, marginBottom: '16px' }} />
+            <h3>{t('NoDataFound')}</h3>
+            <p>No {activeTab} sales found for the selected date range.</p>
+            {activeTab === 'daily' && (
+              <p style={{ fontSize: '12px', marginTop: '8px' }}>
+                Selected date: {dateRange.start_date}
+              </p>
+            )}
+          </div>
+        </div>
       ) : (
         <div className="card">
           <div className="table-container">
@@ -597,12 +637,12 @@ export default function Reports() {
               <table className="table">
                 <thead>
                   <tr>
-                    <th>Invoice No</th>
-                    <th>Retailer</th>
-                    <th className="text-right">Total</th>
-                    <th className="text-right">Paid</th>
-                    <th className="text-right">Due</th>
-                    <th>Status</th>
+                    <th>{t('InvoiceNo')}</th>
+                    <th>{t('Retailer')}</th>
+                    <th className="text-right">{t('Total')}</th>
+                    <th className="text-right">{t('Paid')}</th>
+                    <th className="text-right">{t('Due')}</th>
+                    <th>{t('Status')}</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -624,11 +664,11 @@ export default function Reports() {
               <table className="table">
                 <thead>
                   <tr>
-                    <th>Product</th>
-                    <th>Company</th>
-                    <th>Category</th>
-                    <th className="text-right">Quantity</th>
-                    <th className="text-right">Amount</th>
+                    <th>{t('Product')}</th>
+                    <th>{t('Company')}</th>
+                    <th>{t('Category')}</th>
+                    <th className="text-right">{t('Quantity')}</th>
+                    <th className="text-right">{t('Amount')}</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -649,11 +689,11 @@ export default function Reports() {
               <table className="table">
                 <thead>
                   <tr>
-                    <th>Company</th>
-                    <th className="text-right">Invoices</th>
-                    <th className="text-right">Quantity</th>
-                    <th className="text-right">Sales</th>
-                    <th className="text-right">Profit</th>
+                    <th>{t('Company')}</th>
+                    <th className="text-right">{t('Invoices')}</th>
+                    <th className="text-right">{t('Quantity')}</th>
+                    <th className="text-right">{t('Sales')}</th>
+                    <th className="text-right">{t('Profit')}</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -674,19 +714,19 @@ export default function Reports() {
               <table className="table">
                 <thead>
                   <tr>
-                    <th>Invoice No</th>
-                    <th>Date</th>
-                    <th>Retailer</th>
-                    <th className="text-right">Sales</th>
-                    <th className="text-right">Cost</th>
-                    <th className="text-right">Profit</th>
+                    <th>{t('InvoiceNo')}</th>
+                    <th>{t('Date')}</th>
+                    <th>{t('Retailer')}</th>
+                    <th className="text-right">{t('Sales')}</th>
+                    <th className="text-right">{t('Cost')}</th>
+                    <th className="text-right">{t('Profit')}</th>
                   </tr>
                 </thead>
                 <tbody>
                   {data.map(item => (
                     <tr key={item.invoice_id}>
                       <td>{item.invoice_no}</td>
-                      <td>{item.invoice_date}</td>
+                      <td>{formatDate(item.invoice_date)}</td>
                       <td>{item.retailer_name}</td>
                       <td className="text-right">{formatCurrency(item.sales_amount)}</td>
                       <td className="text-right">{formatCurrency(item.cost_amount)}</td>
@@ -701,11 +741,11 @@ export default function Reports() {
               <table className="table">
                 <thead>
                   <tr>
-                    <th>Product</th>
-                    <th>Company</th>
-                    <th className="text-right">Stock</th>
-                    <th className="text-right">Stock Value</th>
-                    <th className="text-right">Dealer Price</th>
+                    <th>{t('Product')}</th>
+                    <th>{t('Company')}</th>
+                    <th className="text-right">{t('Stock')}</th>
+                    <th className="text-right">{t('StockValue')}</th>
+                    <th className="text-right">{t('DealerPrice')}</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -726,12 +766,12 @@ export default function Reports() {
               <table className="table">
                 <thead>
                   <tr>
-                    <th>Retailer</th>
-                    <th>Phone</th>
-                    <th>Area</th>
-                    <th className="text-right">Credit Limit</th>
-                    <th className="text-right">Outstanding</th>
-                    <th className="text-right">Invoices</th>
+                    <th>{t('Retailer')}</th>
+                    <th>{t('Phone')}</th>
+                    <th>{t('Area')}</th>
+                    <th className="text-right">{t('CreditLimit')}</th>
+                    <th className="text-right">{t('Outstanding')}</th>
+                    <th className="text-right">{t('Invoices')}</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -750,7 +790,7 @@ export default function Reports() {
             )}
           </div>
         </div>
-      )}
+        )}
     </div>
   );
 }

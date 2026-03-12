@@ -1,12 +1,32 @@
 import { useState, useEffect } from 'react';
 import { invoiceService, retailerService, productService } from '../services/api';
+import { useLanguage } from '../context/LanguageContext';
 import { Plus, Search, Eye, Printer } from 'lucide-react';
 
 const formatCurrency = (amount) => {
-  return new Intl.NumberFormat('en-BD', { style: 'currency', currency: 'BDT' }).format(amount || 0);
+  if (amount === null || amount === undefined || isNaN(amount)) return 'BDT 0';
+  return 'BDT ' + new Intl.NumberFormat('en-BD', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(amount);
+};
+
+const formatDate = (dateStr) => {
+  if (!dateStr) return '-';
+  const date = new Date(dateStr);
+  if (isNaN(date.getTime())) return dateStr;
+  return date.toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit', year: 'numeric' });
+};
+
+const formatDateTime = (dateStr) => {
+  if (!dateStr) return '-';
+  const date = new Date(dateStr);
+  if (isNaN(date.getTime())) return dateStr;
+  return date.toLocaleString('en-GB', { 
+    day: '2-digit', month: '2-digit', year: 'numeric',
+    hour: '2-digit', minute: '2-digit'
+  });
 };
 
 export default function Sales() {
+  const { t } = useLanguage();
   const [invoices, setInvoices] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
@@ -16,6 +36,7 @@ export default function Sales() {
     retailer_id: '', invoice_date: new Date().toISOString().split('T')[0],
     discount_percent: 0, paid_amount: 0, notes: '', items: []
   });
+  const [error, setError] = useState('');
 
   useEffect(() => {
     fetchInvoices();
@@ -87,8 +108,21 @@ export default function Sales() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!formData.retailer_id || formData.items.length === 0) {
-      alert('Please select retailer and add items');
+    setError('');
+    
+    if (!formData.retailer_id) {
+      setError(t('SelectRetailer'));
+      return;
+    }
+    
+    if (formData.items.length === 0) {
+      setError(t('AddItem'));
+      return;
+    }
+
+    const validItems = formData.items.filter(item => item.product_id && item.quantity > 0);
+    if (validItems.length === 0) {
+      setError(t('SelectProduct'));
       return;
     }
 
@@ -100,21 +134,23 @@ export default function Sales() {
         retailer_id: '', invoice_date: new Date().toISOString().split('T')[0],
         discount_percent: 0, paid_amount: 0, notes: '', items: []
       });
-    } catch (error) {
-      alert(error.response?.data?.message || 'Failed to create invoice');
+      setError('');
+    } catch (err) {
+      const errorMsg = err.response?.data?.message || err.message || 'Failed to create invoice';
+      setError(errorMsg);
     }
   };
 
   const { subtotal, discount, total } = calculateTotal();
 
-  if (loading) return <div>Loading...</div>;
+  if (loading) return <div>{t('Loading')}</div>;
 
   return (
     <div>
       <div className="page-header">
-        <h1 className="page-title">Sales / Invoices</h1>
-        <button className="btn btn-primary" onClick={() => setShowModal(true)}>
-          <Plus size={18} /> New Invoice
+        <h1 className="page-title">{t('Sales')}</h1>
+        <button className="btn btn-primary" onClick={() => { setShowModal(true); setError(''); }}>
+          <Plus size={18} /> {t('NewInvoice')}
         </button>
       </div>
 
@@ -123,20 +159,22 @@ export default function Sales() {
           <table className="table">
             <thead>
               <tr>
-                <th>Invoice No</th>
-                <th>Date</th>
-                <th>Retailer</th>
-                <th className="text-right">Total</th>
-                <th className="text-right">Paid</th>
-                <th className="text-right">Due</th>
-                <th>Status</th>
+                <th>{t('InvoiceNo')}</th>
+                <th>{t('Date')}</th>
+                <th>{t('Time')}</th>
+                <th>{t('Retailer')}</th>
+                <th className="text-right">{t('Total')}</th>
+                <th className="text-right">{t('Paid')}</th>
+                <th className="text-right">{t('Due')}</th>
+                <th>{t('Status')}</th>
               </tr>
             </thead>
             <tbody>
               {invoices.map(invoice => (
                 <tr key={invoice.id}>
                   <td>{invoice.invoice_no}</td>
-                  <td>{invoice.invoice_date}</td>
+                  <td>{formatDate(invoice.invoice_date)}</td>
+                  <td>{formatDateTime(invoice.created_at)}</td>
                   <td>{invoice.retailer_name}</td>
                   <td className="text-right">{formatCurrency(invoice.total_amount)}</td>
                   <td className="text-right">{formatCurrency(invoice.paid_amount)}</td>
@@ -157,28 +195,48 @@ export default function Sales() {
         <div className="modal-overlay" onClick={() => setShowModal(false)}>
           <div className="modal" style={{ maxWidth: '800px' }} onClick={e => e.stopPropagation()}>
             <div className="modal-header">
-              <h2 className="modal-title">New Invoice</h2>
+              <h2 className="modal-title">{t('NewInvoice')}</h2>
               <button className="modal-close" onClick={() => setShowModal(false)}>×</button>
             </div>
             <form onSubmit={handleSubmit}>
               <div className="modal-body">
+                {error && (
+                  <div className="alert alert-danger" style={{ marginBottom: '16px' }}>
+                    <strong>{t('Error')}: </strong>{error}
+                    {error.includes('Credit limit exceeded') && (
+                      <div style={{ marginTop: '8px', fontSize: '12px' }}>
+                        {t('Error')}: {t('CreditLimitExceeded')}
+                      </div>
+                    )}
+                    {error.includes('Insufficient stock') && (
+                      <div style={{ marginTop: '8px', fontSize: '12px' }}>
+                        {t('Error')}: {t('InsufficientStock')}
+                      </div>
+                    )}
+                    {error.includes('Product not found') && (
+                      <div style={{ marginTop: '8px', fontSize: '12px' }}>
+                        {t('Error')}: {t('SelectProduct')}
+                      </div>
+                    )}
+                  </div>
+                )}
                 <div className="grid-2">
                   <div className="form-group">
-                    <label className="form-label">Retailer *</label>
+                    <label className="form-label">{t('Retailer')} *</label>
                     <select
                       className="form-select"
                       value={formData.retailer_id}
                       onChange={(e) => setFormData({ ...formData, retailer_id: e.target.value })}
                       required
                     >
-                      <option value="">Select Retailer</option>
+                      <option value="">{t('SelectRetailer')}</option>
                       {retailers.map(r => (
                         <option key={r.id} value={r.id}>{r.name} - {r.phone}</option>
                       ))}
                     </select>
                   </div>
                   <div className="form-group">
-                    <label className="form-label">Date</label>
+                    <label className="form-label">{t('Date')}</label>
                     <input
                       type="date"
                       className="form-input"
@@ -189,7 +247,7 @@ export default function Sales() {
                 </div>
 
                 <div className="form-group">
-                  <label className="form-label">Products</label>
+                  <label className="form-label">{t('Products')}</label>
                   {formData.items.map((item, index) => (
                     <div key={index} className="flex gap-2 mb-2" style={{ alignItems: 'flex-end' }}>
                       <select
@@ -198,7 +256,7 @@ export default function Sales() {
                         value={item.product_id}
                         onChange={(e) => updateItem(index, 'product_id', e.target.value)}
                       >
-                        <option value="">Select Product</option>
+                        <option value="">{t('SelectProduct')}</option>
                         {products.filter(p => p.stock_quantity > 0).map(p => (
                           <option key={p.id} value={p.id}>{p.name} (Stock: {p.stock_quantity})</option>
                         ))}
@@ -207,7 +265,7 @@ export default function Sales() {
                         type="number"
                         className="form-input"
                         style={{ flex: 1 }}
-                        placeholder="Qty"
+                        placeholder={t('Quantity')}
                         value={item.quantity}
                         onChange={(e) => updateItem(index, 'quantity', parseInt(e.target.value) || 0)}
                       />
@@ -215,7 +273,7 @@ export default function Sales() {
                         type="number"
                         className="form-input"
                         style={{ flex: 1 }}
-                        placeholder="Rate"
+                        placeholder={t('Price')}
                         value={item.rate}
                         onChange={(e) => updateItem(index, 'rate', parseFloat(e.target.value) || 0)}
                       />
@@ -223,19 +281,19 @@ export default function Sales() {
                         type="text"
                         className="form-input"
                         style={{ flex: 1 }}
-                        placeholder="Amount"
+                        placeholder={t('Amount')}
                         value={item.amount || 0}
                         readOnly
                       />
                       <button type="button" className="btn btn-danger btn-sm" onClick={() => removeItem(index)}>×</button>
                     </div>
                   ))}
-                  <button type="button" className="btn btn-secondary btn-sm" onClick={addItem}>+ Add Item</button>
+                  <button type="button" className="btn btn-secondary btn-sm" onClick={addItem}>+ {t('AddItem')}</button>
                 </div>
 
                 <div className="grid-2">
                   <div className="form-group">
-                    <label className="form-label">Discount %</label>
+                    <label className="form-label">{t('DiscountPercent')}</label>
                     <input
                       type="number"
                       className="form-input"
@@ -244,7 +302,7 @@ export default function Sales() {
                     />
                   </div>
                   <div className="form-group">
-                    <label className="form-label">Paid Amount</label>
+                    <label className="form-label">{t('PaidAmount')}</label>
                     <input
                       type="number"
                       className="form-input"
@@ -257,22 +315,22 @@ export default function Sales() {
                 <div className="card" style={{ background: 'var(--background)', marginTop: '16px' }}>
                   <div className="card-body">
                     <div className="flex justify-between mb-2">
-                      <span>Subtotal:</span>
+                      <span>{t('Subtotal')}:</span>
                       <span>{formatCurrency(subtotal)}</span>
                     </div>
                     <div className="flex justify-between mb-2">
-                      <span>Discount:</span>
+                      <span>{t('Discount')}:</span>
                       <span>- {formatCurrency(discount)}</span>
                     </div>
                     <div className="flex justify-between" style={{ fontWeight: '600', fontSize: '18px' }}>
-                      <span>Total:</span>
+                      <span>{t('Total')}:</span>
                       <span>{formatCurrency(total)}</span>
                     </div>
                   </div>
                 </div>
 
                 <div className="form-group mt-4">
-                  <label className="form-label">Notes</label>
+                  <label className="form-label">{t('Notes')}</label>
                   <input
                     type="text"
                     className="form-input"
@@ -282,8 +340,8 @@ export default function Sales() {
                 </div>
               </div>
               <div className="modal-footer">
-                <button type="button" className="btn btn-secondary" onClick={() => setShowModal(false)}>Cancel</button>
-                <button type="submit" className="btn btn-primary">Create Invoice</button>
+                <button type="button" className="btn btn-secondary" onClick={() => { setShowModal(false); setError(''); }}>{t('Cancel')}</button>
+                <button type="submit" className="btn btn-primary">{t('CreateInvoice')}</button>
               </div>
             </form>
           </div>
