@@ -43,7 +43,9 @@ export const productService = {
   create: (data) => api.post('/products', data),
   update: (id, data) => api.put(`/products/${id}`, data),
   delete: (id) => api.delete(`/products/${id}`),
-  getLowStock: () => api.get('/products/low-stock')
+  getLowStock: () => api.get('/products/low-stock'),
+  getExpired: () => api.get('/products/expired'),
+  getExpiringSoon: (days = 30) => api.get('/products/expiring-soon', { params: { days } })
 };
 
 export const retailerService = {
@@ -75,7 +77,8 @@ export const reportService = {
   companySales: (params) => api.get('/reports/company-sales', { params }),
   profit: (params) => api.get('/reports/profit', { params }),
   stock: () => api.get('/reports/stock'),
-  due: () => api.get('/reports/due')
+  due: () => api.get('/reports/due'),
+  expiry: () => api.get('/reports/expiry')
 };
 
 export const dashboardService = {

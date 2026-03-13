@@ -54,8 +54,8 @@ export const productService = {
   async create(data) {
     const code = data.code || generateCode('PRO');
     const sql = `
-      INSERT INTO products (name, code, category_id, company_id, purchase_price, dealer_price, mrp, stock_quantity, low_stock_alert, unit, pack_size)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      INSERT INTO products (name, code, category_id, company_id, purchase_price, dealer_price, mrp, stock_quantity, low_stock_alert, unit, pack_size, expiry_date)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `;
     const result = await query(sql, [
       data.name,
@@ -68,7 +68,8 @@ export const productService = {
       data.stock_quantity || 0,
       data.low_stock_alert || 10,
       data.unit || 'piece',
-      data.pack_size || 1
+      data.pack_size || 1,
+      data.expiry_date || null
     ]);
     return this.findById(result.insertId);
   },
@@ -77,7 +78,7 @@ export const productService = {
     const fields = [];
     const params = [];
 
-    const allowedFields = ['name', 'code', 'category_id', 'company_id', 'purchase_price', 'dealer_price', 'mrp', 'low_stock_alert', 'unit', 'pack_size'];
+    const allowedFields = ['name', 'code', 'category_id', 'company_id', 'purchase_price', 'dealer_price', 'mrp', 'low_stock_alert', 'unit', 'pack_size', 'expiry_date'];
     
     for (const field of allowedFields) {
       if (data[field] !== undefined) {
@@ -111,6 +112,30 @@ export const productService = {
       ORDER BY p.stock_quantity ASC
     `;
     return query(sql);
+  },
+
+  async getExpired() {
+    const sql = `
+      SELECT p.*, c.name as category_name, comp.name as company_name 
+      FROM products p 
+      LEFT JOIN categories c ON p.category_id = c.id 
+      LEFT JOIN companies comp ON p.company_id = comp.id 
+      WHERE p.is_active = 1 AND p.expiry_date IS NOT NULL AND p.expiry_date <= CURDATE() AND p.stock_quantity > 0
+      ORDER BY p.expiry_date ASC
+    `;
+    return query(sql);
+  },
+
+  async getExpiringSoon(days = 30) {
+    const sql = `
+      SELECT p.*, c.name as category_name, comp.name as company_name 
+      FROM products p 
+      LEFT JOIN categories c ON p.category_id = c.id 
+      LEFT JOIN companies comp ON p.company_id = comp.id 
+      WHERE p.is_active = 1 AND p.expiry_date IS NOT NULL AND p.expiry_date > CURDATE() AND p.expiry_date <= DATE_ADD(CURDATE(), INTERVAL ? DAY) AND p.stock_quantity > 0
+      ORDER BY p.expiry_date ASC
+    `;
+    return query(sql, [days]);
   },
 
   async updateStock(id, quantity, type, referenceType = null, referenceId = null, notes = null, userId) {

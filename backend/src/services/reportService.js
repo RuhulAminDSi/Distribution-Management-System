@@ -176,5 +176,21 @@ export const reportService = {
     `;
     const countResult = await query(countSql);
     return { data, total: countResult[0]?.total || 0 };
+  },
+
+  async expiryReport() {
+    const sql = `
+      SELECT 
+        p.*,
+        c.name as category_name,
+        comp.name as company_name
+      FROM products p
+      LEFT JOIN categories c ON p.category_id = c.id
+      LEFT JOIN companies comp ON p.company_id = comp.id
+      WHERE p.is_active = 1 AND p.expiry_date IS NOT NULL AND p.stock_quantity > 0
+      ORDER BY p.expiry_date ASC
+    `;
+    const data = await query(sql);
+    return { data, total: data.length };
   }
 };

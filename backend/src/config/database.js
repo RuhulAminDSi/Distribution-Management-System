@@ -93,6 +93,7 @@ export const initializeDatabase = async () => {
         low_stock_alert INT DEFAULT 10,
         unit VARCHAR(50) DEFAULT 'piece',
         pack_size INT DEFAULT 1,
+        expiry_date DATE,
         is_active TINYINT DEFAULT 1,
         created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
         updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
@@ -100,6 +101,11 @@ export const initializeDatabase = async () => {
         FOREIGN KEY (company_id) REFERENCES companies(id) ON DELETE SET NULL
       )
     `);
+
+    // Add expiry_date column if not exists
+    try {
+      await connection.execute(`ALTER TABLE products ADD COLUMN expiry_date DATE`);
+    } catch (e) {}
 
     await connection.execute(`
       CREATE TABLE IF NOT EXISTS retailers (

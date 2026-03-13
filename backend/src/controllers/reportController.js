@@ -77,5 +77,14 @@ export const reportController = {
     } catch (error) {
       next(error);
     }
+  },
+
+  async expiryReport(req, res, next) {
+    try {
+      const result = await reportService.expiryReport();
+      res.json(result);
+    } catch (error) {
+      next(error);
+    }
   }
 };

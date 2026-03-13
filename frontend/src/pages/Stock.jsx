@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { stockService, companyService, productService } from '../services/api';
-import { useLanguage, formatCurrency, formatNumber, formatDateTime } from '../context/LanguageContext';
-import { Plus, ArrowDownToLine, ChevronLeft, ChevronRight } from 'lucide-react';
+import { useLanguage, formatCurrency, formatNumber, formatDateTime, formatDate } from '../context/LanguageContext';
+import { Plus, ArrowDownToLine, ChevronLeft, ChevronRight, AlertTriangle } from 'lucide-react';
 
 export default function Stock() {
   const { t, language } = useLanguage();
@@ -10,6 +10,8 @@ export default function Stock() {
   const [purchaseOrders, setPurchaseOrders] = useState([]);
   const [companies, setCompanies] = useState([]);
   const [products, setProducts] = useState([]);
+  const [expiredProducts, setExpiredProducts] = useState([]);
+  const [expiringSoonProducts, setExpiringSoonProducts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
   const [page, setPage] = useState(1);
@@ -26,6 +28,7 @@ export default function Stock() {
     fetchPurchaseOrders();
     fetchCompanies();
     fetchProducts();
+    fetchExpiryProducts();
   }, [page, limit]);
 
   const fetchHistory = async () => {
@@ -67,6 +70,19 @@ export default function Stock() {
       setProducts(response.data.data);
     } catch (error) {
       console.error('Failed to fetch products:', error);
+    }
+  };
+
+  const fetchExpiryProducts = async () => {
+    try {
+      const [expired, expiringSoon] = await Promise.all([
+        productService.getExpired(),
+        productService.getExpiringSoon(30)
+      ]);
+      setExpiredProducts(expired.data || expired || []);
+      setExpiringSoonProducts(expiringSoon.data || expiringSoon || []);
+    } catch (error) {
+      console.error('Failed to fetch expiry products:', error);
     }
   };
 
@@ -137,6 +153,9 @@ export default function Stock() {
         </button>
         <button className={`btn ${activeTab === 'orders' ? 'btn-primary' : 'btn-secondary'}`} onClick={() => setActiveTab('orders')}>
           {t('PurchaseOrders')}
+        </button>
+        <button className={`btn ${activeTab === 'expiry' ? 'btn-primary' : 'btn-secondary'}`} onClick={() => setActiveTab('expiry')}>
+          {t('ExpiryProducts')}
         </button>
       </div>
 
@@ -239,6 +258,82 @@ export default function Stock() {
               </tbody>
             </table>
           </div>
+        </div>
+      )}
+
+      {activeTab === 'expiry' && (
+        <div className="card">
+          <h3 style={{ marginBottom: '20px' }}>{t('ExpiryProducts')}</h3>
+          
+          {expiredProducts.length > 0 && (
+            <>
+              <h4 style={{ color: '#dc3545', marginBottom: '10px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <AlertTriangle size={18} /> Expired Products ({expiredProducts.length})
+              </h4>
+              <div className="table-container" style={{ marginBottom: '30px' }}>
+                <table className="table">
+                  <thead>
+                    <tr>
+                      <th>{t('Code')}</th>
+                      <th>{t('Name')}</th>
+                      <th>{t('Company')}</th>
+                      <th className="text-right">{t('Stock')}</th>
+                      <th>{t('ExpiryDate')}</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {expiredProducts.map(product => (
+                      <tr key={product.id} className="text-danger">
+                        <td>{product.code}</td>
+                        <td>{product.name}</td>
+                        <td>{product.company_name || '-'}</td>
+                        <td className="text-right">{formatNumber(product.stock_quantity, language)}</td>
+                        <td>{formatDate(product.expiry_date, language)}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </>
+          )}
+
+          {expiringSoonProducts.length > 0 && (
+            <>
+              <h4 style={{ color: '#ffc107', marginBottom: '10px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <AlertTriangle size={18} /> Expiring Soon (30 days) ({expiringSoonProducts.length})
+              </h4>
+              <div className="table-container">
+                <table className="table">
+                  <thead>
+                    <tr>
+                      <th>{t('Code')}</th>
+                      <th>{t('Name')}</th>
+                      <th>{t('Company')}</th>
+                      <th className="text-right">{t('Stock')}</th>
+                      <th>{t('ExpiryDate')}</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {expiringSoonProducts.map(product => (
+                      <tr key={product.id} className="text-warning">
+                        <td>{product.code}</td>
+                        <td>{product.name}</td>
+                        <td>{product.company_name || '-'}</td>
+                        <td className="text-right">{formatNumber(product.stock_quantity, language)}</td>
+                        <td>{formatDate(product.expiry_date, language)}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </>
+          )}
+
+          {expiredProducts.length === 0 && expiringSoonProducts.length === 0 && (
+            <div className="text-center" style={{ padding: '40px', color: 'var(--text-secondary)' }}>
+              <p>No expired or expiring soon products</p>
+            </div>
+          )}
         </div>
       )}
 

@@ -63,5 +63,24 @@ export const productController = {
     } catch (error) {
       next(error);
     }
+  },
+
+  async getExpired(req, res, next) {
+    try {
+      const products = await productService.getExpired();
+      res.json(products);
+    } catch (error) {
+      next(error);
+    }
+  },
+
+  async getExpiringSoon(req, res, next) {
+    try {
+      const { days = 30 } = req.query;
+      const products = await productService.getExpiringSoon(parseInt(days));
+      res.json(products);
+    } catch (error) {
+      next(error);
+    }
   }
 };

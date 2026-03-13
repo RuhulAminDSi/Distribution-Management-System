@@ -10,5 +10,6 @@ router.get('/company-sales', authenticate, reportController.companySales);
 router.get('/profit', authenticate, reportController.profitReport);
 router.get('/stock', authenticate, reportController.stockReport);
 router.get('/due', authenticate, reportController.dueReport);
+router.get('/expiry', authenticate, reportController.expiryReport);
 
 export default router;

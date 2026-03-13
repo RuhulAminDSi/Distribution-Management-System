@@ -71,6 +71,9 @@ export default function Reports() {
         case 'due':
           response = await reportService.due({ page, limit });
           break;
+        case 'expiry':
+          response = await reportService.expiry();
+          break;
         default:
           break;
       }
@@ -184,6 +187,21 @@ export default function Reports() {
           formatNumber(item.total_invoices, language)
         ]);
         break;
+      case 'expiry':
+        columns = [['Code', 'Name', 'Company', 'Stock', 'Expiry Date', 'Status']];
+        tableData = data.map(item => {
+          const isExpired = item.expiry_date && new Date(item.expiry_date) <= new Date() && item.stock_quantity > 0;
+          const isExpiringSoon = item.expiry_date && !isExpired && new Date(item.expiry_date) <= new Date(Date.now() + 30 * 24 * 60 * 60 * 1000) && item.stock_quantity > 0;
+          return [
+            item.code,
+            item.name,
+            item.company_name || '-',
+            formatNumber(item.stock_quantity, language),
+            formatDate(item.expiry_date, language),
+            isExpired ? 'Expired' : isExpiringSoon ? 'Expiring Soon' : 'Valid'
+          ];
+        });
+        break;
       default:
         break;
     }
@@ -286,6 +304,22 @@ export default function Reports() {
             <td>${formatCurrency(item.credit_limit)}</td>
             <td>${formatCurrency(item.outstanding_balance)}</td>
             <td>${item.total_invoices}</td>
+          </tr>`;
+        });
+        break;
+      case 'expiry':
+        tableHTML += '<th>কোড</th><th>নাম</th><th>কোম্পানি</th><th>স্টক</th><th>মেয়াদ তারিখ</th><th>স্ট্যাটাস</th></tr></thead><tbody>';
+        data.forEach(item => {
+          const isExpired = item.expiry_date && new Date(item.expiry_date) <= new Date() && item.stock_quantity > 0;
+          const isExpiringSoon = item.expiry_date && !isExpired && new Date(item.expiry_date) <= new Date(Date.now() + 30 * 24 * 60 * 60 * 1000) && item.stock_quantity > 0;
+          const status = isExpired ? 'মেয়াদ উত্তীর্ণ' : isExpiringSoon ? 'শীঘ্রই মেয়াদ শেষ' : 'বৈধ';
+          tableHTML += `<tr>
+            <td>${item.code}</td>
+            <td>${item.name}</td>
+            <td>${item.company_name || '-'}</td>
+            <td>${item.stock_quantity}</td>
+            <td>${formatDate(item.expiry_date)}</td>
+            <td>${status}</td>
           </tr>`;
         });
         break;
@@ -399,6 +433,22 @@ export default function Reports() {
           'Total Invoices': item.total_invoices
         }));
         break;
+      case 'expiry':
+        sheetData = data.map(item => {
+          const isExpired = item.expiry_date && new Date(item.expiry_date) <= new Date() && item.stock_quantity > 0;
+          const isExpiringSoon = item.expiry_date && !isExpired && new Date(item.expiry_date) <= new Date(Date.now() + 30 * 24 * 60 * 60 * 1000) && item.stock_quantity > 0;
+          return {
+            'Code': item.code,
+            'Name': item.name,
+            'Company': item.company_name,
+            'Category': item.category_name,
+            'Stock': item.stock_quantity,
+            'Unit': item.unit,
+            'Expiry Date': item.expiry_date,
+            'Status': isExpired ? 'Expired' : isExpiringSoon ? 'Expiring Soon' : 'Valid'
+          };
+        });
+        break;
       default:
         break;
     }
@@ -453,7 +503,8 @@ export default function Reports() {
     { id: 'company', label: t('CompanyWise') },
     { id: 'profit', label: t('Profit') },
     { id: 'stock', label: t('Stock') },
-    { id: 'due', label: t('Due') }
+    { id: 'due', label: t('Due') },
+    { id: 'expiry', label: t('ExpiryProducts') }
   ];
 
   return (
@@ -773,6 +824,36 @@ export default function Reports() {
                       <td className="text-right">{item.total_invoices}</td>
                     </tr>
                   ))}
+                </tbody>
+              </table>
+            )}
+
+            {activeTab === 'expiry' && (
+              <table className="table">
+                <thead>
+                  <tr>
+                    <th>{t('Code')}</th>
+                    <th>{t('Name')}</th>
+                    <th>{t('Company')}</th>
+                    <th className="text-right">{t('Stock')}</th>
+                    <th>{t('ExpiryDate')}</th>
+                    <th>{t('Status')}</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {data.map(item => {
+                    const isExpired = item.expiry_date && new Date(item.expiry_date) <= new Date() && item.stock_quantity > 0;
+                    const isExpiringSoon = item.expiry_date && !isExpired && new Date(item.expiry_date) <= new Date(Date.now() + 30 * 24 * 60 * 60 * 1000) && item.stock_quantity > 0;
+                    return (
+                    <tr key={item.id} className={isExpired ? 'text-danger' : isExpiringSoon ? 'text-warning' : ''}>
+                      <td>{item.code}</td>
+                      <td>{item.name}</td>
+                      <td>{item.company_name || '-'}</td>
+                      <td className="text-right">{formatNumber(item.stock_quantity, language)}</td>
+                      <td>{formatDate(item.expiry_date, language)}</td>
+                      <td>{isExpired ? 'Expired' : isExpiringSoon ? 'Expiring Soon' : 'Valid'}</td>
+                    </tr>
+                  )})}
                 </tbody>
               </table>
             )}

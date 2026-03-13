@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { productService, companyService } from '../services/api';
-import { useLanguage, formatCurrency, formatNumber } from '../context/LanguageContext';
+import { useLanguage, formatCurrency, formatNumber, formatDate } from '../context/LanguageContext';
 import { Plus, Search, Edit, Trash2, AlertTriangle, ChevronLeft, ChevronRight } from 'lucide-react';
 
 export default function Products() {
@@ -17,7 +17,7 @@ export default function Products() {
   const [formData, setFormData] = useState({
     name: '', code: '', category_id: '', company_id: '',
     purchase_price: '', dealer_price: '', mrp: '', stock_quantity: 0,
-    low_stock_alert: 10, unit: 'piece', pack_size: 1
+    low_stock_alert: 10, unit: 'piece', pack_size: 1, expiry_date: ''
   });
 
   useEffect(() => {
@@ -43,7 +43,8 @@ export default function Products() {
   const fetchCompanies = async () => {
     try {
       const response = await companyService.getCompanies();
-      setCompanies(response.data);
+      const data = response.data?.data || response.data || [];
+      setCompanies(Array.isArray(data) ? data : []);
     } catch (error) {
       console.error('Failed to fetch companies:', error);
     }
@@ -62,7 +63,7 @@ export default function Products() {
       setFormData({
         name: '', code: '', category_id: '', company_id: '',
         purchase_price: '', dealer_price: '', mrp: '', stock_quantity: 0,
-        low_stock_alert: 10, unit: 'piece', pack_size: 1
+        low_stock_alert: 10, unit: 'piece', pack_size: 1, expiry_date: ''
       });
     } catch (error) {
       alert(t('SaveError'));
@@ -119,11 +120,15 @@ export default function Products() {
                 <th className="text-right">{t('DealerPrice')}</th>
                 <th className="text-right">{t('MRP')}</th>
                 <th className="text-right">{t('Stock')}</th>
+                <th>{t('ExpiryDate')}</th>
                 <th></th>
               </tr>
             </thead>
             <tbody>
-              {products.map(product => (
+              {products.map(product => {
+                const isExpired = product.expiry_date && new Date(product.expiry_date) <= new Date() && product.stock_quantity > 0;
+                const isExpiringSoon = product.expiry_date && !isExpired && new Date(product.expiry_date) <= new Date(Date.now() + 30 * 24 * 60 * 60 * 1000) && product.stock_quantity > 0;
+                return (
                 <tr key={product.id}>
                   <td>{product.code}</td>
                   <td>{product.name}</td>
@@ -139,6 +144,13 @@ export default function Products() {
                     ) : formatNumber(product.stock_quantity, language)}
                   </td>
                   <td>
+                    {product.expiry_date ? (
+                      <span className={isExpired ? 'text-danger' : isExpiringSoon ? 'text-warning' : ''}>
+                        {formatDate(product.expiry_date, language)}
+                      </span>
+                    ) : '-'}
+                  </td>
+                  <td>
                     <div className="flex gap-2">
                       <button className="btn btn-secondary btn-sm" onClick={() => handleEdit(product)}>
                         <Edit size={14} />
@@ -149,7 +161,7 @@ export default function Products() {
                     </div>
                   </td>
                 </tr>
-              ))}
+              )})}
             </tbody>
           </table>
         </div>
@@ -288,6 +300,15 @@ export default function Products() {
                       className="form-input"
                       value={formData.unit}
                       onChange={(e) => setFormData({ ...formData, unit: e.target.value })}
+                    />
+                  </div>
+                  <div className="form-group">
+                    <label className="form-label">{t('ExpiryDate')}</label>
+                    <input
+                      type="date"
+                      className="form-input"
+                      value={formData.expiry_date || ''}
+                      onChange={(e) => setFormData({ ...formData, expiry_date: e.target.value })}
                     />
                   </div>
                 </div>
