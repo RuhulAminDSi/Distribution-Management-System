@@ -1,7 +1,8 @@
 import { query } from '../config/database.js';
 
 export const reportService = {
-  async dailySales(startDate, endDate) {
+  async dailySales(startDate, endDate, page = 1, limit = 20) {
+    const offset = (page - 1) * limit;
     const sql = `
       SELECT 
         i.id,
@@ -18,11 +19,17 @@ export const reportService = {
       LEFT JOIN users u ON i.created_by = u.id
       WHERE i.invoice_date BETWEEN ? AND ?
       ORDER BY i.invoice_date DESC, i.id DESC
+      LIMIT ? OFFSET ?
     `;
-    return query(sql, [startDate, endDate]);
+    const data = await query(sql, [startDate, endDate, limit, offset]);
+    const countSql = `
+      SELECT COUNT(*) as total FROM invoices WHERE invoice_date BETWEEN ? AND ?
+    `;
+    const countResult = await query(countSql, [startDate, endDate]);
+    return { data, total: countResult[0]?.total || 0 };
   },
 
-  async productSales(startDate, endDate, productId = null) {
+  async productSales(startDate, endDate, productId = null, page = 1, limit = 20) {
     let sql = `
       SELECT 
         p.id as product_id,
@@ -47,11 +54,18 @@ export const reportService = {
       params.push(productId);
     }
 
-    sql += ' GROUP BY p.id ORDER BY total_quantity DESC';
-    return query(sql, params);
+    const countSql = sql.replace('SELECT \n        p.id as product_id,', 'SELECT COUNT(DISTINCT p.id) as total,');
+    const countResult = await query(countSql.slice(0, countSql.indexOf('GROUP BY')), params);
+    
+    const offset = (page - 1) * limit;
+    sql += ` GROUP BY p.id ORDER BY total_quantity DESC LIMIT ? OFFSET ?`;
+    params.push(limit, offset);
+    const data = await query(sql, params);
+    return { data, total: countResult[0]?.total || 0 };
   },
 
-  async companySales(startDate, endDate) {
+  async companySales(startDate, endDate, page = 1, limit = 20) {
+    const offset = (page - 1) * limit;
     const sql = `
       SELECT 
         comp.id as company_id,
@@ -67,11 +81,18 @@ export const reportService = {
       WHERE comp.is_active = 1
       GROUP BY comp.id
       ORDER BY total_sales DESC
+      LIMIT ? OFFSET ?
     `;
-    return query(sql, [startDate, endDate]);
+    const data = await query(sql, [startDate, endDate, limit, offset]);
+    const countSql = `
+      SELECT COUNT(DISTINCT comp.id) as total FROM companies comp WHERE comp.is_active = 1
+    `;
+    const countResult = await query(countSql);
+    return { data, total: countResult[0]?.total || 0 };
   },
 
-  async profitReport(startDate, endDate) {
+  async profitReport(startDate, endDate, page = 1, limit = 20) {
+    const offset = (page - 1) * limit;
     const sql = `
       SELECT 
         i.id as invoice_id,
@@ -96,11 +117,18 @@ export const reportService = {
       LEFT JOIN retailers r ON i.retailer_id = r.id
       WHERE i.invoice_date BETWEEN ? AND ?
       ORDER BY i.invoice_date DESC, i.id DESC
+      LIMIT ? OFFSET ?
     `;
-    return query(sql, [startDate, endDate]);
+    const data = await query(sql, [startDate, endDate, limit, offset]);
+    const countSql = `
+      SELECT COUNT(*) as total FROM invoices WHERE invoice_date BETWEEN ? AND ?
+    `;
+    const countResult = await query(countSql, [startDate, endDate]);
+    return { data, total: countResult[0]?.total || 0 };
   },
 
-  async stockReport() {
+  async stockReport(page = 1, limit = 20) {
+    const offset = (page - 1) * limit;
     const sql = `
       SELECT 
         p.*,
@@ -113,11 +141,16 @@ export const reportService = {
       LEFT JOIN companies comp ON p.company_id = comp.id
       WHERE p.is_active = 1
       ORDER BY p.stock_quantity ASC, p.name ASC
+      LIMIT ? OFFSET ?
     `;
-    return query(sql);
+    const data = await query(sql, [limit, offset]);
+    const countSql = `SELECT COUNT(*) as total FROM products WHERE is_active = 1`;
+    const countResult = await query(countSql);
+    return { data, total: countResult[0]?.total || 0 };
   },
 
-  async dueReport() {
+  async dueReport(page = 1, limit = 20) {
+    const offset = (page - 1) * limit;
     const sql = `
       SELECT 
         r.id as retailer_id,
@@ -135,7 +168,13 @@ export const reportService = {
       WHERE r.is_active = 1 AND r.outstanding_balance > 0
       GROUP BY r.id
       ORDER BY r.outstanding_balance DESC
+      LIMIT ? OFFSET ?
     `;
-    return query(sql);
+    const data = await query(sql, [limit, offset]);
+    const countSql = `
+      SELECT COUNT(*) as total FROM retailers WHERE is_active = 1 AND outstanding_balance > 0
+    `;
+    const countResult = await query(countSql);
+    return { data, total: countResult[0]?.total || 0 };
   }
 };

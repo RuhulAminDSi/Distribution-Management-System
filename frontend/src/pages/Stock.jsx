@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { stockService, companyService, productService } from '../services/api';
-import { useLanguage, formatCurrency, formatNumber } from '../context/LanguageContext';
-import { Plus, ArrowDownToLine } from 'lucide-react';
+import { useLanguage, formatCurrency, formatNumber, formatDateTime } from '../context/LanguageContext';
+import { Plus, ArrowDownToLine, ChevronLeft, ChevronRight } from 'lucide-react';
 
 export default function Stock() {
   const { t, language } = useLanguage();
@@ -12,6 +12,10 @@ export default function Stock() {
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
+  const [page, setPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [total, setTotal] = useState(0);
+  const [limit, setLimit] = useState(10);
   const [formData, setFormData] = useState({
     company_id: '', order_date: new Date().toISOString().split('T')[0],
     notes: '', items: [{ product_id: '', quantity: 1, rate: 0 }]
@@ -22,12 +26,16 @@ export default function Stock() {
     fetchPurchaseOrders();
     fetchCompanies();
     fetchProducts();
-  }, []);
+  }, [page, limit]);
 
   const fetchHistory = async () => {
     try {
-      const response = await stockService.getHistory({});
-      setHistory(response.data);
+      const response = await stockService.getHistory({ page, limit });
+      const data = response.data?.data || response.data || [];
+      const totalVal = response.data?.pagination?.total || response.data?.total || data.length || 0;
+      setHistory(data);
+      setTotal(totalVal);
+      setTotalPages(Math.ceil(totalVal / limit) || 1);
     } catch (error) {
       console.error('Failed to fetch stock history:', error);
     } finally {
@@ -37,8 +45,8 @@ export default function Stock() {
 
   const fetchPurchaseOrders = async () => {
     try {
-      const response = await stockService.getPurchaseOrders({});
-      setPurchaseOrders(response.data);
+      const response = await stockService.getPurchaseOrders({ page, limit });
+      setPurchaseOrders(response.data?.data || response.data || []);
     } catch (error) {
       console.error('Failed to fetch purchase orders:', error);
     }
@@ -163,6 +171,32 @@ export default function Stock() {
                 ))}
               </tbody>
             </table>
+          </div>
+          
+          <div className="pagination" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '15px', flexWrap: 'wrap', gap: '10px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+              <span style={{ fontSize: '14px' }}>Show</span>
+              <select 
+                value={limit} 
+                onChange={(e) => { setLimit(Number(e.target.value)); setPage(1); }}
+                style={{ padding: '6px 10px', borderRadius: '4px', border: '1px solid var(--border)' }}
+              >
+                <option value={10}>10</option>
+                <option value={25}>25</option>
+                <option value={50}>50</option>
+                <option value={100}>100</option>
+              </select>
+              <span style={{ fontSize: '14px' }}>of {total} entries</span>
+            </div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+              <button className="btn btn-secondary btn-sm" onClick={() => setPage(p => Math.max(1, p - 1))} disabled={page === 1}>
+                <ChevronLeft size={16} />
+              </button>
+              <span style={{ fontSize: '14px' }}>{t('Page')} {page} / {totalPages}</span>
+              <button className="btn btn-secondary btn-sm" onClick={() => setPage(p => Math.min(totalPages, p + 1))} disabled={page === totalPages}>
+                <ChevronRight size={16} />
+              </button>
+            </div>
           </div>
         </div>
       )}

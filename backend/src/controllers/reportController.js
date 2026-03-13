@@ -3,15 +3,15 @@ import { reportService } from '../services/reportService.js';
 export const reportController = {
   async dailySales(req, res, next) {
     try {
-      const { start_date, end_date } = req.query;
+      const { start_date, end_date, page = 1, limit = 20 } = req.query;
       const today = new Date();
       const firstDay = new Date(today.getFullYear(), today.getMonth(), 1);
       
       const start = start_date || firstDay.toISOString().split('T')[0];
       const end = end_date || today.toISOString().split('T')[0];
       
-      const sales = await reportService.dailySales(start, end);
-      res.json(sales);
+      const result = await reportService.dailySales(start, end, parseInt(page), parseInt(limit));
+      res.json(result);
     } catch (error) {
       next(error);
     }
@@ -19,9 +19,9 @@ export const reportController = {
 
   async productSales(req, res, next) {
     try {
-      const { start_date, end_date, product_id } = req.query;
-      const sales = await reportService.productSales(start_date, end_date, product_id ? parseInt(product_id) : null);
-      res.json(sales);
+      const { start_date, end_date, product_id, page = 1, limit = 20 } = req.query;
+      const result = await reportService.productSales(start_date, end_date, product_id ? parseInt(product_id) : null, parseInt(page), parseInt(limit));
+      res.json(result);
     } catch (error) {
       next(error);
     }
@@ -29,15 +29,15 @@ export const reportController = {
 
   async companySales(req, res, next) {
     try {
-      const { start_date, end_date } = req.query;
+      const { start_date, end_date, page = 1, limit = 20 } = req.query;
       const today = new Date();
       const firstDay = new Date(today.getFullYear(), today.getMonth(), 1);
       
       const start = start_date || firstDay.toISOString().split('T')[0];
       const end = end_date || today.toISOString().split('T')[0];
       
-      const sales = await reportService.companySales(start, end);
-      res.json(sales);
+      const result = await reportService.companySales(start, end, parseInt(page), parseInt(limit));
+      res.json(result);
     } catch (error) {
       next(error);
     }
@@ -45,15 +45,15 @@ export const reportController = {
 
   async profitReport(req, res, next) {
     try {
-      const { start_date, end_date } = req.query;
+      const { start_date, end_date, page = 1, limit = 20 } = req.query;
       const today = new Date();
       const firstDay = new Date(today.getFullYear(), today.getMonth(), 1);
       
       const start = start_date || firstDay.toISOString().split('T')[0];
       const end = end_date || today.toISOString().split('T')[0];
       
-      const profit = await reportService.profitReport(start, end);
-      res.json(profit);
+      const result = await reportService.profitReport(start, end, parseInt(page), parseInt(limit));
+      res.json(result);
     } catch (error) {
       next(error);
     }
@@ -61,8 +61,9 @@ export const reportController = {
 
   async stockReport(req, res, next) {
     try {
-      const stock = await reportService.stockReport();
-      res.json(stock);
+      const { page = 1, limit = 20 } = req.query;
+      const result = await reportService.stockReport(parseInt(page), parseInt(limit));
+      res.json(result);
     } catch (error) {
       next(error);
     }
@@ -70,8 +71,9 @@ export const reportController = {
 
   async dueReport(req, res, next) {
     try {
-      const due = await reportService.dueReport();
-      res.json(due);
+      const { page = 1, limit = 20 } = req.query;
+      const result = await reportService.dueReport(parseInt(page), parseInt(limit));
+      res.json(result);
     } catch (error) {
       next(error);
     }

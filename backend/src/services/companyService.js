@@ -2,8 +2,12 @@ import { query } from '../config/database.js';
 import { generateCode } from '../utils/helpers.js';
 
 export const companyService = {
-  async findAll() {
-    return query('SELECT * FROM companies WHERE is_active = 1 ORDER BY name');
+  async findAll(page = 1, limit = 20) {
+    const offset = (page - 1) * limit;
+    const data = await query('SELECT * FROM companies WHERE is_active = 1 ORDER BY name LIMIT ? OFFSET ?', [limit, offset]);
+    const countResult = await query('SELECT COUNT(*) as total FROM companies WHERE is_active = 1');
+    const total = countResult[0]?.total || 0;
+    return { data, total };
   },
 
   async findById(id) {

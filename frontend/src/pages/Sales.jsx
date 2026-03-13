@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { invoiceService, retailerService, productService } from '../services/api';
-import { useLanguage, formatCurrency, formatNumber } from '../context/LanguageContext';
-import { Plus, Search, Eye, Printer } from 'lucide-react';
+import { useLanguage, formatCurrency, formatNumber, formatDate, formatDateTime } from '../context/LanguageContext';
+import { Plus, Search, Eye, Printer, ChevronLeft, ChevronRight } from 'lucide-react';
 
 export default function Sales() {
   const { t, language } = useLanguage();
@@ -10,6 +10,10 @@ export default function Sales() {
   const [showModal, setShowModal] = useState(false);
   const [retailers, setRetailers] = useState([]);
   const [products, setProducts] = useState([]);
+  const [page, setPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [totalCount, setTotalCount] = useState(0);
+  const [limit, setLimit] = useState(10);
   const [formData, setFormData] = useState({
     retailer_id: '', invoice_date: new Date().toISOString().split('T')[0],
     discount_percent: 0, paid_amount: 0, notes: '', items: []
@@ -20,12 +24,16 @@ export default function Sales() {
     fetchInvoices();
     fetchRetailers();
     fetchProducts();
-  }, []);
+  }, [page, limit]);
 
   const fetchInvoices = async () => {
     try {
-      const response = await invoiceService.getAll({ limit: 50 });
-      setInvoices(response.data.data);
+      const response = await invoiceService.getAll({ page, limit });
+      const data = response.data?.data || response.data || [];
+      const totalVal = response.data?.pagination?.total || response.data?.total || data.length || 0;
+      setInvoices(data);
+      setTotalCount(totalVal);
+      setTotalPages(Math.ceil(totalVal / limit) || 1);
     } catch (error) {
       console.error('Failed to fetch invoices:', error);
     } finally {
@@ -166,6 +174,32 @@ export default function Sales() {
               ))}
             </tbody>
           </table>
+        </div>
+        
+        <div className="pagination" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '15px', flexWrap: 'wrap', gap: '10px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+            <span style={{ fontSize: '14px' }}>Show</span>
+            <select 
+              value={limit} 
+              onChange={(e) => { setLimit(Number(e.target.value)); setPage(1); }}
+              style={{ padding: '6px 10px', borderRadius: '4px', border: '1px solid var(--border)' }}
+            >
+              <option value={10}>10</option>
+              <option value={25}>25</option>
+              <option value={50}>50</option>
+              <option value={100}>100</option>
+            </select>
+            <span style={{ fontSize: '14px' }}>of {totalCount} entries</span>
+          </div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+            <button className="btn btn-secondary btn-sm" onClick={() => setPage(p => Math.max(1, p - 1))} disabled={page === 1}>
+              <ChevronLeft size={16} />
+            </button>
+            <span style={{ fontSize: '14px' }}>{t('Page')} {page} / {totalPages}</span>
+            <button className="btn btn-secondary btn-sm" onClick={() => setPage(p => Math.min(totalPages, p + 1))} disabled={page === totalPages}>
+              <ChevronRight size={16} />
+            </button>
+          </div>
         </div>
       </div>
 

@@ -1,8 +1,8 @@
 import { query, getConnection } from '../config/database.js';
-import { generatePONo } from '../utils/helpers.js';
+import { generatePONo, buildPaginatedResponse } from '../utils/helpers.js';
 
 export const stockService = {
-  async getStockHistory(productId = null, startDate = null, endDate = null) {
+  async getStockHistory(page = 1, limit = 20, productId = null, startDate = null, endDate = null) {
     let sql = `
       SELECT 
         sl.*,
@@ -31,8 +31,24 @@ export const stockService = {
       params.push(endDate);
     }
 
-    sql += ' ORDER BY sl.id DESC LIMIT 100';
-    return query(sql, params);
+    const countSql = 'SELECT COUNT(*) as total FROM stock_logs sl WHERE 1=1' +
+      (productId ? ' AND sl.product_id = ?' : '') +
+      (startDate ? ' AND DATE(sl.created_at) >= ?' : '') +
+      (endDate ? ' AND DATE(sl.created_at) <= ?' : '');
+    
+    const countParams = [];
+    if (productId) countParams.push(productId);
+    if (startDate) countParams.push(startDate);
+    if (endDate) countParams.push(endDate);
+    
+    const countResult = await query(countSql, countParams);
+    const total = countResult[0]?.total || 0;
+
+    const offset = (page - 1) * limit;
+    const dataSql = sql + ` ORDER BY sl.id DESC LIMIT ${limit} OFFSET ${offset}`;
+    const data = await query(dataSql, params);
+
+    return buildPaginatedResponse(data, total, page, limit);
   },
 
   async createPurchaseOrder(data, userId) {

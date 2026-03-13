@@ -230,6 +230,8 @@ const translations = {
     Cheque: 'Cheque',
     Or: 'or',
     Default: 'Default',
+    AccountDeactivated: 'Your account has been deactivated. Please contact administrator.',
+    Page: 'Page',
   },
   bn: {
     // Common
@@ -460,6 +462,8 @@ const translations = {
     Cheque: 'চেক',
     Or: 'অথবা',
     Default: 'ডিফল্ট',
+    AccountDeactivated: 'আপনার অ্যাকাউন্ট নিষ্ক্রিয় করা হয়েছে। অনুগ্রহ করে অ্যাডমিনিস্ট্রেটরের সাথে যোগাযোগ করুন।',
+    Page: 'পেজ',
   }
 };
 
@@ -490,9 +494,9 @@ export function useLanguage() {
 }
 
 export function formatCurrency(amount, lang = 'en') {
-  if (amount === null || amount === undefined || isNaN(amount)) return lang === 'bn' ? '৳ 0' : 'BDT 0';
+  if (amount === null || amount === undefined || isNaN(amount)) return lang === 'bn' ? '৳ 0' : '৳ 0';
   const formatted = new Intl.NumberFormat('en-BD', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(amount);
-  return (lang === 'bn' ? '৳ ' : 'BDT ') + (lang === 'bn' ? toBanglaNumber(formatted) : formatted);
+  return (lang === 'bn' ? '৳ ' : '৳ ') + (lang === 'bn' ? toBanglaNumber(formatted) : formatted);
 }
 
 export function toBanglaNumber(num) {
@@ -510,15 +514,17 @@ export function formatDate(dateStr, lang = 'en') {
   if (!dateStr) return '-';
   const date = new Date(dateStr);
   if (isNaN(date.getTime())) return dateStr;
-  return date.toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit', year: 'numeric' });
+  const formatted = date.toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit', year: 'numeric' });
+  return lang === 'bn' ? toBanglaNumber(formatted) : formatted;
 }
 
 export function formatDateTime(dateStr, lang = 'en') {
   if (!dateStr) return '-';
   const date = new Date(dateStr);
   if (isNaN(date.getTime())) return dateStr;
-  return date.toLocaleString('en-GB', { 
+  const formatted = date.toLocaleString('en-GB', { 
     day: '2-digit', month: '2-digit', year: 'numeric',
     hour: '2-digit', minute: '2-digit'
   });
+  return lang === 'bn' ? toBanglaNumber(formatted) : formatted;
 }

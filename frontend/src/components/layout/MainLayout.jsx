@@ -41,21 +41,16 @@ export default function MainLayout() {
   const navigate = useNavigate();
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [dropdownOpen, setDropdownOpen] = useState(false);
-  const [langDropdownOpen, setLangDropdownOpen] = useState(false);
   const [passwordModalOpen, setPasswordModalOpen] = useState(false);
   const [passwordData, setPasswordData] = useState({ currentPassword: '', newPassword: '', confirmPassword: '' });
   const [passwordError, setPasswordError] = useState('');
   const [passwordSuccess, setPasswordSuccess] = useState('');
   const dropdownRef = useRef(null);
-  const langDropdownRef = useRef(null);
 
   useEffect(() => {
     function handleClickOutside(event) {
       if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
         setDropdownOpen(false);
-      }
-      if (langDropdownRef.current && !langDropdownRef.current.contains(event.target)) {
-        setLangDropdownOpen(false);
       }
     }
     document.addEventListener('mousedown', handleClickOutside);
@@ -136,42 +131,22 @@ export default function MainLayout() {
           </div>
           <div style={{ fontWeight: '600', marginBottom: '12px' }}>{user?.full_name}</div>
           
-          <div ref={langDropdownRef} style={{ position: 'relative' }}>
-            <button 
-              onClick={() => setLangDropdownOpen(!langDropdownOpen)}
-              className="btn" 
-              style={{ 
-                width: '100%', 
-                color: 'white', 
-                backgroundColor: '#1976D2',
-                border: 'none',
-                display: 'flex', 
-                alignItems: 'center', 
-                justifyContent: 'center', 
-                gap: '8px' 
-              }}
-            >
-              <Globe size={16} /> {language === 'en' ? t('English') : t('Bangla')}
-            </button>
-            {langDropdownOpen && (
-              <div className="dropdown-menu" style={{ bottom: '100%', top: 'auto', marginBottom: '8px', background: '#2a2a2a' }}>
-                <button 
-                  className="dropdown-item" 
-                  onClick={() => { setLanguage('en'); setLangDropdownOpen(false); }}
-                  style={{ background: language === 'en' ? '#1976D2' : 'transparent' }}
-                >
-                  {t('English')}
-                </button>
-                <button 
-                  className="dropdown-item" 
-                  onClick={() => { setLanguage('bn'); setLangDropdownOpen(false); }}
-                  style={{ background: language === 'bn' ? '#1976D2' : 'transparent' }}
-                >
-                  {t('Bangla')}
-                </button>
-              </div>
-            )}
-          </div>
+          <button 
+            onClick={() => setLanguage(language === 'en' ? 'bn' : 'en')}
+            className="btn" 
+            style={{ 
+              width: '100%', 
+              color: 'white', 
+              backgroundColor: '#1976D2',
+              border: 'none',
+              display: 'flex', 
+              alignItems: 'center', 
+              justifyContent: 'center', 
+              gap: '8px' 
+            }}
+          >
+            <Globe size={16} /> {language === 'en' ? 'বাংলা' : 'English'}
+          </button>
         </div>
       </aside>
 

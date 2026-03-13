@@ -3,8 +3,9 @@ import { companyService, categoryService } from '../services/companyService.js';
 export const companyController = {
   async findAll(req, res, next) {
     try {
-      const companies = await companyService.findAll();
-      res.json(companies);
+      const { page = 1, limit = 20 } = req.query;
+      const result = await companyService.findAll(parseInt(page), parseInt(limit));
+      res.json(result);
     } catch (error) {
       next(error);
     }

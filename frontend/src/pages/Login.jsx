@@ -6,7 +6,7 @@ import { authService } from '../services/api';
 import { Warehouse, Eye, EyeOff } from 'lucide-react';
 
 export default function Login() {
-  const { t } = useLanguage();
+  const { t, language, setLanguage } = useLanguage();
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
@@ -28,7 +28,12 @@ export default function Login() {
       await login(username, password);
       navigate('/');
     } catch (err) {
-      setError(t('LoginFailed'));
+      const errorMsg = err.response?.data?.message || '';
+      if (errorMsg.includes('deactivated') || errorMsg.includes('নিষ্ক্রিয়')) {
+        setError(t('AccountDeactivated'));
+      } else {
+        setError(t('LoginFailed'));
+      }
     } finally {
       setLoading(false);
     }
@@ -71,6 +76,26 @@ export default function Login() {
           <h1>DMS</h1>
           <p style={{ color: 'var(--text-secondary)' }}>{t('Sales')} Management System</p>
         </div>
+
+        <button
+          type="button"
+          onClick={() => setLanguage(language === 'en' ? 'bn' : 'en')}
+          style={{
+            position: 'absolute',
+            top: '15px',
+            right: '15px',
+            background: 'var(--background)',
+            border: '1px solid var(--border-color)',
+            borderRadius: '6px',
+            padding: '6px 12px',
+            cursor: 'pointer',
+            fontSize: '13px',
+            fontWeight: '500',
+            color: 'var(--text-primary)'
+          }}
+        >
+          {language === 'en' ? 'বাংলা' : 'English'}
+        </button>
 
         {error && <div className="alert alert-danger">{error}</div>}
 

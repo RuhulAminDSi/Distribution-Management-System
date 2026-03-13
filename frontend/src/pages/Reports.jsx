@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { reportService } from '../services/api';
-import { useLanguage, formatCurrency, formatNumber } from '../context/LanguageContext';
-import { FileText, FileSpreadsheet } from 'lucide-react';
+import { useLanguage, formatCurrency, formatNumber, formatDate, formatDateTime } from '../context/LanguageContext';
+import { FileText, FileSpreadsheet, ChevronLeft, ChevronRight } from 'lucide-react';
 import { jsPDF } from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import * as XLSX from 'xlsx';
@@ -18,10 +18,14 @@ export default function Reports() {
     start_date: new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString().split('T')[0],
     end_date: new Date().toISOString().split('T')[0]
   });
+  const [page, setPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [total, setTotal] = useState(0);
+  const [limit, setLimit] = useState(10);
 
   useEffect(() => {
     fetchReport();
-  }, [activeTab, dateRange]);
+  }, [activeTab, dateRange, page, limit]);
 
   const fetchReport = async () => {
     setLoading(true);
@@ -32,38 +36,50 @@ export default function Reports() {
         case 'daily':
           response = await reportService.dailySales({ 
             start_date: dateRange.start_date,
-            end_date: dateRange.end_date 
+            end_date: dateRange.end_date,
+            page,
+            limit
           });
           break;
         case 'product':
           response = await reportService.productSales({
             start_date: dateRange.start_date,
-            end_date: dateRange.end_date
+            end_date: dateRange.end_date,
+            page,
+            limit
           });
           break;
         case 'company':
           response = await reportService.companySales({
             start_date: dateRange.start_date,
-            end_date: dateRange.end_date
+            end_date: dateRange.end_date,
+            page,
+            limit
           });
           break;
         case 'profit':
           response = await reportService.profit({
             start_date: dateRange.start_date,
-            end_date: dateRange.end_date
+            end_date: dateRange.end_date,
+            page,
+            limit
           });
           break;
         case 'stock':
-          response = await reportService.stock();
+          response = await reportService.stock({ page, limit });
           break;
         case 'due':
-          response = await reportService.due();
+          response = await reportService.due({ page, limit });
           break;
         default:
           break;
       }
       console.log('Report response:', activeTab, response.data);
-      setData(response.data || []);
+      const reportData = response.data?.data || response.data || [];
+      const totalVal = response.data?.pagination?.total || response.data?.total || reportData.length || 0;
+      setData(reportData);
+      setTotal(totalVal);
+      setTotalPages(Math.ceil(totalVal / limit) || 1);
     } catch (err) {
       console.error('Failed to fetch report:', err);
       setError(err.response?.data?.message || 'Failed to load report');
@@ -141,7 +157,7 @@ export default function Reports() {
           item.total_invoices,
           item.total_quantity,
           formatCurrency(item.total_sales, language),
-          formatCurrency(item.total_profit, language)
+          formatCurrency(item.total_profit, language),
           formatCurrency(item.sales_amount, language),
           formatCurrency(item.cost_amount, language),
           formatCurrency(item.profit, language)
@@ -760,6 +776,32 @@ export default function Reports() {
                 </tbody>
               </table>
             )}
+          </div>
+          
+          <div className="pagination" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '15px', flexWrap: 'wrap', gap: '10px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+              <span style={{ fontSize: '14px' }}>Show</span>
+              <select 
+                value={limit} 
+                onChange={(e) => { setLimit(Number(e.target.value)); setPage(1); }}
+                style={{ padding: '6px 10px', borderRadius: '4px', border: '1px solid var(--border)' }}
+              >
+                <option value={10}>10</option>
+                <option value={25}>25</option>
+                <option value={50}>50</option>
+                <option value={100}>100</option>
+              </select>
+              <span style={{ fontSize: '14px' }}>of {total} entries</span>
+            </div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+              <button className="btn btn-secondary btn-sm" onClick={() => setPage(p => Math.max(1, p - 1))} disabled={page === 1}>
+                <ChevronLeft size={16} />
+              </button>
+              <span style={{ fontSize: '14px' }}>{t('Page')} {page} / {totalPages}</span>
+              <button className="btn btn-secondary btn-sm" onClick={() => setPage(p => Math.min(totalPages, p + 1))} disabled={page === totalPages}>
+                <ChevronRight size={16} />
+              </button>
+            </div>
           </div>
         </div>
         )}

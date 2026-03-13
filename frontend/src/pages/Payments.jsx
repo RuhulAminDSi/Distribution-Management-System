@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { paymentService, retailerService } from '../services/api';
-import { useLanguage, formatCurrency } from '../context/LanguageContext';
-import { Plus, Search } from 'lucide-react';
+import { useLanguage, formatCurrency, formatDate } from '../context/LanguageContext';
+import { Plus, Search, ChevronLeft, ChevronRight } from 'lucide-react';
 
 export default function Payments() {
   const { t, language } = useLanguage();
@@ -9,6 +9,10 @@ export default function Payments() {
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
   const [retailers, setRetailers] = useState([]);
+  const [page, setPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [total, setTotal] = useState(0);
+  const [limit, setLimit] = useState(10);
   const [formData, setFormData] = useState({
     retailer_id: '', amount: 0, payment_method: 'cash',
     reference_no: '', payment_date: new Date().toISOString().split('T')[0], notes: ''
@@ -17,12 +21,16 @@ export default function Payments() {
   useEffect(() => {
     fetchPayments();
     fetchRetailers();
-  }, []);
+  }, [page, limit]);
 
   const fetchPayments = async () => {
     try {
-      const response = await paymentService.getAll({ limit: 50 });
-      setPayments(response.data?.data || []);
+      const response = await paymentService.getAll({ page, limit });
+      const data = response.data?.data || response.data || [];
+      const totalVal = response.data?.pagination?.total || response.data?.total || data.length || 0;
+      setPayments(data);
+      setTotal(totalVal);
+      setTotalPages(Math.ceil(totalVal / limit) || 1);
     } catch (error) {
       console.error('Failed to fetch payments:', error);
     } finally {
@@ -110,6 +118,32 @@ export default function Payments() {
               ))}
             </tbody>
           </table>
+        </div>
+        
+        <div className="pagination" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '15px', flexWrap: 'wrap', gap: '10px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+            <span style={{ fontSize: '14px' }}>Show</span>
+            <select 
+              value={limit} 
+              onChange={(e) => { setLimit(Number(e.target.value)); setPage(1); }}
+              style={{ padding: '6px 10px', borderRadius: '4px', border: '1px solid var(--border)' }}
+            >
+              <option value={10}>10</option>
+              <option value={25}>25</option>
+              <option value={50}>50</option>
+              <option value={100}>100</option>
+            </select>
+            <span style={{ fontSize: '14px' }}>of {total} entries</span>
+          </div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+            <button className="btn btn-secondary btn-sm" onClick={() => setPage(p => Math.max(1, p - 1))} disabled={page === 1}>
+              <ChevronLeft size={16} />
+            </button>
+            <span style={{ fontSize: '14px' }}>{t('Page')} {page} / {totalPages}</span>
+            <button className="btn btn-secondary btn-sm" onClick={() => setPage(p => Math.min(totalPages, p + 1))} disabled={page === totalPages}>
+              <ChevronRight size={16} />
+            </button>
+          </div>
         </div>
       </div>
 

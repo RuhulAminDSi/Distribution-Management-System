@@ -3,13 +3,15 @@ import { stockService } from '../services/stockService.js';
 export const stockController = {
   async getHistory(req, res, next) {
     try {
-      const { product_id, start_date, end_date } = req.query;
-      const history = await stockService.getStockHistory(
+      const { page = 1, limit = 20, product_id, start_date, end_date } = req.query;
+      const result = await stockService.getStockHistory(
+        parseInt(page),
+        parseInt(limit),
         product_id ? parseInt(product_id) : null,
         start_date,
         end_date
       );
-      res.json(history);
+      res.json(result);
     } catch (error) {
       next(error);
     }

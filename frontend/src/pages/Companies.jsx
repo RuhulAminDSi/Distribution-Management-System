@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useLanguage } from '../context/LanguageContext';
 import { companyService } from '../services/api';
-import { X, Plus, Pencil, Trash2 } from 'lucide-react';
+import { X, Plus, Pencil, Trash2, ChevronLeft, ChevronRight } from 'lucide-react';
 
 export default function Companies() {
   const { t } = useLanguage();
@@ -10,17 +10,24 @@ export default function Companies() {
   const [showModal, setShowModal] = useState(false);
   const [editItem, setEditItem] = useState(null);
   const [formData, setFormData] = useState({});
+  const [page, setPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [total, setTotal] = useState(0);
+  const [limit, setLimit] = useState(10);
 
   useEffect(() => {
     fetchCompanies();
-  }, []);
+  }, [page, limit]);
 
   const fetchCompanies = async () => {
     setLoading(true);
     try {
-      const res = await companyService.getCompanies();
-      const data = res?.data?.data || res?.data || res || [];
-      setCompanies(Array.isArray(data) ? data : []);
+      const res = await companyService.getCompanies({ page, limit });
+      const data = res.data?.data || res.data || [];
+      const totalVal = res.data?.pagination?.total || res.data?.total || data.length || 0;
+      setCompanies(data);
+      setTotal(totalVal);
+      setTotalPages(Math.ceil(totalVal / limit) || 1);
     } catch (error) {
       console.error('Failed to fetch:', error);
       setCompanies([]);
@@ -105,6 +112,32 @@ export default function Companies() {
             )}
           </tbody>
         </table>
+      </div>
+      
+      <div className="pagination" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '15px', flexWrap: 'wrap', gap: '10px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+          <span style={{ fontSize: '14px' }}>Show</span>
+          <select 
+            value={limit} 
+            onChange={(e) => { setLimit(Number(e.target.value)); setPage(1); }}
+            style={{ padding: '6px 10px', borderRadius: '4px', border: '1px solid var(--border)' }}
+          >
+            <option value={10}>10</option>
+            <option value={25}>25</option>
+            <option value={50}>50</option>
+            <option value={100}>100</option>
+          </select>
+          <span style={{ fontSize: '14px' }}>of {total} entries</span>
+        </div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+          <button className="btn btn-secondary btn-sm" onClick={() => setPage(p => Math.max(1, p - 1))} disabled={page === 1}>
+            <ChevronLeft size={16} />
+          </button>
+          <span style={{ fontSize: '14px' }}>{t('Page')} {page} / {totalPages}</span>
+          <button className="btn btn-secondary btn-sm" onClick={() => setPage(p => Math.min(totalPages, p + 1))} disabled={page === totalPages}>
+            <ChevronRight size={16} />
+          </button>
+        </div>
       </div>
 
       {showModal && (

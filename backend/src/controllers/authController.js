@@ -12,14 +12,20 @@ export const authController = {
         return res.status(400).json({ message: 'Username/Email/Phone and password required' });
       }
 
-      // Try to find user by username, email, or phone
-      let users = await query('SELECT * FROM users WHERE (username = ? OR email = ? OR phone = ?) AND is_active = 1', [username, username, username]);
+      // First check if user exists (without is_active filter)
+      let users = await query('SELECT * FROM users WHERE (username = ? OR email = ? OR phone = ?)', [username, username, username]);
       
       if (users.length === 0) {
         return res.status(401).json({ message: 'Invalid credentials' });
       }
 
       const user = users[0];
+      
+      // Check if user is inactive
+      if (!user.is_active) {
+        return res.status(401).json({ message: 'Your account has been deactivated. Please contact administrator.' });
+      }
+
       const isValidPassword = await bcrypt.compare(password, user.password_hash);
 
       if (!isValidPassword) {
@@ -86,10 +92,15 @@ export const authController = {
 
   async getAllUsers(req, res, next) {
     try {
+      const { page = 1, limit = 20 } = req.query;
+      const offset = (parseInt(page) - 1) * parseInt(limit);
       const users = await query(
-        'SELECT id, username, full_name, email, role, phone, is_active, created_at FROM users ORDER BY id DESC'
+        'SELECT id, username, full_name, email, role, phone, is_active, created_at FROM users ORDER BY id DESC LIMIT ? OFFSET ?',
+        [parseInt(limit), offset]
       );
-      res.json({ data: users });
+      const countResult = await query('SELECT COUNT(*) as total FROM users');
+      const total = countResult[0]?.total || 0;
+      res.json({ data: users, total });
     } catch (error) {
       next(error);
     }
@@ -98,7 +109,7 @@ export const authController = {
   async updateUser(req, res, next) {
     try {
       const { id } = req.params;
-      const { username, full_name, email, role, phone, password } = req.body;
+      const { username, full_name, email, role, phone, password, is_active } = req.body;
       const currentUser = req.user;
 
       const users = await query('SELECT id, username, role FROM users WHERE id = ?', [id]);
@@ -116,6 +127,10 @@ export const authController = {
         // admin cannot create system_admin
         if (role === 'system_admin') {
           return res.status(403).json({ message: 'Only system admin can assign system admin role' });
+        }
+        // admin cannot change status of other admins
+        if (is_active !== undefined && targetUser.role === 'admin') {
+          return res.status(403).json({ message: 'You cannot change admin status' });
         }
       }
 
@@ -146,13 +161,17 @@ export const authController = {
         fields.push('password_hash = ?');
         params.push(await bcrypt.hash(password, 10));
       }
+      if (is_active !== undefined) {
+        fields.push('is_active = ?');
+        params.push(is_active);
+      }
 
       if (fields.length > 0) {
         params.push(id);
         await query(`UPDATE users SET ${fields.join(', ')} WHERE id = ?`, params);
       }
 
-      const updatedUsers = await query('SELECT id, username, full_name, email, role, phone FROM users WHERE id = ?', [id]);
+      const updatedUsers = await query('SELECT id, username, full_name, email, role, phone, is_active FROM users WHERE id = ?', [id]);
       res.json({ user: updatedUsers[0] });
     } catch (error) {
       next(error);

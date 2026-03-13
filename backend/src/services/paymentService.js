@@ -27,15 +27,24 @@ export const paymentService = {
       params.push(endDate);
     }
 
-    const countSql = sql.replace(/SELECT p\.\*, r\.name as retailer_name, u\.full_name as collected_by_name/, 'SELECT COUNT(*) as total');
-    const countResult = await query(countSql, params);
+    const countSql = 'SELECT COUNT(*) as total FROM payments p WHERE 1=1' + 
+      (retailerId ? ' AND p.retailer_id = ?' : '') +
+      (startDate ? ' AND p.payment_date >= ?' : '') +
+      (endDate ? ' AND p.payment_date <= ?' : '');
+    
+    const countParams = [];
+    if (retailerId) countParams.push(retailerId);
+    if (startDate) countParams.push(startDate);
+    if (endDate) countParams.push(endDate);
+    
+    const countResult = await query(countSql, countParams);
     const total = countResult[0]?.total || 0;
 
-    sql += ' ORDER BY p.id DESC LIMIT ? OFFSET ?';
     const { offset, limit: parsedLimit } = paginate(page, limit);
-    params.push(parsedLimit, offset);
-
-    const payments = await query(sql, params);
+    const dataSql = sql + ' ORDER BY p.id DESC LIMIT ? OFFSET ?';
+    const dataParams = [...params, parsedLimit, offset];
+    
+    const payments = await query(dataSql, dataParams);
     return buildPaginatedResponse(payments, total, page, limit);
   },
 

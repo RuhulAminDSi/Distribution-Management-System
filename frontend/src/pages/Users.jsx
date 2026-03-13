@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { authService } from '../services/api';
 import { useLanguage } from '../context/LanguageContext';
-import { X, Plus, Pencil, Trash2 } from 'lucide-react';
+import { X, Plus, Pencil, Trash2, ChevronLeft, ChevronRight } from 'lucide-react';
 
 export default function Users() {
   const { t } = useLanguage();
@@ -10,22 +10,26 @@ export default function Users() {
   const [showModal, setShowModal] = useState(false);
   const [editItem, setEditItem] = useState(null);
   const [formData, setFormData] = useState({});
+  const [page, setPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [total, setTotal] = useState(0);
+  const [limit, setLimit] = useState(10);
 
   useEffect(() => {
     fetchUsers();
-  }, []);
+  }, [page, limit]);
 
   const fetchUsers = async () => {
     setLoading(true);
     try {
-      const res = await authService.getUsers();
-      console.log('Users response:', res);
-      const data = res?.data?.data || res?.data || res || [];
-      setUsers(Array.isArray(data) ? data : []);
+      const res = await authService.getUsers({ page, limit });
+      const data = res.data?.data || res.data || [];
+      const totalVal = res.data?.pagination?.total || res.data?.total || data.length || 0;
+      setUsers(data);
+      setTotal(totalVal);
+      setTotalPages(Math.ceil(totalVal / limit) || 1);
     } catch (error) {
       console.error('Failed to fetch:', error);
-      console.log('Error response:', error.response?.data);
-      alert(error.response?.data?.message || 'Failed to fetch users. Make sure you are logged in as admin.');
       setUsers([]);
     }
     setLoading(false);
@@ -73,6 +77,25 @@ export default function Users() {
       fetchUsers();
     } catch (error) {
       alert(t('DeleteError'));
+    }
+  };
+
+  const handleToggleStatus = async (user) => {
+    if (user.username === 'admin') {
+      alert(t('SystemAdmin') + ' status cannot be changed');
+      return;
+    }
+    
+    const newStatus = user.is_active ? 0 : 1;
+    const action = newStatus ? 'activate' : 'deactivate';
+    
+    if (!confirm(`Are you sure you want to ${action} this user?`)) return;
+    
+    try {
+      await authService.updateUser(user.id, { is_active: newStatus });
+      fetchUsers();
+    } catch (error) {
+      alert(error.response?.data?.message || 'Failed to update status');
     }
   };
 
@@ -150,6 +173,15 @@ export default function Users() {
                   <td>{u.phone}</td>
                   <td>{u.is_active ? <span className="badge badge-success">{t('Active')}</span> : <span className="badge badge-danger">{t('Inactive')}</span>}</td>
                   <td>
+                    <button 
+                      className={`btn btn-sm ${u.is_active ? 'btn-warning' : 'btn-success'}`}
+                      onClick={() => handleToggleStatus(u)}
+                      disabled={u.username === 'admin'}
+                      title={u.username === 'admin' ? 'Cannot change admin status' : u.is_active ? 'Deactivate' : 'Activate'}
+                      style={{ marginRight: '4px' }}
+                    >
+                      {u.is_active ? 'Deactivate' : 'Activate'}
+                    </button>
                     <button className="btn btn-sm" onClick={() => openModal(u)}><Pencil size={14} /></button>
                     <button 
                       className="btn btn-sm btn-danger" 
@@ -163,6 +195,32 @@ export default function Users() {
             )}
           </tbody>
         </table>
+      </div>
+      
+      <div className="pagination" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '15px', flexWrap: 'wrap', gap: '10px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+          <span style={{ fontSize: '14px' }}>Show</span>
+          <select 
+            value={limit} 
+            onChange={(e) => { setLimit(Number(e.target.value)); setPage(1); }}
+            style={{ padding: '6px 10px', borderRadius: '4px', border: '1px solid var(--border)' }}
+          >
+            <option value={10}>10</option>
+            <option value={25}>25</option>
+            <option value={50}>50</option>
+            <option value={100}>100</option>
+          </select>
+          <span style={{ fontSize: '14px' }}>of {total} entries</span>
+        </div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+          <button className="btn btn-secondary btn-sm" onClick={() => setPage(p => Math.max(1, p - 1))} disabled={page === 1}>
+            <ChevronLeft size={16} />
+          </button>
+          <span style={{ fontSize: '14px' }}>{t('Page')} {page} / {totalPages}</span>
+          <button className="btn btn-secondary btn-sm" onClick={() => setPage(p => Math.min(totalPages, p + 1))} disabled={page === totalPages}>
+            <ChevronRight size={16} />
+          </button>
+        </div>
       </div>
 
       {showModal && (
