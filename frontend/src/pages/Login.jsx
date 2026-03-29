@@ -63,8 +63,16 @@ export default function Login() {
   const [forgotEmail, setForgotEmail] = useState('');
   const [forgotMessage, setForgotMessage] = useState('');
   const [forgotLoading, setForgotLoading] = useState(false);
-  const { login } = useAuth();
+  const { login, user } = useAuth();
   const navigate = useNavigate();
+
+  useEffect(() => {
+    const token = localStorage.getItem('token');
+    const tokenExpiry = localStorage.getItem('token_expiry');
+    if (token && tokenExpiry && new Date(tokenExpiry) > new Date()) {
+      navigate('/dashboard');
+    }
+  }, [navigate]);
 
   useEffect(() => {
     const handleStorageChange = () => {

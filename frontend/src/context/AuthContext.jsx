@@ -9,10 +9,13 @@ export function AuthProvider({ children }) {
 
   useEffect(() => {
     const token = localStorage.getItem('token');
-    if (token) {
+    const tokenExpiry = localStorage.getItem('token_expiry');
+    if (token && tokenExpiry && new Date(tokenExpiry) > new Date()) {
       api.defaults.headers.common['Authorization'] = `Bearer ${token}`;
       fetchUser();
     } else {
+      localStorage.removeItem('token');
+      localStorage.removeItem('token_expiry');
       setLoading(false);
     }
   }, []);
@@ -23,6 +26,7 @@ export function AuthProvider({ children }) {
       setUser(response.data.user);
     } catch (error) {
       localStorage.removeItem('token');
+      localStorage.removeItem('token_expiry');
       delete api.defaults.headers.common['Authorization'];
     } finally {
       setLoading(false);
@@ -32,7 +36,9 @@ export function AuthProvider({ children }) {
   const login = async (username, password) => {
     const response = await api.post('/auth/login', { username, password });
     const { token, user: userData } = response.data;
+    const expiryTime = new Date(Date.now() + 8 * 60 * 60 * 1000);
     localStorage.setItem('token', token);
+    localStorage.setItem('token_expiry', expiryTime.toISOString());
     api.defaults.headers.common['Authorization'] = `Bearer ${token}`;
     setUser(userData);
     return userData;
@@ -40,6 +46,7 @@ export function AuthProvider({ children }) {
 
   const logout = () => {
     localStorage.removeItem('token');
+    localStorage.removeItem('token_expiry');
     delete api.defaults.headers.common['Authorization'];
     setUser(null);
   };
