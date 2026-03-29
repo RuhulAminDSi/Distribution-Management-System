@@ -20,7 +20,8 @@ import {
   Clock,
   Menu,
   X,
-  ChevronRight
+  ChevronRight,
+  Circle
 } from 'lucide-react';
 import './Landing.css';
 
@@ -265,23 +266,6 @@ export default function Landing() {
         <div className="shape shape-5"></div>
       </div>
 
-      <div className="top-bar">
-        <div className="container">
-          <div className="top-bar-content">
-            <div className="top-bar-left">
-              <span><Phone size={14} /> {t.topBarPhone}</span>
-              <span><Mail size={14} /> {t.topBarEmail}</span>
-            </div>
-            <div className="top-bar-right">
-              <span><Clock size={14} /> {t.topBarHours}</span>
-              <button className="lang-toggle" onClick={toggleLanguage}>
-                {language === 'en' ? '🇧🇩 বাংলা' : '🇺🇸 English'}
-              </button>
-            </div>
-          </div>
-        </div>
-      </div>
-
       <header className={`navbar ${scrolled ? 'scrolled' : ''}`}>
         <div className="container">
           <div className="navbar-content">
@@ -289,7 +273,10 @@ export default function Landing() {
               <span className="brand-icon">
                 <Package size={24} />
               </span>
-              <span className="brand-text">DMS</span>
+              <span className="brand-text">
+                <span className="live-indicator"><Circle size={10} fill="#fff" /></span>
+                DMS
+              </span>
             </Link>
             
             <nav className={`navbar-nav ${mobileMenuOpen ? 'mobile-open' : ''}`}>
@@ -301,6 +288,9 @@ export default function Landing() {
             </nav>
 
             <div className="navbar-actions">
+              <button className="lang-toggle-nav" onClick={toggleLanguage}>
+                {language === 'en' ? 'বাংলা' : 'English'}
+              </button>
               <Link to="/demo" className="btn btn-outline">{t.demo}</Link>
               <Link to="/login" className="btn btn-primary">{t.getStarted}</Link>
             </div>
@@ -379,9 +369,14 @@ export default function Landing() {
       </section>
 
       <section id="features" className="features">
+        <div className="features-bg-shapes">
+          <div className="feature-shape feature-shape-1"></div>
+          <div className="feature-shape feature-shape-2"></div>
+          <div className="feature-shape feature-shape-3"></div>
+        </div>
         <div className="container">
           <div className="section-header animate-on-scroll" id="features">
-            <span className="section-tag">{t.featuresTag}</span>
+            <span className="section-tag"><Circle size={10} fill="#fff" className="section-tag-dot" /> {t.featuresTag}</span>
             <h2 className="section-title">{t.featuresTitle}</h2>
             <p className="section-subtitle">{t.featuresSubtitle}</p>
           </div>
@@ -610,25 +605,42 @@ export default function Landing() {
           
           <div className="contact-grid">
             <div className="contact-card">
-              <div className="contact-icon"><MapPin size={40} /></div>
+              <div className="contact-icon live-icon"><MapPin size={40} /></div>
               <h3>{t.address}</h3>
               <p>{t.addressLine}<br />{t.city}</p>
+              <div className="contact-map">
+                <iframe 
+                  src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3652.677586195429!2d90.4077273154312!3d23.75042138459745!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x375421b4d7947153%3A0x7603dd42c82730!2s Dhaka%2C%20Bangladesh!5e0!3m2!1sen!2s!4v1645456789012!5m2!1sen!2s" 
+                  width="100%" 
+                  height="120" 
+                  style={{ border: 0, borderRadius: '8px' }} 
+                  allowFullScreen="" 
+                  loading="lazy"
+                  title="Map"
+                ></iframe>
+              </div>
             </div>
             
             <div className="contact-card">
-              <div className="contact-icon"><Phone size={40} /></div>
+              <div className="contact-icon live-icon"><Phone size={40} /></div>
               <h3>{t.phone}</h3>
-              <p>{t.topBarPhone}<br />{t.phone2}</p>
+              <p>
+                <a href={`tel:${t.topBarPhone.replace(/\s/g, '')}`} className="contact-link">{t.topBarPhone}</a><br />
+                <a href={`tel:${t.phone2.replace(/\s/g, '')}`} className="contact-link">{t.phone2}</a>
+              </p>
             </div>
             
             <div className="contact-card">
-              <div className="contact-icon"><Mail size={40} /></div>
+              <div className="contact-icon live-icon"><Mail size={40} /></div>
               <h3>{t.email}</h3>
-              <p>{t.topBarEmail}<br />{t.email2}</p>
+              <p>
+                <a href={`mailto:${t.topBarEmail}`} className="contact-link">{t.topBarEmail}</a><br />
+                <a href={`mailto:${t.email2}`} className="contact-link">{t.email2}</a>
+              </p>
             </div>
             
             <div className="contact-card">
-              <div className="contact-icon"><Clock size={40} /></div>
+              <div className="contact-icon live-icon"><Clock size={40} /></div>
               <h3>{t.hours}</h3>
               <p>{t.topBarHours}<br />{t.hoursLine}</p>
             </div>

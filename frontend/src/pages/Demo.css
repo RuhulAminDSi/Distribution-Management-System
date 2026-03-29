@@ -27,6 +27,25 @@
   gap: 12px;
 }
 
+.demo-back-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: white;
+  text-decoration: none;
+  background: rgba(255,255,255,0.1);
+  padding: 8px 14px;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 500;
+  transition: all 0.3s ease;
+}
+
+.demo-back-btn:hover {
+  background: rgba(255,255,255,0.2);
+  transform: translateX(-3px);
+}
+
 .demo-logo {
   font-size: 20px;
   font-weight: 700;

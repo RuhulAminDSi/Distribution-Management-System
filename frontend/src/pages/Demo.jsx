@@ -752,6 +752,9 @@ export default function Demo() {
     <div className="demo-page">
       <div className="demo-topbar">
         <div className="demo-topbar-left">
+          <Link to="/" className="demo-back-btn">
+            <ChevronLeft size={18} /> {language === 'en' ? 'Back' : 'ফিরুন'}
+          </Link>
           <span className="demo-logo">📦 DMS</span>
           <span className="demo-badge">{t.demoTitle}</span>
         </div>

@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
-import { Outlet, NavLink, useLocation, useNavigate } from 'react-router-dom';
+import { Outlet, NavLink, useLocation, useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { useLanguage } from '../../context/LanguageContext';
 import { authService } from '../../services/api';
@@ -18,7 +18,8 @@ import {
   Menu,
   Key,
   ChevronDown,
-  Globe
+  Globe,
+  Home
 } from 'lucide-react';
 
 const navItems = [
@@ -146,10 +147,26 @@ export default function MainLayout() {
         </nav>
 
         <div style={{ padding: '20px', borderTop: '1px solid rgba(255,255,255,0.1)' }}>
-          <div style={{ color: 'rgba(255,255,255,0.7)', fontSize: '12px', marginBottom: '8px' }}>
-            {t('LoggedInAs')}
-          </div>
-          <div style={{ fontWeight: '600', marginBottom: '12px' }}>{user?.full_name}</div>
+          <Link 
+            to="/"
+            style={{ 
+              width: '100%', 
+              color: 'white', 
+              backgroundColor: '#0f3460',
+              border: 'none',
+              display: 'flex', 
+              alignItems: 'center', 
+              justifyContent: 'center', 
+              gap: '8px',
+              padding: '10px',
+              borderRadius: '8px',
+              textDecoration: 'none',
+              marginBottom: '12px',
+              fontWeight: '500'
+            }}
+          >
+            <Home size={16} /> {language === 'en' ? 'Home' : 'হোম'}
+          </Link>
           
           <button 
             onClick={() => setLanguage(language === 'en' ? 'bn' : 'en')}
