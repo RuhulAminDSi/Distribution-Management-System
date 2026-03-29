@@ -196,7 +196,7 @@ export default function MainLayout() {
                     <Key size={16} />
                     {t('ChangePassword')}
                   </button>
-                  <button className="dropdown-item" onClick={() => { logout(); navigate('/login'); }}
+                  <button className="dropdown-item" onClick={() => { logout(); navigate('/login'); }}>
                     <LogOut size={16} />
                     {t('Logout')}
                   </button>
