@@ -79,6 +79,37 @@ export default function MainLayout() {
     setSidebarOpen(false);
   };
 
+  const handlePasswordChange = async (e) => {
+    e.preventDefault();
+    setPasswordError('');
+    setPasswordSuccess('');
+    
+    if (passwordData.newPassword !== passwordData.confirmPassword) {
+      setPasswordError(t('PasswordMismatch'));
+      return;
+    }
+    
+    if (passwordData.newPassword.length < 6) {
+      setPasswordError(t('PasswordTooShort'));
+      return;
+    }
+
+    try {
+      await authService.changePassword({
+        currentPassword: passwordData.currentPassword,
+        newPassword: passwordData.newPassword
+      });
+      setPasswordSuccess(t('PasswordChanged'));
+      setPasswordData({ currentPassword: '', newPassword: '', confirmPassword: '' });
+      setTimeout(() => {
+        setPasswordModalOpen(false);
+        setPasswordSuccess('');
+      }, 1500);
+    } catch (error) {
+      setPasswordError(error.response?.data?.message || t('SaveError'));
+    }
+  };
+
   const getPageTitle = () => {
     const item = navItems.find(item => item.path === location.pathname);
     return item ? t(item.labelKey) : t('Dashboard');
@@ -165,7 +196,7 @@ export default function MainLayout() {
                     <Key size={16} />
                     {t('ChangePassword')}
                   </button>
-                  <button className="dropdown-item" onClick={logout}>
+                  <button className="dropdown-item" onClick={() => { logout(); navigate('/login'); }}
                     <LogOut size={16} />
                     {t('Logout')}
                   </button>
