@@ -44,6 +44,15 @@ body {
   height: 100vh;
   overflow-y: auto;
   z-index: 100;
+  transition: transform 0.3s ease;
+}
+
+.sidebar.collapsed {
+  transform: translateX(-100%);
+}
+
+.sidebar.show {
+  transform: translateX(0);
 }
 
 .sidebar-header {
@@ -107,6 +116,11 @@ body {
   flex: 1;
   margin-left: var(--sidebar-width);
   min-height: 100vh;
+  transition: margin-left 0.3s ease;
+}
+
+.main-content.sidebar-collapsed {
+  margin-left: 0;
 }
 
 /* Header */
@@ -605,6 +619,25 @@ body {
     transform: translateX(-100%);
   }
   
+  .sidebar.show {
+    transform: translateX(0);
+  }
+  
+  .sidebar-overlay {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.5);
+    z-index: 99;
+  }
+
+  .sidebar-overlay {
+    display: block;
+  }
+  
   .main-content {
     margin-left: 0;
   }
@@ -615,6 +648,302 @@ body {
   
   .grid-2, .grid-3 {
     grid-template-columns: 1fr;
+  }
+
+  /* Header */
+  .header {
+    padding: 10px 15px;
+  }
+
+  .header-left {
+    gap: 10px;
+  }
+
+  .header-title {
+    font-size: 18px;
+  }
+
+  .header-right {
+    gap: 10px;
+  }
+
+  .user-menu {
+    gap: 8px;
+  }
+
+  .user-avatar {
+    width: 32px;
+    height: 32px;
+    font-size: 14px;
+  }
+
+  /* Page Content */
+  .page-content {
+    padding: 15px;
+  }
+
+  .page-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 15px;
+  }
+
+  .page-header h1 {
+    font-size: 20px;
+  }
+
+  /* Tables */
+  .table-container {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  table {
+    font-size: 13px;
+    min-width: 600px;
+  }
+
+  th, td {
+    padding: 10px 8px;
+  }
+
+  /* Forms */
+  .form-group {
+    margin-bottom: 15px;
+  }
+
+  .form-input, .form-select {
+    font-size: 14px;
+    padding: 10px 12px;
+  }
+
+  .form-label {
+    font-size: 13px;
+    margin-bottom: 6px;
+  }
+
+  /* Buttons */
+  .btn {
+    padding: 10px 16px;
+    font-size: 13px;
+    min-height: 40px;
+  }
+
+  .btn-sm {
+    padding: 6px 10px;
+    font-size: 12px;
+  }
+
+  /* Cards */
+  .card {
+    padding: 15px;
+  }
+
+  .card-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 10px;
+    padding-bottom: 15px;
+  }
+
+  /* Stats */
+  .stat-card {
+    padding: 15px;
+  }
+
+  .stat-icon {
+    width: 40px;
+    height: 40px;
+  }
+
+  .stat-icon svg {
+    width: 20px;
+    height: 20px;
+  }
+
+  .stat-value {
+    font-size: 20px;
+  }
+
+  .stat-label {
+    font-size: 12px;
+  }
+
+  /* Modals */
+  .modal {
+    width: 95%;
+    max-height: 90vh;
+    margin: 10px;
+  }
+
+  .modal-header {
+    padding: 15px;
+  }
+
+  .modal-header h3 {
+    font-size: 18px;
+  }
+
+  .modal-body {
+    padding: 15px;
+  }
+
+  .modal-footer {
+    padding: 15px;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .modal-footer .btn {
+    width: 100%;
+  }
+
+  /* Search */
+  .search-bar {
+    padding: 8px 12px;
+  }
+
+  .search-bar input {
+    font-size: 13px;
+  }
+
+  /* Filters */
+  .filters {
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .filters > div {
+    width: 100%;
+  }
+
+  /* Nav Tabs */
+  .nav-tabs {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    padding-bottom: 5px;
+  }
+
+  .nav-tab {
+    padding: 8px 12px;
+    font-size: 13px;
+    white-space: nowrap;
+  }
+
+  /* Login Page */
+  .login-page {
+    padding: 20px;
+  }
+
+  .login-card {
+    padding: 25px 20px;
+    width: 100%;
+  }
+
+  .login-logo h1 {
+    font-size: 28px;
+  }
+
+  /* Dropdown Menu */
+  .dropdown-menu {
+    right: 0;
+    min-width: 180px;
+  }
+
+  /* Empty State */
+  .empty-state {
+    padding: 40px 20px;
+  }
+
+  .empty-state svg {
+    width: 48px;
+    height: 48px;
+  }
+
+  /* Settings */
+  .settings-section {
+    gap: 12px;
+  }
+
+  .settings-item {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 10px;
+  }
+
+  /* Badges */
+  .badge {
+    font-size: 11px;
+    padding: 4px 8px;
+  }
+
+  /* Action buttons in tables */
+  .action-buttons {
+    gap: 5px;
+  }
+
+  .action-buttons button {
+    padding: 5px;
+  }
+
+  /* Horizontal scroll for small screens */
+  .table-scroll {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+}
+
+/* Extra small devices */
+@media (max-width: 480px) {
+  .page-header h1 {
+    font-size: 18px;
+  }
+
+  .stat-value {
+    font-size: 18px;
+  }
+
+  .modal {
+    width: 98%;
+    margin: 5px;
+  }
+
+  .btn {
+    padding: 8px 12px;
+    font-size: 12px;
+  }
+
+  .form-input, .form-select {
+    padding: 8px 10px;
+    font-size: 13px;
+  }
+
+  .login-card {
+    padding: 20px 15px;
+  }
+
+  .login-logo h1 {
+    font-size: 24px;
+  }
+
+  .grid-2, .grid-3 {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Tablet */
+@media (min-width: 769px) and (max-width: 1024px) {
+  .stats-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .grid-2 {
+    grid-template-columns: 1fr;
+  }
+
+  .grid-3 {
+    grid-template-columns: repeat(2, 1fr);
   }
 }
 

@@ -22,16 +22,16 @@ import {
 } from 'lucide-react';
 
 const navItems = [
-  { path: '/', icon: LayoutDashboard, labelKey: 'Dashboard' },
-  { path: '/companies', icon: Building2, labelKey: 'Companies' },
-  { path: '/products', icon: Package, labelKey: 'Products' },
-  { path: '/retailers', icon: Users, labelKey: 'Retailers' },
-  { path: '/sales', icon: ShoppingCart, labelKey: 'Sales' },
-  { path: '/payments', icon: CreditCard, labelKey: 'Payments' },
-  { path: '/stock', icon: Warehouse, labelKey: 'Stock' },
-  { path: '/reports', icon: FileText, labelKey: 'Reports' },
-  { path: '/users', icon: UserCircle, labelKey: 'Users' },
-  { path: '/settings', icon: Settings, labelKey: 'Settings' },
+  { path: '/dashboard', icon: LayoutDashboard, labelKey: 'Dashboard' },
+  { path: '/dashboard/companies', icon: Building2, labelKey: 'Companies' },
+  { path: '/dashboard/products', icon: Package, labelKey: 'Products' },
+  { path: '/dashboard/retailers', icon: Users, labelKey: 'Retailers' },
+  { path: '/dashboard/sales', icon: ShoppingCart, labelKey: 'Sales' },
+  { path: '/dashboard/payments', icon: CreditCard, labelKey: 'Payments' },
+  { path: '/dashboard/stock', icon: Warehouse, labelKey: 'Stock' },
+  { path: '/dashboard/reports', icon: FileText, labelKey: 'Reports' },
+  { path: '/dashboard/users', icon: UserCircle, labelKey: 'Users' },
+  { path: '/dashboard/settings', icon: Settings, labelKey: 'Settings' },
 ];
 
 export default function MainLayout() {
@@ -46,6 +46,7 @@ export default function MainLayout() {
   const [passwordError, setPasswordError] = useState('');
   const [passwordSuccess, setPasswordSuccess] = useState('');
   const dropdownRef = useRef(null);
+  const [isMobile, setIsMobile] = useState(false);
 
   useEffect(() => {
     function handleClickOutside(event) {
@@ -57,40 +58,25 @@ export default function MainLayout() {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  const handleLogout = () => {
-    logout();
-    navigate('/login');
+  useEffect(() => {
+    function handleResize() {
+      const mobile = window.innerWidth <= 768;
+      setIsMobile(mobile);
+      if (!mobile) {
+        setSidebarOpen(true);
+      }
+    }
+    handleResize();
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
+  const handleSidebarToggle = () => {
+    setSidebarOpen(!sidebarOpen);
   };
 
-  const handlePasswordChange = async (e) => {
-    e.preventDefault();
-    setPasswordError('');
-    setPasswordSuccess('');
-    
-    if (passwordData.newPassword !== passwordData.confirmPassword) {
-      setPasswordError(t('PasswordMismatch'));
-      return;
-    }
-    
-    if (passwordData.newPassword.length < 6) {
-      setPasswordError(t('PasswordTooShort'));
-      return;
-    }
-
-    try {
-      await authService.changePassword({
-        currentPassword: passwordData.currentPassword,
-        newPassword: passwordData.newPassword
-      });
-      setPasswordSuccess(t('PasswordChanged'));
-      setPasswordData({ currentPassword: '', newPassword: '', confirmPassword: '' });
-      setTimeout(() => {
-        setPasswordModalOpen(false);
-        setPasswordSuccess('');
-      }, 1500);
-    } catch (error) {
-      setPasswordError(error.response?.data?.message || t('SaveError'));
-    }
+  const handleOverlayClick = () => {
+    setSidebarOpen(false);
   };
 
   const getPageTitle = () => {
@@ -100,7 +86,10 @@ export default function MainLayout() {
 
   return (
     <div className="app">
-      <aside className={`sidebar ${sidebarOpen ? '' : 'collapsed'}`}>
+      {sidebarOpen && isMobile && (
+        <div className="sidebar-overlay" onClick={handleOverlayClick}></div>
+      )}
+      <aside className={`sidebar ${isMobile ? (sidebarOpen ? 'show' : '') : (sidebarOpen ? '' : 'collapsed')}`}>
         <div className="sidebar-header">
           <div className="sidebar-logo">
             <Warehouse size={24} />
@@ -111,12 +100,12 @@ export default function MainLayout() {
         <nav className="sidebar-nav">
           <div className="nav-section">
             <div className="nav-section-title">{t('Menu')}</div>
-            {navItems.map(item => (
+            {navItems.map((item, index) => (
               <NavLink 
                 key={item.path} 
                 to={item.path} 
                 className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}
-                end={item.path === '/'}
+                end={index === 0}
               >
                 <item.icon size={20} />
                 <span>{t(item.labelKey)}</span>
@@ -150,10 +139,10 @@ export default function MainLayout() {
         </div>
       </aside>
 
-      <main className="main-content">
+      <main className={`main-content ${isMobile || !sidebarOpen ? 'sidebar-collapsed' : ''}`}>
         <header className="header">
           <div className="header-left">
-            <button className="btn btn-secondary" onClick={() => setSidebarOpen(!sidebarOpen)}>
+            <button className="btn btn-secondary" onClick={handleSidebarToggle}>
               <Menu size={20} />
             </button>
             <h1 className="header-title">{getPageTitle()}</h1>
@@ -176,7 +165,7 @@ export default function MainLayout() {
                     <Key size={16} />
                     {t('ChangePassword')}
                   </button>
-                  <button className="dropdown-item" onClick={handleLogout}>
+                  <button className="dropdown-item" onClick={logout}>
                     <LogOut size={16} />
                     {t('Logout')}
                   </button>

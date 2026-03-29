@@ -474,10 +474,37 @@ const translations = {
 const LanguageContext = createContext();
 
 export function LanguageProvider({ children }) {
-  const [language, setLanguage] = useState(() => localStorage.getItem('language') || 'en');
+  const getInitialLanguage = () => {
+    try {
+      const saved = localStorage.getItem('dms_language');
+      if (saved === 'bn' || saved === 'en') {
+        return saved;
+      }
+    } catch (e) {
+      console.error('Error reading language:', e);
+    }
+    return 'bn';
+  };
+  
+  const [language, setLanguage] = useState(getInitialLanguage);
 
   useEffect(() => {
-    localStorage.setItem('language', language);
+    localStorage.setItem('dms_language', language);
+  }, [language]);
+
+  useEffect(() => {
+    const handleStorage = () => {
+      const saved = localStorage.getItem('dms_language');
+      if (saved && saved !== language) {
+        setLanguage(saved);
+      }
+    };
+    window.addEventListener('storage', handleStorage);
+    const interval = setInterval(handleStorage, 500);
+    return () => {
+      window.removeEventListener('storage', handleStorage);
+      clearInterval(interval);
+    };
   }, [language]);
 
   const t = (key) => translations[language][key] || key;

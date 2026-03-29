@@ -2,6 +2,8 @@ import { Routes, Route, Navigate } from 'react-router-dom';
 import { useAuth } from './context/AuthContext';
 import { LanguageProvider } from './context/LanguageContext';
 import MainLayout from './components/layout/MainLayout';
+import Landing from './pages/Landing';
+import Demo from './pages/Demo';
 import Login from './pages/Login';
 import ResetPassword from './pages/ResetPassword';
 import Dashboard from './pages/Dashboard';
@@ -29,9 +31,11 @@ export default function App() {
   return (
     <LanguageProvider>
       <Routes>
+        <Route path="/" element={<Landing />} />
+        <Route path="/demo" element={<Demo />} />
         <Route path="/login" element={<Login />} />
         <Route path="/reset-password" element={<ResetPassword />} />
-        <Route path="/" element={
+        <Route path="/dashboard" element={
           <PrivateRoute>
             <MainLayout />
           </PrivateRoute>
