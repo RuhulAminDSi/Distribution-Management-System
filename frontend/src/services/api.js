@@ -14,11 +14,9 @@ api.interceptors.response.use(
       const isAuthRequest = error.config?.url?.includes('/auth/login');
       if (!isAuthRequest) {
         localStorage.removeItem('token');
+        localStorage.removeItem('token_expiry');
         delete api.defaults.headers.common['Authorization'];
-        const currentPath = window.location.pathname;
-        if (currentPath !== '/login') {
-          window.location.href = '/login';
-        }
+        window.dispatchEvent(new Event('unauthorized'));
       }
     }
     return Promise.reject(error);

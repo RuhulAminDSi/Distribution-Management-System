@@ -3,6 +3,7 @@ import { Outlet, NavLink, useLocation, useNavigate, Link } from 'react-router-do
 import { useAuth } from '../../context/AuthContext';
 import { useLanguage } from '../../context/LanguageContext';
 import { authService } from '../../services/api';
+import TopNav from './TopNav';
 import { 
   LayoutDashboard, 
   Package, 
@@ -14,50 +15,33 @@ import {
   Settings,
   Building2,
   UserCircle,
-  LogOut,
-  Menu,
-  Key,
-  ChevronDown,
-  Globe,
-  Home
+  Key
 } from 'lucide-react';
 
 const navItems = [
   { path: '/dashboard', icon: LayoutDashboard, labelKey: 'Dashboard' },
-  { path: '/dashboard/companies', icon: Building2, labelKey: 'Companies' },
-  { path: '/dashboard/products', icon: Package, labelKey: 'Products' },
-  { path: '/dashboard/retailers', icon: Users, labelKey: 'Retailers' },
-  { path: '/dashboard/sales', icon: ShoppingCart, labelKey: 'Sales' },
-  { path: '/dashboard/payments', icon: CreditCard, labelKey: 'Payments' },
-  { path: '/dashboard/stock', icon: Warehouse, labelKey: 'Stock' },
-  { path: '/dashboard/reports', icon: FileText, labelKey: 'Reports' },
-  { path: '/dashboard/users', icon: UserCircle, labelKey: 'Users' },
-  { path: '/dashboard/settings', icon: Settings, labelKey: 'Settings' },
+  { path: '/companies', icon: Building2, labelKey: 'Companies' },
+  { path: '/products', icon: Package, labelKey: 'Products' },
+  { path: '/retailers', icon: Users, labelKey: 'Retailers' },
+  { path: '/sales', icon: ShoppingCart, labelKey: 'Sales' },
+  { path: '/payments', icon: CreditCard, labelKey: 'Payments' },
+  { path: '/stock', icon: Warehouse, labelKey: 'Stock' },
+  { path: '/reports', icon: FileText, labelKey: 'Reports' },
+  { path: '/users', icon: UserCircle, labelKey: 'Users' },
+  { path: '/settings', icon: Settings, labelKey: 'Settings' },
 ];
 
-export default function MainLayout() {
-  const { user, logout } = useAuth();
-  const { t, language, setLanguage } = useLanguage();
+export default function MainLayout({ children }) {
+  const { user } = useAuth();
+  const { t } = useLanguage();
   const location = useLocation();
   const navigate = useNavigate();
   const [sidebarOpen, setSidebarOpen] = useState(true);
-  const [dropdownOpen, setDropdownOpen] = useState(false);
   const [passwordModalOpen, setPasswordModalOpen] = useState(false);
   const [passwordData, setPasswordData] = useState({ currentPassword: '', newPassword: '', confirmPassword: '' });
   const [passwordError, setPasswordError] = useState('');
   const [passwordSuccess, setPasswordSuccess] = useState('');
-  const dropdownRef = useRef(null);
   const [isMobile, setIsMobile] = useState(false);
-
-  useEffect(() => {
-    function handleClickOutside(event) {
-      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
-        setDropdownOpen(false);
-      }
-    }
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, []);
 
   useEffect(() => {
     function handleResize() {
@@ -72,12 +56,25 @@ export default function MainLayout() {
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
+  useEffect(() => {
+    const handleOpenPasswordModal = () => {
+      setPasswordModalOpen(true);
+    };
+    window.addEventListener('openPasswordModal', handleOpenPasswordModal);
+    return () => window.removeEventListener('openPasswordModal', handleOpenPasswordModal);
+  }, []);
+
   const handleSidebarToggle = () => {
     setSidebarOpen(!sidebarOpen);
   };
 
   const handleOverlayClick = () => {
     setSidebarOpen(false);
+  };
+
+  const getPageTitle = () => {
+    const item = navItems.find(item => item.path === location.pathname);
+    return item ? t(item.labelKey) : t('Dashboard');
   };
 
   const handlePasswordChange = async (e) => {
@@ -111,27 +108,15 @@ export default function MainLayout() {
     }
   };
 
-  const getPageTitle = () => {
-    const item = navItems.find(item => item.path === location.pathname);
-    return item ? t(item.labelKey) : t('Dashboard');
-  };
-
   return (
     <div className="app">
       {sidebarOpen && isMobile && (
         <div className="sidebar-overlay" onClick={handleOverlayClick}></div>
       )}
       <aside className={`sidebar ${isMobile ? (sidebarOpen ? 'show' : '') : (sidebarOpen ? '' : 'collapsed')}`}>
-        <div className="sidebar-header">
-          <div className="sidebar-logo">
-            <Warehouse size={24} />
-            <span>DMS</span>
-          </div>
-        </div>
-        
         <nav className="sidebar-nav">
           <div className="nav-section">
-            <div className="nav-section-title">{t('Menu')}</div>
+            {/*<div className="nav-section-title">{t('Menu')}</div>*/}
             {navItems.map((item, index) => (
               <NavLink 
                 key={item.path} 
@@ -145,86 +130,14 @@ export default function MainLayout() {
             ))}
           </div>
         </nav>
-
-        <div style={{ padding: '20px', borderTop: '1px solid rgba(255,255,255,0.1)' }}>
-          <Link 
-            to="/"
-            style={{ 
-              width: '100%', 
-              color: 'white', 
-              backgroundColor: '#0f3460',
-              border: 'none',
-              display: 'flex', 
-              alignItems: 'center', 
-              justifyContent: 'center', 
-              gap: '8px',
-              padding: '10px',
-              borderRadius: '8px',
-              textDecoration: 'none',
-              marginBottom: '12px',
-              fontWeight: '500'
-            }}
-          >
-            <Home size={16} /> {language === 'en' ? 'Home' : 'হোম'}
-          </Link>
-          
-          <button 
-            onClick={() => setLanguage(language === 'en' ? 'bn' : 'en')}
-            className="btn" 
-            style={{ 
-              width: '100%', 
-              color: 'white', 
-              backgroundColor: '#1976D2',
-              border: 'none',
-              display: 'flex', 
-              alignItems: 'center', 
-              justifyContent: 'center', 
-              gap: '8px' 
-            }}
-          >
-            <Globe size={16} /> {language === 'en' ? 'বাংলা' : 'English'}
-          </button>
-        </div>
       </aside>
 
+      <TopNav onSidebarToggle={handleSidebarToggle} sidebarOpen={sidebarOpen} />
+      
       <main className={`main-content ${isMobile || !sidebarOpen ? 'sidebar-collapsed' : ''}`}>
-        <header className="header">
-          <div className="header-left">
-            <button className="btn btn-secondary" onClick={handleSidebarToggle}>
-              <Menu size={20} />
-            </button>
-            <h1 className="header-title">{getPageTitle()}</h1>
-          </div>
-          
-          <div className="header-right">
-            <div className="user-menu" ref={dropdownRef} style={{ position: 'relative' }}>
-              <div className="user-avatar" onClick={() => setDropdownOpen(!dropdownOpen)} style={{ cursor: 'pointer' }}>
-                {user?.full_name?.charAt(0) || 'U'}
-              </div>
-              <div onClick={() => setDropdownOpen(!dropdownOpen)} style={{ cursor: 'pointer' }}>
-                <div style={{ fontWeight: '500', fontSize: '14px' }}>{user?.full_name}</div>
-                <div style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>{user?.role}</div>
-              </div>
-              <ChevronDown size={16} style={{ color: 'var(--text-secondary)' }} />
-              
-              {dropdownOpen && (
-                <div className="dropdown-menu">
-                  <button className="dropdown-item" onClick={() => { setDropdownOpen(false); setPasswordModalOpen(true); }}>
-                    <Key size={16} />
-                    {t('ChangePassword')}
-                  </button>
-                  <button className="dropdown-item" onClick={() => { logout(); navigate('/login'); }}>
-                    <LogOut size={16} />
-                    {t('Logout')}
-                  </button>
-                </div>
-              )}
-            </div>
-          </div>
-        </header>
 
         <div className="page-content">
-          <Outlet />
+          {children || <Outlet />}
         </div>
       </main>
 
