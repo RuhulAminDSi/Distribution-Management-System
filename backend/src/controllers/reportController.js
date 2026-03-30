@@ -1,6 +1,22 @@
 import { reportService } from '../services/reportService.js';
 
 export const reportController = {
+  async getSummary(req, res, next) {
+    try {
+      const { start_date, end_date } = req.query;
+      const today = new Date();
+      const firstDay = new Date(today.getFullYear(), today.getMonth(), 1);
+      
+      const start = start_date || firstDay.toISOString().split('T')[0];
+      const end = end_date || today.toISOString().split('T')[0];
+
+      const summary = await reportService.getReportSummary(start, end);
+      res.json(summary);
+    } catch (error) {
+      next(error);
+    }
+  },
+
   async dailySales(req, res, next) {
     try {
       const { start_date, end_date, page = 1, limit = 20 } = req.query;

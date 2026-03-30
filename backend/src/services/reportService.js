@@ -1,6 +1,127 @@
 import { query } from '../config/database.js';
 
 export const reportService = {
+  async getReportSummary(startDate, endDate) {
+    const dailySalesSummary = await query(`
+      SELECT 
+        COUNT(*) as total_invoices,
+        COALESCE(SUM(total_amount), 0) as total_amount,
+        COALESCE(SUM(paid_amount), 0) as total_collected,
+        COALESCE(SUM(due_amount), 0) as total_due
+      FROM invoices 
+      WHERE invoice_date BETWEEN ? AND ?
+    `, [startDate, endDate]);
+
+    const productSalesSummary = await query(`
+      SELECT 
+        COUNT(DISTINCT p.id) as total_products,
+        COALESCE(SUM(ii.quantity), 0) as total_quantity,
+        COALESCE(SUM(ii.amount), 0) as total_amount
+      FROM invoice_items ii
+      JOIN invoices i ON ii.invoice_id = i.id
+      JOIN products p ON ii.product_id = p.id
+      WHERE i.invoice_date BETWEEN ? AND ?
+    `, [startDate, endDate]);
+
+    const companySalesSummary = await query(`
+      SELECT 
+        COUNT(DISTINCT comp.id) as total_companies,
+        COALESCE(SUM(ii.amount), 0) as total_sales
+      FROM companies comp
+      LEFT JOIN products p ON p.company_id = comp.id
+      LEFT JOIN invoice_items ii ON ii.product_id = p.id
+      LEFT JOIN invoices i ON ii.invoice_id = i.id AND i.invoice_date BETWEEN ? AND ?
+      WHERE comp.is_active = 1
+    `, [startDate, endDate]);
+
+    const profitSummary = await query(`
+      SELECT 
+        COUNT(*) as total_invoices,
+        COALESCE(SUM(total_amount), 0) as total_sales,
+        COALESCE((
+          SELECT SUM(ii.quantity * p.purchase_price)
+          FROM invoice_items ii
+          JOIN products p ON ii.product_id = p.id
+          JOIN invoices i ON ii.invoice_id = i.id
+          WHERE i.invoice_date BETWEEN ? AND ?
+        ), 0) as total_cost,
+        COALESCE(SUM(total_amount), 0) - COALESCE((
+          SELECT SUM(ii.quantity * p.purchase_price)
+          FROM invoice_items ii
+          JOIN products p ON ii.product_id = p.id
+          JOIN invoices i ON ii.invoice_id = i.id
+          WHERE i.invoice_date BETWEEN ? AND ?
+        ), 0) as total_profit
+      FROM invoices
+      WHERE invoice_date BETWEEN ? AND ?
+    `, [startDate, endDate, startDate, endDate, startDate, endDate]);
+
+    const stockSummary = await query(`
+      SELECT 
+        COUNT(*) as total_products,
+        COALESCE(SUM(stock_quantity), 0) as total_quantity,
+        COALESCE(SUM(stock_quantity * dealer_price), 0) as stock_value
+      FROM products 
+      WHERE is_active = 1
+    `);
+
+    const dueSummary = await query(`
+      SELECT 
+        COUNT(DISTINCT r.id) as total_retailers,
+        COALESCE(SUM(i.due_amount), 0) as total_due
+      FROM retailers r
+      LEFT JOIN invoices i ON r.id = i.retailer_id AND i.status IN ('due', 'partial')
+      WHERE r.is_active = 1 AND r.outstanding_balance > 0
+    `);
+
+    const expirySummary = await query(`
+      SELECT 
+        COUNT(*) as total_products,
+        COUNT(CASE WHEN expiry_date < CURDATE() THEN 1 END) as expired,
+        COUNT(CASE WHEN expiry_date BETWEEN CURDATE() AND DATE_ADD(CURDATE(), INTERVAL 30 DAY) THEN 1 END) as expiring_soon
+      FROM products 
+      WHERE is_active = 1 AND expiry_date IS NOT NULL AND stock_quantity > 0
+    `);
+
+    return {
+      daily: {
+        totalInvoices: dailySalesSummary[0]?.total_invoices || 0,
+        totalAmount: dailySalesSummary[0]?.total_amount || 0,
+        totalCollected: dailySalesSummary[0]?.total_collected || 0,
+        totalDue: dailySalesSummary[0]?.total_due || 0
+      },
+      product: {
+        totalProducts: productSalesSummary[0]?.total_products || 0,
+        totalQuantity: productSalesSummary[0]?.total_quantity || 0,
+        totalAmount: productSalesSummary[0]?.total_amount || 0
+      },
+      company: {
+        totalCompanies: companySalesSummary[0]?.total_companies || 0,
+        totalSales: companySalesSummary[0]?.total_sales || 0
+      },
+      profit: {
+        totalInvoices: profitSummary[0]?.total_invoices || 0,
+        totalSales: profitSummary[0]?.total_sales || 0,
+        totalCost: profitSummary[0]?.total_cost || 0,
+        totalProfit: profitSummary[0]?.total_profit || 0
+      },
+      stock: {
+        totalProducts: stockSummary[0]?.total_products || 0,
+        totalQuantity: stockSummary[0]?.total_quantity || 0,
+        stockValue: stockSummary[0]?.stock_value || 0
+      },
+      due: {
+        totalRetailers: dueSummary[0]?.total_retailers || 0,
+        totalDue: dueSummary[0]?.total_due || 0
+      },
+      expiry: {
+        totalProducts: expirySummary[0]?.total_products || 0,
+        expired: expirySummary[0]?.expired || 0,
+        expiringSoon: expirySummary[0]?.expiring_soon || 0
+      }
+    };
+  },
+
   async dailySales(startDate, endDate, page = 1, limit = 20) {
     const offset = (page - 1) * limit;
     const sql = `

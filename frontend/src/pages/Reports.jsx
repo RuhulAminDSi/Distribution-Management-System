@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { reportService } from '../services/api';
 import { useLanguage, formatCurrency, formatNumber, formatDate, formatDateTime } from '../context/LanguageContext';
-import { FileText, FileSpreadsheet, ChevronLeft, ChevronRight } from 'lucide-react';
+import { FileText, FileSpreadsheet, ChevronLeft, ChevronRight, DollarSign, Package, Building2, TrendingUp, CreditCard, AlertTriangle } from 'lucide-react';
 import { jsPDF } from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import * as XLSX from 'xlsx';
@@ -12,6 +12,7 @@ export default function Reports() {
   const { t, language } = useLanguage();
   const [activeTab, setActiveTab] = useState('daily');
   const [data, setData] = useState([]);
+  const [summary, setSummary] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [dateRange, setDateRange] = useState({
@@ -22,6 +23,22 @@ export default function Reports() {
   const [totalPages, setTotalPages] = useState(1);
   const [total, setTotal] = useState(0);
   const [limit, setLimit] = useState(10);
+
+  useEffect(() => {
+    fetchSummary();
+  }, [dateRange]);
+
+  const fetchSummary = async () => {
+    try {
+      const response = await reportService.getSummary({
+        start_date: dateRange.start_date,
+        end_date: dateRange.end_date
+      });
+      setSummary(response.data);
+    } catch (error) {
+      console.error('Failed to fetch summary:', error);
+    }
+  };
 
   useEffect(() => {
     fetchReport();
@@ -462,41 +479,6 @@ export default function Reports() {
     saveAs(blob, `${sheetName.replace(/\s+/g, '_')}_${new Date().toISOString().split('T')[0]}.xlsx`);
   };
 
-  const getSummary = () => {
-    if (!data.length) return null;
-    
-    switch (activeTab) {
-      case 'daily':
-        const dailyTotal = data.reduce((sum, item) => sum + (item.total_amount || 0), 0);
-        const dailyPaid = data.reduce((sum, item) => sum + (item.paid_amount || 0), 0);
-        const dailyDue = data.reduce((sum, item) => sum + (item.due_amount || 0), 0);
-        return { total: dailyTotal, paid: dailyPaid, due: dailyDue };
-      case 'product':
-        const productTotal = data.reduce((sum, item) => sum + (item.total_amount || 0), 0);
-        const productQty = data.reduce((sum, item) => sum + (item.total_quantity || 0), 0);
-        return { total: productTotal, quantity: productQty };
-      case 'company':
-        const companySales = data.reduce((sum, item) => sum + (item.total_sales || 0), 0);
-        const companyProfit = data.reduce((sum, item) => sum + (item.total_profit || 0), 0);
-        return { sales: companySales, profit: companyProfit };
-      case 'profit':
-        const profitTotal = data.reduce((sum, item) => sum + (item.profit || 0), 0);
-        const salesTotal = data.reduce((sum, item) => sum + (item.sales_amount || 0), 0);
-        return { sales: salesTotal, profit: profitTotal };
-      case 'stock':
-        const stockValue = data.reduce((sum, item) => sum + (item.stock_value || 0), 0);
-        const stockQty = data.reduce((sum, item) => sum + (item.stock_quantity || 0), 0);
-        return { value: stockValue, quantity: stockQty };
-      case 'due':
-        const totalDue = data.reduce((sum, item) => sum + (item.outstanding_balance || 0), 0);
-        return { due: totalDue };
-      default:
-        return null;
-    }
-  };
-
-  const summary = getSummary();
-
   const tabs = [
     { id: 'daily', label: t('DailySales') },
     { id: 'product', label: t('ProductWise') },
@@ -573,83 +555,129 @@ export default function Reports() {
             <>
               <div className="stat-card">
                 <div className="stat-icon blue"><FileText size={24} /></div>
-                <div className="stat-label">{t('TotalSales')}</div>
-                <div className="stat-value">{formatCurrency(summary.total, language)}</div>
+                <div className="stat-label">{t('TotalInvoices') || 'Total Invoices'}</div>
+                <div className="stat-value">{formatNumber(summary.daily?.totalInvoices, language)}</div>
               </div>
               <div className="stat-card">
-                <div className="stat-icon green"><FileText size={24} /></div>
-                <div className="stat-label">{t('Collected')}</div>
-                <div className="stat-value">{formatCurrency(summary.paid, language)}</div>
+                <div className="stat-icon green"><DollarSign size={24} /></div>
+                <div className="stat-label">{t('TotalSales') || 'Total Sales'}</div>
+                <div className="stat-value">{formatCurrency(summary.daily?.totalAmount, language)}</div>
               </div>
               <div className="stat-card">
-                <div className="stat-icon red"><FileText size={24} /></div>
-                <div className="stat-label">{t('Due')}</div>
-                <div className="stat-value">{formatCurrency(summary.due, language)}</div>
+                <div className="stat-icon green"><CreditCard size={24} /></div>
+                <div className="stat-label">{t('Collected') || 'Collected'}</div>
+                <div className="stat-value">{formatCurrency(summary.daily?.totalCollected, language)}</div>
+              </div>
+              <div className="stat-card">
+                <div className="stat-icon red"><AlertTriangle size={24} /></div>
+                <div className="stat-label">{t('Due') || 'Due'}</div>
+                <div className="stat-value">{formatCurrency(summary.daily?.totalDue, language)}</div>
               </div>
             </>
           )}
           {activeTab === 'product' && (
             <>
               <div className="stat-card">
-                <div className="stat-icon blue"><FileText size={24} /></div>
-                <div className="stat-label">{t('Total')}</div>
-                <div className="stat-value">{formatCurrency(summary.total, language)}</div>
+                <div className="stat-icon blue"><Package size={24} /></div>
+                <div className="stat-label">{t('TotalProducts') || 'Total Products'}</div>
+                <div className="stat-value">{formatNumber(summary.product?.totalProducts, language)}</div>
               </div>
               <div className="stat-card">
-                <div className="stat-icon green"><FileText size={24} /></div>
-                <div className="stat-label">{t('Quantity')}</div>
-                <div className="stat-value">{formatNumber(summary.quantity, language)}</div>
+                <div className="stat-icon green"><Package size={24} /></div>
+                <div className="stat-label">{t('TotalQuantity') || 'Total Quantity'}</div>
+                <div className="stat-value">{formatNumber(summary.product?.totalQuantity, language)}</div>
+              </div>
+              <div className="stat-card">
+                <div className="stat-icon green"><DollarSign size={24} /></div>
+                <div className="stat-label">{t('TotalSales') || 'Total Sales'}</div>
+                <div className="stat-value">{formatCurrency(summary.product?.totalAmount, language)}</div>
               </div>
             </>
           )}
           {activeTab === 'company' && (
             <>
               <div className="stat-card">
-                <div className="stat-icon blue"><FileText size={24} /></div>
-                <div className="stat-label">{t('TotalSales')}</div>
-                <div className="stat-value">{formatCurrency(summary.sales, language)}</div>
+                <div className="stat-icon blue"><Building2 size={24} /></div>
+                <div className="stat-label">{t('TotalCompanies') || 'Total Companies'}</div>
+                <div className="stat-value">{formatNumber(summary.company?.totalCompanies, language)}</div>
               </div>
               <div className="stat-card">
-                <div className="stat-icon green"><FileText size={24} /></div>
-                <div className="stat-label">{t('Profit')}</div>
-                <div className="stat-value">{formatCurrency(summary.profit, language)}</div>
+                <div className="stat-icon green"><DollarSign size={24} /></div>
+                <div className="stat-label">{t('TotalSales') || 'Total Sales'}</div>
+                <div className="stat-value">{formatCurrency(summary.company?.totalSales, language)}</div>
               </div>
             </>
           )}
           {activeTab === 'profit' && (
             <>
               <div className="stat-card">
-                <div className="stat-icon blue"><FileText size={24} /></div>
-                <div className="stat-label">{t('TotalSales')}</div>
-                <div className="stat-value">{formatCurrency(summary.sales, language)}</div>
+                <div className="stat-icon blue"><DollarSign size={24} /></div>
+                <div className="stat-label">{t('TotalSales') || 'Total Sales'}</div>
+                <div className="stat-value">{formatCurrency(summary.profit?.totalSales, language)}</div>
               </div>
               <div className="stat-card">
-                <div className="stat-icon green"><FileText size={24} /></div>
-                <div className="stat-label">{t('Profit')}</div>
-                <div className="stat-value">{formatCurrency(summary.profit, language)}</div>
+                <div className="stat-icon green"><TrendingUp size={24} /></div>
+                <div className="stat-label">{t('TotalCost') || 'Total Cost'}</div>
+                <div className="stat-value">{formatCurrency(summary.profit?.totalCost, language)}</div>
+              </div>
+              <div className="stat-card">
+                <div className="stat-icon green"><TrendingUp size={24} /></div>
+                <div className="stat-label">{t('TotalProfit') || 'Total Profit'}</div>
+                <div className="stat-value">{formatCurrency(summary.profit?.totalProfit, language)}</div>
               </div>
             </>
           )}
           {activeTab === 'stock' && (
             <>
               <div className="stat-card">
-                <div className="stat-icon blue"><FileText size={24} /></div>
-                <div className="stat-label">{t('StockValue')}</div>
-                <div className="stat-value">{formatCurrency(summary.value, language)}</div>
+                <div className="stat-icon blue"><Package size={24} /></div>
+                <div className="stat-label">{t('TotalProducts') || 'Total Products'}</div>
+                <div className="stat-value">{formatNumber(summary.stock?.totalProducts, language)}</div>
               </div>
               <div className="stat-card">
-                <div className="stat-icon green"><FileText size={24} /></div>
-                <div className="stat-label">{t('Quantity')}</div>
-                <div className="stat-value">{formatNumber(summary.quantity, language)}</div>
+                <div className="stat-icon green"><Package size={24} /></div>
+                <div className="stat-label">{t('TotalQuantity') || 'Total Quantity'}</div>
+                <div className="stat-value">{formatNumber(summary.stock?.totalQuantity, language)}</div>
+              </div>
+              <div className="stat-card">
+                <div className="stat-icon green"><DollarSign size={24} /></div>
+                <div className="stat-label">{t('StockValue') || 'Stock Value'}</div>
+                <div className="stat-value">{formatCurrency(summary.stock?.stockValue, language)}</div>
               </div>
             </>
           )}
           {activeTab === 'due' && (
-            <div className="stat-card">
-              <div className="stat-icon red"><FileText size={24} /></div>
-              <div className="stat-label">{t('TotalOutstanding')}</div>
-              <div className="stat-value">{formatCurrency(summary.due, language)}</div>
-            </div>
+            <>
+              <div className="stat-card">
+                <div className="stat-icon blue"><Building2 size={24} /></div>
+                <div className="stat-label">{t('TotalRetailers') || 'Total Retailers'}</div>
+                <div className="stat-value">{formatNumber(summary.due?.totalRetailers, language)}</div>
+              </div>
+              <div className="stat-card">
+                <div className="stat-icon red"><AlertTriangle size={24} /></div>
+                <div className="stat-label">{t('TotalDue') || 'Total Due'}</div>
+                <div className="stat-value">{formatCurrency(summary.due?.totalDue, language)}</div>
+              </div>
+            </>
+          )}
+          {activeTab === 'expiry' && (
+            <>
+              <div className="stat-card">
+                <div className="stat-icon blue"><Package size={24} /></div>
+                <div className="stat-label">{t('TotalProducts') || 'Total Products'}</div>
+                <div className="stat-value">{formatNumber(summary.expiry?.totalProducts, language)}</div>
+              </div>
+              <div className="stat-card">
+                <div className="stat-icon red"><AlertTriangle size={24} /></div>
+                <div className="stat-label">{t('Expired') || 'Expired'}</div>
+                <div className="stat-value">{formatNumber(summary.expiry?.expired, language)}</div>
+              </div>
+              <div className="stat-card">
+                <div className="stat-icon orange"><AlertTriangle size={24} /></div>
+                <div className="stat-label">{t('ExpiringSoon') || 'Expiring Soon'}</div>
+                <div className="stat-value">{formatNumber(summary.expiry?.expiringSoon, language)}</div>
+              </div>
+            </>
           )}
         </div>
       )}

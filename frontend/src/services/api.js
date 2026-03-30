@@ -5,7 +5,8 @@ const api = axios.create({
   withCredentials: true,
   headers: {
     'Content-Type': 'application/json'
-  }
+  },
+  timeout: 30000
 });
 
 export const authService = {
@@ -64,6 +65,7 @@ export const stockService = {
 };
 
 export const reportService = {
+  getSummary: (params) => api.get('/reports/summary', { params }),
   dailySales: (params) => api.get('/reports/daily-sales', { params }),
   productSales: (params) => api.get('/reports/product-sales', { params }),
   companySales: (params) => api.get('/reports/company-sales', { params }),

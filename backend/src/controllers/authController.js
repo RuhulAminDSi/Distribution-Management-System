@@ -156,39 +156,33 @@ export const authController = {
       }
 
       const targetUser = users[0];
-
-      // Get target user's role name
-      const [targetRole] = await query('SELECT name FROM roles WHERE id = ?', [targetUser.role_id]);
-      const targetRoleName = targetRole ? targetRole.name : 'unknown';
-
-      // Allow users to update their own profile (only name, email, phone)
       const isOwnProfile = currentUser.id === parseInt(id);
       
-      // If updating own profile, only allow name, email, phone
       if (isOwnProfile) {
-        let sql = 'UPDATE users SET ';
-        const params = [];
-        const updates = [];
+        const fields = [];
+        const values = [];
         
-        if (full_name) {
-          updates.push('full_name = ?');
-          params.push(full_name);
+        if (full_name !== undefined) {
+          fields.push('full_name = ?');
+          values.push(full_name);
         }
         if (email !== undefined) {
-          updates.push('email = ?');
-          params.push(email);
+          fields.push('email = ?');
+          values.push(email);
         }
-        if (phone) {
-          updates.push('phone = ?');
-          params.push(phone);
-        }
-        
-        if (updates.length > 0) {
-          sql += updates.join(', ') + ' WHERE id = ?';
-          params.push(id);
+        if (phone !== undefined) {
+          fields.push('phone = ?');
+          values.push(phone);
         }
         
-        await query(sql, params);
+        if (fields.length === 0) {
+          return res.status(400).json({ message: 'No fields to update' });
+        }
+        
+        values.push(id);
+        const sql = `UPDATE users SET ${fields.join(', ')} WHERE id = ?`;
+        
+        await query(sql, values);
         
         const [updatedUser] = await query('SELECT id, username, full_name, email, role_id, phone, is_active FROM users WHERE id = ?', [id]);
         const [updatedRole] = await query('SELECT name FROM roles WHERE id = ?', [updatedUser.role_id]);

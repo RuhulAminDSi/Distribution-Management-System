@@ -4,6 +4,7 @@ import { authenticate, permit } from '../middleware/auth.js';
 
 const router = express.Router();
 
+router.get('/summary', authenticate, permit('reports_view'), reportController.getSummary);
 router.get('/daily-sales', authenticate, permit('reports_view'), reportController.dailySales);
 router.get('/product-sales', authenticate, permit('reports_view'), reportController.productSales);
 router.get('/company-sales', authenticate, permit('reports_view'), reportController.companySales);
