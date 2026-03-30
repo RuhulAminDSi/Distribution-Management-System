@@ -1,19 +1,19 @@
 import express from 'express';
 import { companyController, categoryController } from '../controllers/companyController.js';
-import { authenticate, authorize } from '../middleware/auth.js';
+import { authenticate, permit } from '../middleware/auth.js';
 
 const router = express.Router();
 
-router.get('/companies', authenticate, companyController.findAll);
-router.get('/companies/:id', authenticate, companyController.findById);
-router.post('/companies', authenticate, authorize('system_admin', 'admin'), companyController.create);
-router.put('/companies/:id', authenticate, authorize('system_admin', 'admin'), companyController.update);
-router.delete('/companies/:id', authenticate, authorize('system_admin', 'admin'), companyController.delete);
+router.get('/companies', authenticate, permit('companies_view'), companyController.findAll);
+router.get('/companies/:id', authenticate, permit('companies_view'), companyController.findById);
+router.post('/companies', authenticate, permit('companies_create'), companyController.create);
+router.put('/companies/:id', authenticate, permit('companies_edit'), companyController.update);
+router.delete('/companies/:id', authenticate, permit('companies_delete'), companyController.delete);
 
-router.get('/categories', authenticate, categoryController.findAll);
-router.get('/categories/:id', authenticate, categoryController.findById);
-router.post('/categories', authenticate, authorize('system_admin', 'admin'), categoryController.create);
-router.put('/categories/:id', authenticate, authorize('system_admin', 'admin'), categoryController.update);
-router.delete('/categories/:id', authenticate, authorize('system_admin', 'admin'), categoryController.delete);
+router.get('/categories', authenticate, permit('companies_view'), categoryController.findAll);
+router.get('/categories/:id', authenticate, permit('companies_view'), categoryController.findById);
+router.post('/categories', authenticate, permit('companies_create'), categoryController.create);
+router.put('/categories/:id', authenticate, permit('companies_edit'), categoryController.update);
+router.delete('/categories/:id', authenticate, permit('companies_delete'), categoryController.delete);
 
 export default router;

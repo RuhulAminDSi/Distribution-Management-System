@@ -1,66 +1,58 @@
 import { useState, useEffect } from 'react';
 import { useLanguage } from '../context/LanguageContext';
 import { useAuth } from '../context/AuthContext';
-import { authService } from '../services/api';
-import { Shield, Key, Database, User, Bell, Globe, Plus, Save, Check } from 'lucide-react';
+import { authService, roleService } from '../services/api';
+import { Shield, Key, Database, User, Bell, Globe, Plus, Save, Check, X, Trash2, Edit } from 'lucide-react';
 
-const roles = [
-  { 
-    id: 'system_admin', 
-    name: 'System Admin', 
-    description: 'Full system access with all permissions',
-    permissions: ['All'],
-    color: '#ef4444'
-  },
-  { 
-    id: 'admin', 
-    name: 'Admin', 
-    description: 'Full access to all features except system settings',
-    permissions: ['All'],
-    color: '#f97316'
-  },
-  { 
-    id: 'manager', 
-    name: 'Manager', 
-    description: 'Manage sales, inventory, retailers and reports',
-    permissions: ['Products', 'Retailers', 'Sales', 'Payments', 'Stock', 'Reports'],
-    color: '#eab308'
-  },
-  { 
-    id: 'salesman', 
-    name: 'Salesman', 
-    description: 'Create sales, manage retailers and payments',
-    permissions: ['Retailers', 'Sales', 'Payments'],
-    color: '#22c55e'
-  },
-  { 
-    id: 'accountant', 
-    name: 'Accountant', 
-    description: 'Manage payments, invoices and financial reports',
-    permissions: ['Payments', 'Reports'],
-    color: '#3b82f6'
-  },
-  { 
-    id: 'driver', 
-    name: 'Driver', 
-    description: 'View deliveries and routes',
-    permissions: ['View Deliveries'],
-    color: '#8b5cf6'
-  },
-  { 
-    id: 'loader', 
-    name: 'Loader', 
-    description: 'Manage stock and warehouse',
-    permissions: ['Stock', 'Products'],
-    color: '#ec4899'
-  }
+const availablePermissionsDefault = [
+  { id: 'all', name: 'All Access', module: 'system' },
+  { id: 'dashboard_view', name: 'View Dashboard', module: 'dashboard' },
+  { id: 'companies_view', name: 'View Companies', module: 'companies' },
+  { id: 'companies_create', name: 'Create Companies', module: 'companies' },
+  { id: 'companies_edit', name: 'Edit Companies', module: 'companies' },
+  { id: 'companies_delete', name: 'Delete Companies', module: 'companies' },
+  { id: 'products_view', name: 'View Products', module: 'products' },
+  { id: 'products_create', name: 'Create Products', module: 'products' },
+  { id: 'products_edit', name: 'Edit Products', module: 'products' },
+  { id: 'products_delete', name: 'Delete Products', module: 'products' },
+  { id: 'retailers_view', name: 'View Retailers', module: 'retailers' },
+  { id: 'retailers_create', name: 'Create Retailers', module: 'retailers' },
+  { id: 'retailers_edit', name: 'Edit Retailers', module: 'retailers' },
+  { id: 'retailers_delete', name: 'Delete Retailers', module: 'retailers' },
+  { id: 'sales_view', name: 'View Sales', module: 'sales' },
+  { id: 'sales_create', name: 'Create Sales', module: 'sales' },
+  { id: 'payments_view', name: 'View Payments', module: 'payments' },
+  { id: 'payments_create', name: 'Create Payments', module: 'payments' },
+  { id: 'stock_view', name: 'View Stock', module: 'stock' },
+  { id: 'stock_create', name: 'Create Stock', module: 'stock' },
+  { id: 'stock_edit', name: 'Edit Stock', module: 'stock' },
+  { id: 'reports_view', name: 'View Reports', module: 'reports' },
+  { id: 'users_view', name: 'View Users', module: 'users' },
+  { id: 'users_create', name: 'Create Users', module: 'users' },
+  { id: 'users_edit', name: 'Edit Users', module: 'users' },
+  { id: 'users_delete', name: 'Delete Users', module: 'users' },
+  { id: 'roles_manage', name: 'Manage Roles', module: 'roles' },
+  { id: 'settings_view', name: 'View Settings', module: 'settings' },
+  { id: 'settings_edit', name: 'Edit Settings', module: 'settings' },
+  { id: 'view_deliveries', name: 'View Deliveries', module: 'deliveries' }
 ];
 
 export default function Settings() {
   const { t, language, setLanguage } = useLanguage();
-  const { user, setUser } = useAuth();
+  const { user, setUser, refreshRoles } = useAuth();
   const [activeTab, setActiveTab] = useState('general');
   const [showRoleModal, setShowRoleModal] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(null);
+  const [editingRole, setEditingRole] = useState(null);
+  const [roles, setRoles] = useState([]);
+  const [permissions, setPermissions] = useState([]);
+  const [roleLoading, setRoleLoading] = useState(false);
+  const [roleForm, setRoleForm] = useState({
+    name: '',
+    description: '',
+    permissions: [],
+    color: '#6b7280'
+  });
   const [profileData, setProfileData] = useState({
     full_name: '',
     email: '',
@@ -70,9 +62,9 @@ export default function Settings() {
   const [profileSuccess, setProfileSuccess] = useState(false);
 
   const isSystemAdmin = user?.role === 'system_admin';
+  const isAdmin = user?.role === 'system_admin' || user?.role === 'admin';
 
   useEffect(() => {
-    console.log('User data in Settings:', user);
     if (user) {
       setProfileData({
         full_name: user.full_name || user.fullName || user.name || '',
@@ -81,6 +73,111 @@ export default function Settings() {
       });
     }
   }, [user]);
+
+  useEffect(() => {
+    if (!isAdmin && (activeTab === 'general' || activeTab === 'roles')) {
+      setActiveTab('profile');
+    }
+  }, [isAdmin]);
+
+  useEffect(() => {
+    if (activeTab === 'roles' && isAdmin) {
+      fetchRoles();
+    }
+    if ((activeTab === 'roles' || activeTab === 'general') && !isAdmin) {
+      setActiveTab('profile');
+    }
+  }, [activeTab, isAdmin]);
+
+  const fetchRoles = async () => {
+    setRoleLoading(true);
+    try {
+      const [rolesRes, permsRes] = await Promise.all([
+        roleService.getAll(),
+        roleService.getPermissions()
+      ]);
+      setRoles(rolesRes.data.data || []);
+      
+      const allPerms = [];
+      const groupedPerms = permsRes.data.data || {};
+      Object.keys(groupedPerms).forEach(module => {
+        groupedPerms[module].forEach(perm => {
+          allPerms.push(perm);
+        });
+      });
+      setPermissions(allPerms);
+    } catch (error) {
+      console.error('Error fetching roles:', error);
+      setPermissions(availablePermissionsDefault);
+    } finally {
+      setRoleLoading(false);
+    }
+  };
+
+  const handleRoleSubmit = async (e) => {
+    e.preventDefault();
+    setRoleLoading(true);
+    try {
+      const submitData = {
+        ...roleForm,
+        permissions: roleForm.permissions
+      };
+      console.log('Submitting role data:', submitData);
+      
+      if (editingRole) {
+        await roleService.update(editingRole.id, submitData);
+      } else {
+        await roleService.create(submitData);
+      }
+      setShowRoleModal(false);
+      setEditingRole(null);
+      setRoleForm({ name: '', description: '', permissions: [], color: '#6b7280' });
+      fetchRoles();
+      refreshRoles();
+    } catch (error) {
+      console.error('Error saving role:', error);
+      alert(error.response?.data?.message || 'Failed to save role');
+    } finally {
+      setRoleLoading(false);
+    }
+  };
+
+  const handleDeleteRole = async (id) => {
+    try {
+      await roleService.delete(id);
+      setShowDeleteConfirm(null);
+      fetchRoles();
+      refreshRoles();
+    } catch (error) {
+      alert(error.response?.data?.message || 'Failed to delete role');
+    }
+  };
+
+  const openEditRole = (role) => {
+    setEditingRole(role);
+    const rolePerms = role.permissions || [];
+    console.log('Editing role:', role.name, 'Permissions:', rolePerms);
+    setRoleForm({
+      name: role.name,
+      description: role.description || '',
+      permissions: rolePerms,
+      color: role.color || '#6b7280'
+    });
+    setShowRoleModal(true);
+  };
+
+  const togglePermission = (permissionId) => {
+    setRoleForm(prev => {
+      const newPermissions = prev.permissions.includes(permissionId)
+        ? prev.permissions.filter(p => p !== permissionId)
+        : [...prev.permissions, permissionId];
+      return { ...prev, permissions: newPermissions };
+    });
+  };
+
+  const canEditRole = (role) => {
+    return !['system_admin', 'admin'].includes(role.name);
+  };
 
   const handleProfileSave = async (e) => {
     e.preventDefault();
@@ -113,10 +210,12 @@ export default function Settings() {
   };
 
   const tabs = [
-    { id: 'general', label: t('General') || 'General', icon: <Shield size={18} /> },
-    { id: 'roles', label: t('Role') || 'Roles', icon: <Key size={18} /> },
+    { id: 'general', label: t('General') || 'General', icon: <Shield size={18} />, requiresAdmin: true },
+    { id: 'roles', label: t('Roles') || 'Roles', icon: <Key size={18} />, requiresAdmin: true },
     { id: 'profile', label: t('Profile') || 'Profile', icon: <User size={18} /> },
   ];
+
+  const visibleTabs = tabs.filter(tab => !tab.requiresAdmin || isAdmin);
 
   return (
     <div>
@@ -125,7 +224,7 @@ export default function Settings() {
       </div>
 
       <div className="settings-tabs">
-        {tabs.map(tab => (
+        {visibleTabs.map(tab => (
           <button
             key={tab.id}
             className={`settings-tab ${activeTab === tab.id ? 'active' : ''}`}
@@ -142,13 +241,13 @@ export default function Settings() {
           <div className="settings-section">
             <div className="section-header">
               <Globe size={20} />
-              <h3>Language Settings</h3>
+              <h3>{t('Language') || 'Language Settings'}</h3>
             </div>
             <div className="settings-card">
               <div className="setting-item">
                 <div className="setting-info">
                   <h4>Default Language</h4>
-                  <p>Choose your preferred language</p>
+                  <p>{t('DefaultLanguage')}</p>
                 </div>
                 <select 
                   value={language} 
@@ -166,7 +265,7 @@ export default function Settings() {
           <div className="settings-section">
             <div className="section-header">
               <Database size={20} />
-              <h3>System Information</h3>
+              <h3>{t('SystemInformation')}</h3>
             </div>
             <div className="settings-card">
               <div className="system-info-grid">
@@ -193,13 +292,13 @@ export default function Settings() {
           <div className="settings-section">
             <div className="section-header">
               <Bell size={20} />
-              <h3>Notifications</h3>
+              <h3>{t('Notifications')}</h3>
             </div>
             <div className="settings-card">
               <div className="setting-item">
                 <div className="setting-info">
-                  <h4>Low Stock Alerts</h4>
-                  <p>Get notified when stock is low</p>
+                  <h4>{t('LowStockAlerts')}</h4>
+                  <p>{t('LowStockAlerts')}</p>
                 </div>
                 <label className="toggle">
                   <input type="checkbox" defaultChecked />
@@ -208,8 +307,8 @@ export default function Settings() {
               </div>
               <div className="setting-item">
                 <div className="setting-info">
-                  <h4>Expiry Alerts</h4>
-                  <p>Get notified about expiring products</p>
+                  <h4>{t('ExpiryAlerts')}</h4>
+                  <p>{t('ExpiryAlerts')}</p>
                 </div>
                 <label className="toggle">
                   <input type="checkbox" defaultChecked />
@@ -218,8 +317,8 @@ export default function Settings() {
               </div>
               <div className="setting-item">
                 <div className="setting-info">
-                  <h4>Payment Reminders</h4>
-                  <p>Get notified about due payments</p>
+                  <h4>{t('PaymentReminders')}</h4>
+                  <p>{t('PaymentReminders')}</p>
                 </div>
                 <label className="toggle">
                   <input type="checkbox" defaultChecked />
@@ -236,36 +335,150 @@ export default function Settings() {
           <div className="settings-section">
             <div className="section-header">
               <Key size={20} />
-              <h3>User Roles & Permissions</h3>
+              <h3>{t('RoleManagement')}</h3>
               {isSystemAdmin && (
-                <button className="btn-add-role" onClick={() => setShowRoleModal(true)}>
-                  <Plus size={16} /> Add Role
+                <button className="btn-add-role" onClick={() => { setEditingRole(null); setRoleForm({ name: '', description: '', permissions: [], color: '#6b7280' }); setShowRoleModal(true); }}>
+                  <Plus size={16} /> {t('AddRole')}
                 </button>
               )}
             </div>
             
-            <div className="roles-grid">
-              {roles.map(role => (
-                <div key={role.id} className="role-card" style={{ borderLeftColor: role.color }}>
-                  <div className="role-header">
-                    <div className="role-icon" style={{ background: role.color }}>
-                      <Shield size={18} />
+            {roleLoading && roles.length === 0 ? (
+              <div className="loading-state">{t('Loading')}</div>
+            ) : (
+              <div className="roles-grid">
+                {roles.map(role => (
+                  <div key={role.id} className="role-card" style={{ borderLeftColor: role.color }}>
+                    <div className="role-header">
+                      <div className="role-icon" style={{ background: role.color }}>
+                        <Shield size={18} />
+                      </div>
+                      <div>
+                        <h4>{t(role.name) || role.name.replace('_', ' ')}</h4>
+                        <span className="role-id">{role.name}</span>
+                      </div>
+                      {isSystemAdmin && canEditRole(role) && (
+                        <div className="role-actions">
+                          <button className="btn-icon" onClick={() => openEditRole(role)} title="Edit">
+                            <Edit size={14} />
+                          </button>
+                          <button className="btn-icon btn-danger" onClick={() => setShowDeleteConfirm(role)} title="Delete">
+                            <Trash2 size={14} />
+                          </button>
+                        </div>
+                      )}
                     </div>
-                    <div>
-                      <h4>{role.name}</h4>
-                      <span className="role-id">{role.id}</span>
+                    <p className="role-description">{role.description}</p>
+                    <div className="role-permissions">
+                      {(role.permissions || []).map(perm => (
+                        <span key={perm} className="permission-tag" style={{ background: `${role.color}20`, color: role.color }}>
+                          {perm === 'all' ? t('AllAccess') : t(perm) || perm.replace('_', ' ')}
+                        </span>
+                      ))}
                     </div>
                   </div>
-                  <p className="role-description">{role.description}</p>
-                  <div className="role-permissions">
-                    {role.permissions.map(perm => (
-                      <span key={perm} className="permission-tag" style={{ background: `${role.color}20`, color: role.color }}>
-                        {perm}
-                      </span>
-                    ))}
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {showRoleModal && (
+        <div className="modal-overlay" onClick={() => setShowRoleModal(false)}>
+          <div className="modal" onClick={e => e.stopPropagation()}>
+            <div className="modal-header">
+              <h3>{editingRole ? t('EditRole') : t('AddRole')}</h3>
+              <button className="btn-close" onClick={() => setShowRoleModal(false)}>
+                <X size={20} />
+              </button>
+            </div>
+            <form onSubmit={handleRoleSubmit}>
+              <div className="modal-body">
+                <div className="form-group">
+                  <label>{t('RoleName')}</label>
+                  <input
+                    type="text"
+                    className="form-input"
+                    value={roleForm.name}
+                    onChange={(e) => setRoleForm({...roleForm, name: e.target.value.toLowerCase().replace(/\s+/g, '_')})}
+                    placeholder="e.g., warehouse_manager"
+                    required
+                    disabled={!!editingRole}
+                  />
+                </div>
+                <div className="form-group">
+                  <label>{t('Description')}</label>
+                  <input
+                    type="text"
+                    className="form-input"
+                    value={roleForm.description}
+                    onChange={(e) => setRoleForm({...roleForm, description: e.target.value})}
+                    placeholder={t('Description')}
+                  />
+                </div>
+                <div className="form-group">
+                  <label>{t('Color')}</label>
+                  <input
+                    type="color"
+                    className="form-input"
+                    value={roleForm.color}
+                    onChange={(e) => setRoleForm({...roleForm, color: e.target.value})}
+                    style={{ height: '40px', padding: '4px' }}
+                  />
+                </div>
+                  <div className="form-group">
+                  <label>{t('Permissions')}</label>
+                  <div className="permissions-grid">
+                    {(permissions.length > 0 ? permissions : availablePermissionsDefault).map(perm => {
+                      const permName = perm.name;
+                      return (
+                        <label key={permName} className="permission-checkbox">
+                          <input
+                            type="checkbox"
+                            checked={roleForm.permissions.includes(permName)}
+                            onChange={() => togglePermission(permName)}
+                          />
+                          <span>{permName}</span>
+                        </label>
+                      );
+                    })}
                   </div>
                 </div>
-              ))}
+              </div>
+              <div className="modal-footer">
+                <button type="button" className="btn btn-secondary" onClick={() => setShowRoleModal(false)}>
+                  {t('Cancel')}
+                </button>
+                <button type="submit" className="btn btn-primary" disabled={roleLoading}>
+                  {roleLoading ? t('Loading') : t('Save')}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {showDeleteConfirm && (
+        <div className="modal-overlay" onClick={() => setShowDeleteConfirm(null)}>
+          <div className="modal modal-sm" onClick={e => e.stopPropagation()}>
+            <div className="modal-header">
+              <h3>{t('DeleteRole')}</h3>
+              <button className="btn-close" onClick={() => setShowDeleteConfirm(null)}>
+                <X size={20} />
+              </button>
+            </div>
+            <div className="modal-body">
+              <p>{t('ConfirmDelete')} "{showDeleteConfirm.name}"?</p>
+              <p className="text-danger">{t('DeleteError')}</p>
+            </div>
+            <div className="modal-footer">
+              <button className="btn btn-secondary" onClick={() => setShowDeleteConfirm(null)}>
+                {t('Cancel')}
+              </button>
+              <button className="btn btn-danger" onClick={() => handleDeleteRole(showDeleteConfirm.id)}>
+                {t('Delete')}
+              </button>
             </div>
           </div>
         </div>
@@ -276,7 +489,7 @@ export default function Settings() {
           <div className="settings-section">
             <div className="section-header">
               <User size={20} />
-              <h3>Profile Settings</h3>
+              <h3>{t('Profile')} {t('Settings')}</h3>
             </div>
             <div className="settings-card">
               <div className="profile-header">
@@ -638,6 +851,138 @@ export default function Settings() {
           .settings-tab span {
             display: none;
           }
+        }
+
+        .role-actions {
+          display: flex;
+          gap: 4px;
+          margin-left: auto;
+        }
+
+        .btn-icon {
+          padding: 6px;
+          background: var(--background);
+          border: 1px solid var(--border);
+          border-radius: 6px;
+          cursor: pointer;
+          color: var(--text-secondary);
+          transition: all 0.2s;
+        }
+
+        .btn-icon:hover {
+          background: var(--surface);
+          color: var(--text-primary);
+        }
+
+        .btn-icon.btn-danger:hover {
+          background: #fef2f2;
+          color: #ef4444;
+          border-color: #ef4444;
+        }
+
+        .modal-overlay {
+          position: fixed;
+          inset: 0;
+          background: rgba(0, 0, 0, 0.5);
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          z-index: 1000;
+        }
+
+        .modal {
+          background: var(--surface);
+          border-radius: 16px;
+          width: 100%;
+          max-width: 500px;
+          max-height: 90vh;
+          overflow: auto;
+        }
+
+        .modal-sm {
+          max-width: 400px;
+        }
+
+        .modal-header {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          padding: 20px;
+          border-bottom: 1px solid var(--border);
+        }
+
+        .modal-header h3 {
+          margin: 0;
+          font-size: 18px;
+        }
+
+        .btn-close {
+          background: none;
+          border: none;
+          cursor: pointer;
+          color: var(--text-secondary);
+          padding: 4px;
+        }
+
+        .modal-body {
+          padding: 20px;
+        }
+
+        .modal-footer {
+          display: flex;
+          gap: 12px;
+          justify-content: flex-end;
+          padding: 20px;
+          border-top: 1px solid var(--border);
+        }
+
+        .permissions-grid {
+          display: grid;
+          grid-template-columns: repeat(2, 1fr);
+          gap: 8px;
+        }
+
+        .permission-checkbox {
+          display: flex;
+          align-items: center;
+          gap: 8px;
+          padding: 8px;
+          background: var(--background);
+          border-radius: 8px;
+          cursor: pointer;
+          font-size: 13px;
+        }
+
+        .permission-checkbox input {
+          width: 16px;
+          height: 16px;
+        }
+
+        .text-danger {
+          color: #ef4444;
+          font-size: 13px;
+        }
+
+        .btn-secondary {
+          background: var(--background);
+          border: 1px solid var(--border);
+          color: var(--text-primary);
+        }
+
+        .btn-danger {
+          background: #ef4444;
+          border: none;
+          color: white;
+        }
+
+        .btn-danger:hover {
+          background: #dc2626;
+        }
+
+        .loading-state {
+          text-align: center;
+          padding: 40px;
+          color: var(--text-secondary);
         }
       `}</style>
     </div>

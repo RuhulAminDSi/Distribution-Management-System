@@ -19,20 +19,20 @@ import {
 } from 'lucide-react';
 
 const navItems = [
-  { path: '/dashboard', icon: LayoutDashboard, labelKey: 'Dashboard' },
-  { path: '/companies', icon: Building2, labelKey: 'Companies' },
-  { path: '/products', icon: Package, labelKey: 'Products' },
-  { path: '/retailers', icon: Users, labelKey: 'Retailers' },
-  { path: '/sales', icon: ShoppingCart, labelKey: 'Sales' },
-  { path: '/payments', icon: CreditCard, labelKey: 'Payments' },
-  { path: '/stock', icon: Warehouse, labelKey: 'Stock' },
-  { path: '/reports', icon: FileText, labelKey: 'Reports' },
-  { path: '/users', icon: UserCircle, labelKey: 'Users' },
-  { path: '/settings', icon: Settings, labelKey: 'Settings' },
+  { path: '/dashboard', icon: LayoutDashboard, labelKey: 'Dashboard', permission: 'dashboard_view' },
+  { path: '/companies', icon: Building2, labelKey: 'Companies', permission: 'companies_view' },
+  { path: '/products', icon: Package, labelKey: 'Products', permission: 'products_view' },
+  { path: '/retailers', icon: Users, labelKey: 'Retailers', permission: 'retailers_view' },
+  { path: '/sales', icon: ShoppingCart, labelKey: 'Sales', permission: 'sales_view' },
+  { path: '/payments', icon: CreditCard, labelKey: 'Payments', permission: 'payments_view' },
+  { path: '/stock', icon: Warehouse, labelKey: 'Stock', permission: 'stock_view' },
+  { path: '/reports', icon: FileText, labelKey: 'Reports', permission: 'reports_view' },
+  { path: '/users', icon: UserCircle, labelKey: 'Users', permission: 'users_view' },
+  { path: '/settings', icon: Settings, labelKey: 'Settings', permission: 'settings_view' },
 ];
 
 export default function MainLayout({ children }) {
-  const { user } = useAuth();
+  const { user, hasPermission } = useAuth();
   const { t } = useLanguage();
   const location = useLocation();
   const navigate = useNavigate();
@@ -77,6 +77,11 @@ export default function MainLayout({ children }) {
     return item ? t(item.labelKey) : t('Dashboard');
   };
 
+  const visibleNavItems = navItems.filter(item => {
+    if (!item.permission) return true;
+    return hasPermission(item.permission);
+  });
+
   const handlePasswordChange = async (e) => {
     e.preventDefault();
     setPasswordError('');
@@ -117,7 +122,7 @@ export default function MainLayout({ children }) {
         <nav className="sidebar-nav">
           <div className="nav-section">
             {/*<div className="nav-section-title">{t('Menu')}</div>*/}
-            {navItems.map((item, index) => (
+            {visibleNavItems.map((item, index) => (
               <NavLink 
                 key={item.path} 
                 to={item.path} 

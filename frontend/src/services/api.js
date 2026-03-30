@@ -2,29 +2,15 @@ import axios from 'axios';
 
 const api = axios.create({
   baseURL: '/api',
+  withCredentials: true,
   headers: {
     'Content-Type': 'application/json'
   }
 });
 
-api.interceptors.response.use(
-  response => response,
-  error => {
-    if (error.response?.status === 401) {
-      const isAuthRequest = error.config?.url?.includes('/auth/login');
-      if (!isAuthRequest) {
-        localStorage.removeItem('token');
-        localStorage.removeItem('token_expiry');
-        delete api.defaults.headers.common['Authorization'];
-        window.dispatchEvent(new Event('unauthorized'));
-      }
-    }
-    return Promise.reject(error);
-  }
-);
-
 export const authService = {
   login: (username, password) => api.post('/auth/login', { username, password }),
+  logout: () => api.post('/auth/logout'),
   me: () => api.get('/auth/me'),
   register: (data) => api.post('/auth/register', data),
   getUsers: () => api.get('/auth/users'),
@@ -43,7 +29,7 @@ export const productService = {
   delete: (id) => api.delete(`/products/${id}`),
   getLowStock: () => api.get('/products/low-stock'),
   getExpired: () => api.get('/products/expired'),
-  getExpiringSoon: (days = 30) => api.get('/products/expiring-soon', { params: { days } })
+  getExpiringSoon: () => api.get('/products/expiring-soon')
 };
 
 export const retailerService = {
@@ -52,6 +38,7 @@ export const retailerService = {
   create: (data) => api.post('/retailers', data),
   update: (id, data) => api.put(`/retailers/${id}`, data),
   delete: (id) => api.delete(`/retailers/${id}`),
+  getAreas: () => api.get('/retailers/areas'),
   getBalance: (id) => api.get(`/retailers/${id}/balance`)
 };
 
@@ -66,7 +53,14 @@ export const paymentService = {
   getAll: (params) => api.get('/payments', { params }),
   getById: (id) => api.get(`/payments/${id}`),
   create: (data) => api.post('/payments', data),
-  getRetailerPayments: (retailerId) => api.get(`/payments/retailer/${retailerId}`)
+  getByRetailer: (retailerId) => api.get(`/payments/retailer/${retailerId}`)
+};
+
+export const stockService = {
+  getHistory: (params) => api.get('/stock/history', { params }),
+  getPurchaseOrders: (params) => api.get('/stock/purchase-orders', { params }),
+  createPurchaseOrder: (data) => api.post('/stock/purchase-orders', data),
+  receivePurchaseOrder: (id, data) => api.put(`/stock/purchase-orders/${id}/receive`, data)
 };
 
 export const reportService = {
@@ -74,20 +68,13 @@ export const reportService = {
   productSales: (params) => api.get('/reports/product-sales', { params }),
   companySales: (params) => api.get('/reports/company-sales', { params }),
   profit: (params) => api.get('/reports/profit', { params }),
-  stock: () => api.get('/reports/stock'),
-  due: () => api.get('/reports/due'),
-  expiry: () => api.get('/reports/expiry')
+  stock: (params) => api.get('/reports/stock', { params }),
+  due: (params) => api.get('/reports/due', { params }),
+  expiry: (params) => api.get('/reports/expiry', { params })
 };
 
 export const dashboardService = {
   getSummary: () => api.get('/dashboard/summary')
-};
-
-export const stockService = {
-  getHistory: (params) => api.get('/stock/history', { params }),
-  getPurchaseOrders: (params) => api.get('/stock/purchase-orders', { params }),
-  createPurchaseOrder: (data) => api.post('/stock/purchase-orders', data),
-  receivePurchaseOrder: (id) => api.put(`/stock/purchase-orders/${id}/receive`)
 };
 
 export const companyService = {
@@ -99,6 +86,15 @@ export const companyService = {
   createCategory: (data) => api.post('/categories', data),
   updateCategory: (id, data) => api.put(`/categories/${id}`, data),
   deleteCategory: (id) => api.delete(`/categories/${id}`)
+};
+
+export const roleService = {
+  getAll: () => api.get('/roles'),
+  getPermissions: () => api.get('/roles/permissions'),
+  getById: (id) => api.get(`/roles/${id}`),
+  create: (data) => api.post('/roles', data),
+  update: (id, data) => api.put(`/roles/${id}`, data),
+  delete: (id) => api.delete(`/roles/${id}`)
 };
 
 export default api;

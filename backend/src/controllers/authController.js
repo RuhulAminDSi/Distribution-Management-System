@@ -2,6 +2,7 @@ import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import { query } from '../config/database.js';
 import { sendPasswordResetEmail } from '../services/emailService.js';
+import { userModel } from '../models/index.js';
 
 export const authController = {
   async login(req, res, next) {
@@ -12,43 +13,60 @@ export const authController = {
         return res.status(400).json({ message: 'Username/Email/Phone and password required' });
       }
 
-      // First check if user exists (without is_active filter)
-      let users = await query('SELECT * FROM users WHERE (username = ? OR email = ? OR phone = ?)', [username, username, username]);
+      const user = await userModel.findByUsername(username);
       
-      if (users.length === 0) {
+      if (!user) {
         return res.status(401).json({ message: 'Invalid credentials' });
       }
 
-      const user = users[0];
-      
-      // Check if user is inactive
       if (!user.is_active) {
         return res.status(401).json({ message: 'Your account has been deactivated. Please contact administrator.' });
       }
 
-      const isValidPassword = await bcrypt.compare(password, user.password_hash);
+      const isValidPassword = await userModel.verifyPassword(user, password);
 
       if (!isValidPassword) {
         return res.status(401).json({ message: 'Invalid credentials' });
       }
 
+      // Get role name from roles table
+      const [roleResult] = await query('SELECT name FROM roles WHERE id = ?', [user.role_id]);
+      const roleName = roleResult ? roleResult.name : 'unknown';
+
       const token = jwt.sign(
-        { userId: user.id, role: user.role },
+        { userId: user.id, role: roleName },
         process.env.JWT_SECRET,
         { expiresIn: process.env.JWT_EXPIRES_IN || '24h' }
       );
 
+      // Set token in cookie
+      res.cookie('token', token, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: 'lax',
+        maxAge: 8 * 60 * 60 * 1000 // 8 hours
+      });
+
       res.json({
-        token,
         user: {
           id: user.id,
           username: user.username,
           full_name: user.full_name,
           email: user.email,
-          role: user.role,
+          role_id: user.role_id,
+          role: roleName,
           phone: user.phone
         }
       });
+    } catch (error) {
+      next(error);
+    }
+  },
+
+  async logout(req, res, next) {
+    try {
+      res.clearCookie('token');
+      res.json({ message: 'Logged out successfully' });
     } catch (error) {
       next(error);
     }
@@ -64,9 +82,9 @@ export const authController = {
 
   async register(req, res, next) {
     try {
-      const { username, password, full_name, email, role, phone } = req.body;
+      const { username, password, full_name, email, role, phone, role_id } = req.body;
 
-      if (!username || !password || !full_name || !role) {
+      if (!username || !password || !full_name || (!role && !role_id)) {
         return res.status(400).json({ message: 'All fields required' });
       }
 
@@ -77,14 +95,28 @@ export const authController = {
 
       const password_hash = await bcrypt.hash(password, 10);
 
+      // Get role_id from role name if not provided
+      let newRoleId = role_id;
+      if (!newRoleId && role) {
+        const [roleResult] = await query('SELECT id FROM roles WHERE name = ?', [role]);
+        if (roleResult) {
+          newRoleId = roleResult.id;
+        }
+      }
+
+      if (!newRoleId) {
+        return res.status(400).json({ message: 'Invalid role' });
+      }
+
       const result = await query(
-        'INSERT INTO users (username, password_hash, full_name, email, role, phone) VALUES (?, ?, ?, ?, ?, ?)',
-        [username, password_hash, full_name, email || null, role, phone || null]
+        'INSERT INTO users (username, password_hash, full_name, email, role_id, phone) VALUES (?, ?, ?, ?, ?, ?)',
+        [username, password_hash, full_name, email || null, newRoleId, phone || null]
       );
 
-      const users = await query('SELECT id, username, full_name, email, role, phone FROM users WHERE id = ?', [result.insertId]);
+      const users = await query('SELECT id, username, full_name, email, role_id, phone FROM users WHERE id = ?', [result.insertId]);
+      const [roleResult] = await query('SELECT name FROM roles WHERE id = ?', [users[0].role_id]);
       
-      res.status(201).json({ user: users[0] });
+      res.status(201).json({ user: { ...users[0], role: roleResult ? roleResult.name : 'unknown' } });
     } catch (error) {
       next(error);
     }
@@ -92,15 +124,21 @@ export const authController = {
 
   async getAllUsers(req, res, next) {
     try {
-      const { page = 1, limit = 20 } = req.query;
-      const offset = (parseInt(page) - 1) * parseInt(limit);
-      const users = await query(
-        'SELECT id, username, full_name, email, role, phone, is_active, created_at FROM users ORDER BY id DESC LIMIT ? OFFSET ?',
-        [parseInt(limit), offset]
+      const { page = 1, limit = 20, search = '' } = req.query;
+      const result = await userModel.getAllWithPagination(
+        parseInt(page),
+        parseInt(limit),
+        search
       );
-      const countResult = await query('SELECT COUNT(*) as total FROM users');
-      const total = countResult[0]?.total || 0;
-      res.json({ data: users, total });
+      
+      // Add role name to each user
+      const usersWithRole = await Promise.all(result.data.map(async (user) => {
+        const [role] = await query('SELECT name FROM roles WHERE id = ?', [user.role_id]);
+        return { ...user, role: role ? role.name : 'unknown' };
+      }));
+      
+      result.data = usersWithRole;
+      res.json(result);
     } catch (error) {
       next(error);
     }
@@ -109,15 +147,19 @@ export const authController = {
   async updateUser(req, res, next) {
     try {
       const { id } = req.params;
-      const { username, full_name, email, role, phone, password, is_active } = req.body;
+      const { username, full_name, email, role, phone, password, is_active, role_id } = req.body;
       const currentUser = req.user;
 
-      const users = await query('SELECT id, username, role FROM users WHERE id = ?', [id]);
+      const users = await query('SELECT id, username, role_id FROM users WHERE id = ?', [id]);
       if (users.length === 0) {
         return res.status(404).json({ message: 'User not found' });
       }
 
       const targetUser = users[0];
+
+      // Get target user's role name
+      const [targetRole] = await query('SELECT name FROM roles WHERE id = ?', [targetUser.role_id]);
+      const targetRoleName = targetRole ? targetRole.name : 'unknown';
 
       // Allow users to update their own profile (only name, email, phone)
       const isOwnProfile = currentUser.id === parseInt(id);
@@ -144,24 +186,40 @@ export const authController = {
         if (updates.length > 0) {
           sql += updates.join(', ') + ' WHERE id = ?';
           params.push(id);
-          await query(sql, params);
         }
         
-        const [updatedUser] = await query('SELECT id, username, full_name, email, role, phone, is_active FROM users WHERE id = ?', [id]);
-        return res.json(updatedUser);
+        await query(sql, params);
+        
+        const [updatedUser] = await query('SELECT id, username, full_name, email, role_id, phone, is_active FROM users WHERE id = ?', [id]);
+        const [updatedRole] = await query('SELECT name FROM roles WHERE id = ?', [updatedUser.role_id]);
+        return res.json({ ...updatedUser, role: updatedRole ? updatedRole.name : 'unknown' });
       }
-
+      
+      // Get the role name being assigned
+      let newRoleName = role;
+      let newRoleId = role_id;
+      
+      if (role && !role_id) {
+        const [roleResult] = await query('SELECT id FROM roles WHERE name = ?', [role]);
+        if (roleResult) {
+          newRoleId = roleResult.id;
+        }
+      } else if (role_id && !role) {
+        const [roleResult] = await query('SELECT name FROM roles WHERE id = ?', [role_id]);
+        newRoleName = roleResult ? roleResult.name : role;
+      }
+      
       // system_admin can edit anyone, admin cannot edit system_admin or admin
       if (currentUser.role !== 'system_admin') {
-        if (targetUser.role === 'system_admin' || (targetUser.role === 'admin' && targetUser.username !== currentUser.username)) {
+        if (targetRoleName === 'system_admin' || (targetRoleName === 'admin' && targetUser.username !== currentUser.username)) {
           return res.status(403).json({ message: 'You cannot edit this user' });
         }
         // admin cannot create system_admin
-        if (role === 'system_admin') {
+        if (newRoleName === 'system_admin') {
           return res.status(403).json({ message: 'Only system admin can assign system admin role' });
         }
         // admin cannot change status of other admins
-        if (is_active !== undefined && targetUser.role === 'admin') {
+        if (is_active !== undefined && targetRoleName === 'admin') {
           return res.status(403).json({ message: 'You cannot change admin status' });
         }
       }
@@ -181,9 +239,9 @@ export const authController = {
         fields.push('email = ?');
         params.push(email);
       }
-      if (role) {
-        fields.push('role = ?');
-        params.push(role);
+      if (newRoleId) {
+        fields.push('role_id = ?');
+        params.push(newRoleId);
       }
       if (phone !== undefined) {
         fields.push('phone = ?');
@@ -203,8 +261,9 @@ export const authController = {
         await query(`UPDATE users SET ${fields.join(', ')} WHERE id = ?`, params);
       }
 
-      const updatedUsers = await query('SELECT id, username, full_name, email, role, phone, is_active FROM users WHERE id = ?', [id]);
-      res.json({ user: updatedUsers[0] });
+      const updatedUsers = await query('SELECT id, username, full_name, email, role_id, phone, is_active FROM users WHERE id = ?', [id]);
+      const [updatedRole] = await query('SELECT name FROM roles WHERE id = ?', [updatedUsers[0].role_id]);
+      res.json({ user: { ...updatedUsers[0], role: updatedRole ? updatedRole.name : 'unknown' } });
     } catch (error) {
       next(error);
     }
@@ -215,16 +274,20 @@ export const authController = {
       const { id } = req.params;
       const currentUser = req.user;
       
-      const users = await query('SELECT id, username, role FROM users WHERE id = ?', [id]);
+      const users = await query('SELECT id, username, role_id FROM users WHERE id = ?', [id]);
       if (users.length === 0) {
         return res.status(404).json({ message: 'User not found' });
       }
 
       const targetUser = users[0];
+      
+      // Get target user's role name
+      const [targetRole] = await query('SELECT name FROM roles WHERE id = ?', [targetUser.role_id]);
+      const targetRoleName = targetRole ? targetRole.name : 'unknown';
 
       // system_admin can delete anyone, admin cannot delete system_admin or admin
       if (currentUser.role !== 'system_admin') {
-        if (targetUser.role === 'system_admin' || targetUser.role === 'admin') {
+        if (targetRoleName === 'system_admin' || targetRoleName === 'admin') {
           return res.status(403).json({ message: 'You cannot delete admin or system admin' });
         }
       }

@@ -1,11 +1,12 @@
 import { useState, useEffect } from 'react';
-import { authService } from '../services/api';
+import { authService, roleService } from '../services/api';
 import { useLanguage } from '../context/LanguageContext';
 import { X, Plus, Pencil, Trash2, ChevronLeft, ChevronRight, User, Mail, Phone, Lock, Shield } from 'lucide-react';
 
 export default function Users() {
   const { t } = useLanguage();
   const [users, setUsers] = useState([]);
+  const [roles, setRoles] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
   const [editItem, setEditItem] = useState(null);
@@ -17,7 +18,17 @@ export default function Users() {
 
   useEffect(() => {
     fetchUsers();
+    fetchRoles();
   }, [page, limit]);
+
+  const fetchRoles = async () => {
+    try {
+      const res = await roleService.getAll();
+      setRoles(res.data.data || []);
+    } catch (error) {
+      console.error('Error fetching roles:', error);
+    }
+  };
 
   const fetchUsers = async () => {
     setLoading(true);
@@ -43,7 +54,7 @@ export default function Users() {
         const updateData = {
           full_name: formData.full_name,
           email: formData.email,
-          role: formData.role,
+          role_id: formData.role_id,
           phone: formData.phone
         };
         if (formData.password) {
@@ -107,7 +118,7 @@ export default function Users() {
         password: '',
         full_name: item.full_name || '',
         email: item.email || '',
-        role: item.role || 'salesman',
+        role_id: item.role_id || '',
         phone: item.phone || ''
       });
     } else {
@@ -117,14 +128,12 @@ export default function Users() {
         password: '',
         full_name: '',
         email: '',
-        role: '',
+        role_id: '',
         phone: ''
       });
     }
     setShowModal(true);
   };
-
-  const roles = ['system_admin', 'admin', 'manager', 'salesman', 'accountant', 'driver', 'loader'];
 
   const getRoleBadgeClass = (role) => {
     switch(role) {
@@ -314,14 +323,14 @@ export default function Users() {
                 <div className="form-group full-width">
                   <label><Shield size={14} /> {t('Role')} *</label>
                   <select 
-                    value={formData.role || ''}
-                    onChange={e => setFormData({...formData, role: e.target.value})}
+                    value={formData.role_id || ''}
+                    onChange={e => setFormData({...formData, role_id: e.target.value})}
                     required
                     className="form-input"
                   >
                     <option value="">Select role</option>
                     {roles.map(r => (
-                      <option key={r} value={r}>{formatRole(r)}</option>
+                      <option key={r.id} value={r.id}>{r.name.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase())}</option>
                     ))}
                   </select>
                 </div>

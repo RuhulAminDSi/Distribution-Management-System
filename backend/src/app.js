@@ -2,6 +2,7 @@ import express from 'express';
 import cors from 'cors';
 import rateLimit from 'express-rate-limit';
 import dotenv from 'dotenv';
+import cookieParser from 'cookie-parser';
 
 import authRoutes from './routes/authRoutes.js';
 import productRoutes from './routes/productRoutes.js';
@@ -12,6 +13,7 @@ import reportRoutes from './routes/reportRoutes.js';
 import dashboardRoutes from './routes/dashboardRoutes.js';
 import stockRoutes from './routes/stockRoutes.js';
 import companyRoutes from './routes/companyRoutes.js';
+import roleRoutes from './routes/roleRoutes.js';
 
 import { errorHandler, notFound } from './middleware/errorHandler.js';
 
@@ -24,6 +26,7 @@ app.use(cors({
   credentials: true
 }));
 
+app.use(cookieParser());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
@@ -43,6 +46,7 @@ app.use('/api/payments', paymentRoutes);
 app.use('/api/reports', reportRoutes);
 app.use('/api/dashboard', dashboardRoutes);
 app.use('/api/stock', stockRoutes);
+app.use('/api/roles', roleRoutes);
 app.use('/api', companyRoutes);
 
 app.get('/api/health', (req, res) => {

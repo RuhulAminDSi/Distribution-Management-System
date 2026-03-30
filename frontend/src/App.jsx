@@ -29,6 +29,24 @@ function PrivateRoute({ children }) {
   return user ? children : <Navigate to="/login" />;
 }
 
+function PermissionRoute({ children, permission }) {
+  const { user, loading, hasPermission } = useAuth();
+  
+  if (loading) {
+    return <div>Loading...</div>;
+  }
+  
+  if (!user) {
+    return <Navigate to="/login" />;
+  }
+  
+  if (!hasPermission(permission)) {
+    return <Navigate to="/unauthorized" />;
+  }
+  
+  return children;
+}
+
 function UnauthorizedHandler() {
   const navigate = useNavigate();
   
@@ -58,57 +76,57 @@ export default function App() {
         <Route path="/reset-password" element={<ResetPassword />} />
         
         <Route path="/dashboard" element={
-          <PrivateRoute>
+          <PermissionRoute permission="dashboard_view">
             <MainLayout />
-          </PrivateRoute>
+          </PermissionRoute>
         }>
           <Route index element={<Dashboard />} />
         </Route>
         
         <Route path="/companies" element={
-          <PrivateRoute>
+          <PermissionRoute permission="companies_view">
             <MainLayout><Companies /></MainLayout>
-          </PrivateRoute>
+          </PermissionRoute>
         } />
         <Route path="/products" element={
-          <PrivateRoute>
+          <PermissionRoute permission="products_view">
             <MainLayout><Products /></MainLayout>
-          </PrivateRoute>
+          </PermissionRoute>
         } />
         <Route path="/retailers" element={
-          <PrivateRoute>
+          <PermissionRoute permission="retailers_view">
             <MainLayout><Retailers /></MainLayout>
-          </PrivateRoute>
+          </PermissionRoute>
         } />
         <Route path="/sales" element={
-          <PrivateRoute>
+          <PermissionRoute permission="sales_view">
             <MainLayout><Sales /></MainLayout>
-          </PrivateRoute>
+          </PermissionRoute>
         } />
         <Route path="/payments" element={
-          <PrivateRoute>
+          <PermissionRoute permission="payments_view">
             <MainLayout><Payments /></MainLayout>
-          </PrivateRoute>
+          </PermissionRoute>
         } />
         <Route path="/stock" element={
-          <PrivateRoute>
+          <PermissionRoute permission="stock_view">
             <MainLayout><Stock /></MainLayout>
-          </PrivateRoute>
+          </PermissionRoute>
         } />
         <Route path="/reports" element={
-          <PrivateRoute>
+          <PermissionRoute permission="reports_view">
             <MainLayout><Reports /></MainLayout>
-          </PrivateRoute>
+          </PermissionRoute>
         } />
         <Route path="/users" element={
-          <PrivateRoute>
+          <PermissionRoute permission="users_view">
             <MainLayout><Users /></MainLayout>
-          </PrivateRoute>
+          </PermissionRoute>
         } />
         <Route path="/settings" element={
-          <PrivateRoute>
+          <PermissionRoute permission="settings_view">
             <MainLayout><Settings /></MainLayout>
-          </PrivateRoute>
+          </PermissionRoute>
         } />
         <Route path="/unauthorized" element={<NotFound type="unauthorized" />} />
         <Route path="*" element={<NotFound type="not-found" />} />
