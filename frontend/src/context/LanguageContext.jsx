@@ -64,7 +64,7 @@ const translations = {
     Bangla: 'Bangla',
 
     // Dashboard
-    WelcomeToDMS: 'Welcome to DMS',
+    WelcomeToDMS: 'DMS Dashboard',
     TodaySales: "Today's Sales",
     TotalSales: 'Total Sales',
     TotalSalesAllTime: 'Total Sales (All Time)',
@@ -207,6 +207,10 @@ const translations = {
 
     // Settings
     GeneralSettings: 'General Settings',
+    General: 'General',
+    Roles: 'Roles',
+    Role: 'Role',
+    Profile: 'Profile',
     CompanyInfo: 'Company Info',
     InvoiceSettings: 'Invoice Settings',
     LowStockThreshold: 'Low Stock Threshold',
@@ -298,7 +302,7 @@ const translations = {
     Bangla: 'বাংলা',
 
     // Dashboard
-    WelcomeToDMS: 'DMS এ স্বাগতম',
+    WelcomeToDMS: 'ডিএমএস ড্যাশবোর্ড',
     TodaySales: 'আজকের বিক্রয়',
     TotalSales: 'মোট বিক্রয়',
     TotalSalesAllTime: 'সর্বমোট বিক্রয় (আজ পর্যন্ত)',
@@ -441,6 +445,10 @@ const translations = {
 
     // Settings
     GeneralSettings: 'সাধারণ সেটিংস',
+    General: 'সাধারণ',
+    Roles: 'রোল',
+    Role: 'রোল',
+    Profile: 'প্রোফাইল',
     CompanyInfo: 'কোম্পানি তথ্য',
     InvoiceSettings: 'ইনভয়েস সেটিংস',
     LowStockThreshold: 'কম স্টক থ্রেশহোল্ড',

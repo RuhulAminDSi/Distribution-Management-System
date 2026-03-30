@@ -12,12 +12,22 @@ const pool = mysql.createPool({
   database: process.env.DB_NAME || 'dms_db',
   waitForConnections: true,
   connectionLimit: 10,
-  queueLimit: 0
+  queueLimit: 0,
+  acquireTimeout: 10000,
+  timeout: 10000
 });
 
-export const query = async (sql, params = []) => {
-  const [rows] = await pool.execute(sql, params);
-  return rows;
+export const query = async (sql, params = [], retries = 3) => {
+  try {
+    const [rows] = await pool.execute(sql, params);
+    return rows;
+  } catch (error) {
+    if (error.code === 'ER_LOCK_WAIT_TIMEOUT' && retries > 0) {
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      return query(sql, params, retries - 1);
+    }
+    throw error;
+  }
 };
 
 export const getConnection = async () => {

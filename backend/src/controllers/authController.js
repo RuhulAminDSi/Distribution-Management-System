@@ -119,6 +119,38 @@ export const authController = {
 
       const targetUser = users[0];
 
+      // Allow users to update their own profile (only name, email, phone)
+      const isOwnProfile = currentUser.id === parseInt(id);
+      
+      // If updating own profile, only allow name, email, phone
+      if (isOwnProfile) {
+        let sql = 'UPDATE users SET ';
+        const params = [];
+        const updates = [];
+        
+        if (full_name) {
+          updates.push('full_name = ?');
+          params.push(full_name);
+        }
+        if (email !== undefined) {
+          updates.push('email = ?');
+          params.push(email);
+        }
+        if (phone) {
+          updates.push('phone = ?');
+          params.push(phone);
+        }
+        
+        if (updates.length > 0) {
+          sql += updates.join(', ') + ' WHERE id = ?';
+          params.push(id);
+          await query(sql, params);
+        }
+        
+        const [updatedUser] = await query('SELECT id, username, full_name, email, role, phone, is_active FROM users WHERE id = ?', [id]);
+        return res.json(updatedUser);
+      }
+
       // system_admin can edit anyone, admin cannot edit system_admin or admin
       if (currentUser.role !== 'system_admin') {
         if (targetUser.role === 'system_admin' || (targetUser.role === 'admin' && targetUser.username !== currentUser.username)) {

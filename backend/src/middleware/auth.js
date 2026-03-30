@@ -12,7 +12,7 @@ export const authenticate = async (req, res, next) => {
     const token = authHeader.split(' ')[1];
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
 
-    const users = await query('SELECT id, username, full_name, role, phone, is_active FROM users WHERE id = ?', [decoded.userId]);
+    const users = await query('SELECT id, username, full_name, email, role, phone, is_active FROM users WHERE id = ?', [decoded.userId]);
     
     if (users.length === 0 || !users[0].is_active) {
       return res.status(401).json({ message: 'Invalid user' });
