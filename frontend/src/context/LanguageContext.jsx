@@ -92,6 +92,9 @@ const translations = {
     CompanyName: 'Company Name',
     ContactPerson: 'Contact Person',
     DueLimit: 'Due Limit',
+    BasicInformation: 'Basic Information',
+    ContactInformation: 'Contact Information',
+    CreditSettings: 'Credit Settings',
 
     // Products
     AddProduct: 'Add Product',
@@ -396,6 +399,9 @@ const translations = {
     CompanyName: 'কোম্পানির নাম',
     ContactPerson: 'যোগাযোগ ব্যক্তি',
     DueLimit: 'বাকি সীমা',
+    BasicInformation: 'মৌলিক তথ্য',
+    ContactInformation: 'যোগাযোগ তথ্য',
+    CreditSettings: 'ক্রেডিট সেটিংস',
 
     // Products
     AddProduct: 'প্রোডাক্ট যোগ করুন',

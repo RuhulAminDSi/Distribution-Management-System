@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useLanguage } from '../context/LanguageContext';
 import { companyService } from '../services/api';
-import { X, Plus, Pencil, Trash2, ChevronLeft, ChevronRight } from 'lucide-react';
+import { X, Plus, Pencil, Trash2, ChevronLeft, ChevronRight, Building2, User, Phone, MapPin, CreditCard, Save } from 'lucide-react';
 
 export default function Companies() {
   const { t } = useLanguage();
@@ -142,75 +142,119 @@ export default function Companies() {
 
       {showModal && (
         <div className="modal-overlay" onClick={() => setShowModal(false)}>
-          <div className="modal" onClick={e => e.stopPropagation()}>
+          <div className="modal company-modal" onClick={e => e.stopPropagation()}>
             <div className="modal-header">
-              <h3>{editItem ? t('EditCompany') : t('AddCompany')}</h3>
+              <div className="modal-title-wrapper">
+                <Building2 size={24} className="modal-header-icon" />
+                <h3>{editItem ? t('EditCompany') : t('AddCompany')}</h3>
+              </div>
               <button className="modal-close" onClick={() => setShowModal(false)}>
                 <X size={20} />
               </button>
             </div>
             <form onSubmit={handleSubmit} className="modal-body">
-              <div className="form-row">
-                <div className="form-group">
-                  <label>{t('CompanyName')} *</label>
-                  <input 
-                    type="text" 
-                    value={formData.name || ''}
-                    onChange={e => setFormData({...formData, name: e.target.value})}
-                    required 
-                    placeholder={t('CompanyName')}
-                  />
-                </div>
-                <div className="form-group">
-                  <label>{t('Code')}</label>
-                  <input 
-                    type="text" 
-                    value={formData.code || ''}
-                    onChange={e => setFormData({...formData, code: e.target.value})}
-                    placeholder="Auto"
-                  />
-                </div>
-              </div>
-              <div className="form-row">
-                <div className="form-group">
-                  <label>{t('ContactPerson')}</label>
-                  <input 
-                    type="text" 
-                    value={formData.contact_person || ''}
-                    onChange={e => setFormData({...formData, contact_person: e.target.value})}
-                    placeholder={t('ContactPerson')}
-                  />
-                </div>
-                <div className="form-group">
-                  <label>{t('Phone')}</label>
-                  <input 
-                    type="text" 
-                    value={formData.phone || ''}
-                    onChange={e => setFormData({...formData, phone: e.target.value})}
-                    placeholder={t('Phone')}
-                  />
+              <div className="form-section">
+                <div className="form-section-title">{t('BasicInformation') || 'Basic Information'}</div>
+                <div className="form-row">
+                  <div className="form-group">
+                    <label>{t('CompanyName')} *</label>
+                    <div className="input-with-icon">
+                      <Building2 size={18} className="input-icon" />
+                      <input 
+                        type="text" 
+                        value={formData.name || ''}
+                        onChange={e => setFormData({...formData, name: e.target.value})}
+                        required 
+                        placeholder={t('CompanyName')}
+                        className="form-input"
+                      />
+                    </div>
+                  </div>
+                  <div className="form-group">
+                    <label>{t('Code')}</label>
+                    <div className="input-with-icon">
+                      <span className="input-icon" style={{fontWeight: 'bold', fontSize: '14px'}}>#</span>
+                      <input 
+                        type="text" 
+                        value={formData.code || ''}
+                        onChange={e => setFormData({...formData, code: e.target.value})}
+                        placeholder="Auto"
+                        className="form-input"
+                      />
+                    </div>
+                  </div>
                 </div>
               </div>
-              <div className="form-group">
-                <label>{t('Address')}</label>
-                <textarea 
-                  value={formData.address || ''}
-                  onChange={e => setFormData({...formData, address: e.target.value})}
-                  placeholder={t('Address')}
-                  rows={2}
-                />
+
+              <div className="form-section">
+                <div className="form-section-title">{t('ContactInformation') || 'Contact Information'}</div>
+                <div className="form-row">
+                  <div className="form-group">
+                    <label>{t('ContactPerson')}</label>
+                    <div className="input-with-icon">
+                      <User size={18} className="input-icon" />
+                      <input 
+                        type="text" 
+                        value={formData.contact_person || ''}
+                        onChange={e => setFormData({...formData, contact_person: e.target.value})}
+                        placeholder={t('ContactPerson')}
+                        className="form-input"
+                      />
+                    </div>
+                  </div>
+                  <div className="form-group">
+                    <label>{t('Phone')}</label>
+                    <div className="input-with-icon">
+                      <Phone size={18} className="input-icon" />
+                      <input 
+                        type="text" 
+                        value={formData.phone || ''}
+                        onChange={e => setFormData({...formData, phone: e.target.value})}
+                        placeholder={t('Phone')}
+                        className="form-input"
+                      />
+                    </div>
+                  </div>
+                </div>
+                <div className="form-group">
+                  <label>{t('Address')}</label>
+                  <div className="input-with-icon" style={{alignItems: 'flex-start'}}>
+                    <MapPin size={18} className="input-icon" style={{marginTop: '12px'}} />
+                    <textarea 
+                      value={formData.address || ''}
+                      onChange={e => setFormData({...formData, address: e.target.value})}
+                      placeholder={t('Address')}
+                      rows={2}
+                      className="form-input"
+                    />
+                  </div>
+                </div>
               </div>
-              <div className="form-group">
-                <label>{t('DueLimit')}</label>
-                <input 
-                  type="number" 
-                  value={formData.due_limit || 0}
-                  onChange={e => setFormData({...formData, due_limit: parseFloat(e.target.value)})}
-                />
+
+              <div className="form-section">
+                <div className="form-section-title">{t('CreditSettings') || 'Credit Settings'}</div>
+                <div className="form-group">
+                  <label>{t('DueLimit')}</label>
+                  <div className="input-with-icon">
+                    <CreditCard size={18} className="input-icon" />
+                    <input 
+                      type="number" 
+                      value={formData.due_limit || 0}
+                      onChange={e => setFormData({...formData, due_limit: parseFloat(e.target.value)})}
+                      className="form-input"
+                      placeholder="0.00"
+                    />
+                  </div>
+                </div>
               </div>
-              <div className="modal-footer" style={{ padding: 0, border: 'none', marginTop: '20px' }}>
-                <button type="button" className="btn btn-secondary" onClick={() => setShowModal(false)}>{t('Cancel')}</button>
-                <button type="submit" className="btn btn-primary">{editItem ? t('UpdateSuccess') : t('Save')}</button>
+
+              <div className="modal-footer">
+                <button type="button" className="btn btn-secondary" onClick={() => setShowModal(false)}>
+                  <X size={18} /> {t('Cancel')}
+                </button>
+                <button type="submit" className="btn btn-primary">
+                  <Save size={18} /> {editItem ? t('Update') : t('Save')}
+                </button>
               </div>
             </form>
           </div>
