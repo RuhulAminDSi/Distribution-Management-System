@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { authService } from '../services/api';
 import { useLanguage } from '../context/LanguageContext';
-import { X, Plus, Pencil, Trash2, ChevronLeft, ChevronRight } from 'lucide-react';
+import { X, Plus, Pencil, Trash2, ChevronLeft, ChevronRight, User, Mail, Phone, Lock, Shield } from 'lucide-react';
 
 export default function Users() {
   const { t } = useLanguage();
@@ -100,23 +100,27 @@ export default function Users() {
   };
 
   const openModal = (item = null) => {
-    setEditItem(item);
-    // When editing, use existing role; when creating, default to salesman
-    setFormData(item ? { 
-      username: item.username, 
-      password: '', 
-      full_name: item.full_name || '', 
-      email: item.email || '',
-      role: item.role || 'salesman', 
-      phone: item.phone || '' 
-    } : { 
-      username: '', 
-      password: '', 
-      full_name: '', 
-      email: '',
-      role: 'salesman', 
-      phone: '' 
-    });
+    if (item) {
+      setEditItem(item);
+      setFormData({
+        username: item.username || '',
+        password: '',
+        full_name: item.full_name || '',
+        email: item.email || '',
+        role: item.role || 'salesman',
+        phone: item.phone || ''
+      });
+    } else {
+      setEditItem(null);
+      setFormData({
+        username: '',
+        password: '',
+        full_name: '',
+        email: '',
+        role: '',
+        phone: ''
+      });
+    }
     setShowModal(true);
   };
 
@@ -224,88 +228,315 @@ export default function Users() {
       </div>
 
       {showModal && (
-        <div className="modal-overlay" onClick={() => setShowModal(false)}>
-          <div className="modal" onClick={e => e.stopPropagation()}>
+        <div className="modal-overlay" onClick={() => { setShowModal(false); setEditItem(null); setFormData({}); }}>
+          <div className="user-modal" onClick={e => e.stopPropagation()}>
             <div className="modal-header">
-              <h3>{editItem ? t('EditUser') : t('AddUser')}</h3>
-              <button className="modal-close" onClick={() => setShowModal(false)}>
+              <div className="modal-title-wrapper">
+                <div className="modal-icon">
+                  <User size={20} />
+                </div>
+                <div>
+                  <h3>{editItem ? t('EditUser') : t('AddUser')}</h3>
+                  <p>{editItem ? 'Update user information' : 'Create a new user account'}</p>
+                </div>
+              </div>
+              <button className="modal-close" onClick={() => { setShowModal(false); setEditItem(null); setFormData({}); }}>
                 <X size={20} />
               </button>
             </div>
+            
             <form onSubmit={handleSubmit} className="modal-body">
-              <div className="form-row">
+              <div className="form-grid">
                 <div className="form-group">
-                  <label>{t('Username')} *</label>
+                  <label><User size={14} /> {t('Username')} *</label>
                   <input 
                     type="text" 
                     value={formData.username || ''}
                     onChange={e => setFormData({...formData, username: e.target.value})}
                     required 
-                    placeholder={t('Username')}
+                    placeholder="Enter username"
                     disabled={editItem}
+                    className="form-input"
+                    autoComplete="off"
                   />
                 </div>
+                
                 <div className="form-group">
-                  <label>{t('Password')} {editItem ? '' : '*'}</label>
+                  <label><Lock size={14} /> {t('Password')} {editItem ? '(Optional)' : '*'}</label>
                   <input 
                     type="password" 
                     value={formData.password || ''}
                     onChange={e => setFormData({...formData, password: e.target.value})}
                     required={!editItem}
-                    placeholder={editItem ? t('Optional') : t('Password')}
+                    placeholder={editItem ? 'Leave blank to keep current' : 'Enter password'}
+                    className="form-input"
+                    autoComplete="new-password"
                   />
                 </div>
-              </div>
-              <div className="form-row">
-                <div className="form-group">
-                  <label>{t('FullName')} *</label>
+                
+                <div className="form-group full-width">
+                  <label><User size={14} /> {t('FullName')} *</label>
                   <input 
                     type="text" 
                     value={formData.full_name || ''}
                     onChange={e => setFormData({...formData, full_name: e.target.value})}
                     required 
-                    placeholder={t('FullName')}
+                    placeholder="Enter full name"
+                    className="form-input"
+                    autoComplete="off"
                   />
                 </div>
+                
                 <div className="form-group">
-                  <label>{t('Email')}</label>
+                  <label><Mail size={14} /> {t('Email')}</label>
                   <input 
                     type="email" 
                     value={formData.email || ''}
                     onChange={e => setFormData({...formData, email: e.target.value})}
-                    placeholder={t('Email')}
+                    placeholder="Enter email address"
+                    className="form-input"
+                    autoComplete="off"
                   />
                 </div>
-              </div>
-              <div className="form-row">
+                
                 <div className="form-group">
-                  <label>{t('Role')} *</label>
+                  <label><Phone size={14} /> {t('Phone')}</label>
+                  <input 
+                    type="text" 
+                    value={formData.phone || ''}
+                    onChange={e => setFormData({...formData, phone: e.target.value})}
+                    placeholder="Enter phone number"
+                    className="form-input"
+                    autoComplete="off"
+                  />
+                </div>
+                
+                <div className="form-group full-width">
+                  <label><Shield size={14} /> {t('Role')} *</label>
                   <select 
-                    value={formData.role || 'salesman'}
+                    value={formData.role || ''}
                     onChange={e => setFormData({...formData, role: e.target.value})}
                     required
+                    className="form-input"
                   >
+                    <option value="">Select role</option>
                     {roles.map(r => (
                       <option key={r} value={r}>{formatRole(r)}</option>
                     ))}
                   </select>
                 </div>
-                <div className="form-group">
-                  <label>{t('Phone')}</label>
-                  <input 
-                    type="text" 
-                    value={formData.phone || ''}
-                    onChange={e => setFormData({...formData, phone: e.target.value})}
-                    placeholder={t('Phone')}
-                  />
-                </div>
               </div>
-              <div className="modal-footer" style={{ padding: 0, border: 'none', marginTop: '20px' }}>
-                <button type="button" className="btn btn-secondary" onClick={() => setShowModal(false)}>{t('Cancel')}</button>
-                <button type="submit" className="btn btn-primary">{editItem ? t('Save') : t('AddUser')}</button>
+              
+              <div className="modal-footer">
+                <button type="button" className="btn-cancel" onClick={() => { setShowModal(false); setEditItem(null); setFormData({}); }}>
+                  {t('Cancel')}
+                </button>
+                <button type="submit" className="btn btn-primary">
+                  {editItem ? t('Save') : t('AddUser')}
+                </button>
               </div>
             </form>
           </div>
+          
+          <style>{`
+            .user-modal {
+              background: #1a1a2e !important;
+              color: white !important;
+              border-radius: 16px;
+              width: 100%;
+              max-width: 520px;
+              border: 1px solid rgba(233, 69, 96, 0.2);
+              box-shadow: 0 25px 50px rgba(0, 0, 0, 0.5);
+              animation: modalSlide 0.3s ease;
+            }
+            
+            @keyframes modalSlide {
+              from { opacity: 0; transform: scale(0.95) translateY(-10px); }
+              to { opacity: 1; transform: scale(1) translateY(0); }
+            }
+            
+            .user-modal .modal-header {
+              display: flex;
+              justify-content: space-between;
+              align-items: flex-start;
+              padding: 24px;
+              border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+              background: #1a1a2e !important;
+            }
+            
+            .modal-title-wrapper {
+              display: flex;
+              align-items: center;
+              gap: 14px;
+            }
+            
+            .modal-icon {
+              width: 44px;
+              height: 44px;
+              background: linear-gradient(135deg, #e94560 0%, #ff6b6b 100%);
+              border-radius: 12px;
+              display: flex;
+              align-items: center;
+              justify-content: center;
+              color: white;
+            }
+            
+            .modal-title-wrapper h3 {
+              margin: 0;
+              color: white;
+              font-size: 1.25rem;
+              font-weight: 600;
+            }
+            
+            .modal-title-wrapper p {
+              margin: 4px 0 0;
+              color: rgba(255, 255, 255, 0.5);
+              font-size: 0.85rem;
+            }
+            
+            .user-modal .modal-close {
+              background: rgba(255, 255, 255, 0.1) !important;
+              border: none;
+              color: white !important;
+              width: 36px;
+              height: 36px;
+              border-radius: 10px;
+              cursor: pointer;
+              display: flex;
+              align-items: center;
+              justify-content: center;
+              transition: all 0.2s;
+            }
+            
+            .user-modal .modal-close:hover {
+              background: rgba(239, 68, 68, 0.3) !important;
+              color: #ff6b6b !important;
+            }
+            
+            .user-modal .modal-body {
+              padding: 24px;
+              background: #1a1a2e !important;
+            }
+            
+            .form-grid {
+              display: grid;
+              grid-template-columns: 1fr 1fr;
+              gap: 16px;
+            }
+            
+            .form-group.full-width {
+              grid-column: span 2;
+            }
+            
+            .form-group label {
+              display: flex;
+              align-items: center;
+              gap: 8px;
+              color: rgba(255, 255, 255, 0.8);
+              font-size: 0.875rem;
+              font-weight: 500;
+              margin-bottom: 8px;
+            }
+            
+            .form-input {
+              width: 100%;
+              padding: 12px 14px;
+              background: rgba(255, 255, 255, 0.05);
+              border: 1px solid rgba(255, 255, 255, 0.1);
+              border-radius: 10px;
+              color: white;
+              font-size: 0.95rem;
+              transition: all 0.3s;
+            }
+            
+            .form-input:focus {
+              outline: none;
+              border-color: #e94560;
+              box-shadow: 0 0 0 3px rgba(233, 69, 96, 0.15);
+            }
+            
+            .form-input::placeholder {
+              color: rgba(255, 255, 255, 0.3);
+            }
+            
+            .form-input:disabled {
+              background: rgba(255, 255, 255, 0.02);
+              cursor: not-allowed;
+            }
+            
+            select.form-input {
+              cursor: pointer;
+            }
+            
+            select.form-input option {
+              background: #1a1a2e;
+              color: white;
+            }
+            
+            .user-modal .modal-footer {
+              display: flex;
+              justify-content: flex-end;
+              gap: 12px;
+              padding: 20px 24px;
+              border-top: 1px solid rgba(255, 255, 255, 0.05);
+              margin: 0 -24px -24px;
+              background: #1a1a2e !important;
+            }
+            
+            .user-modal .btn {
+              padding: 12px 24px;
+              border-radius: 10px;
+              font-weight: 600;
+              cursor: pointer;
+              transition: all 0.2s;
+            }
+            
+            .user-modal .btn-secondary {
+              background: rgba(255, 255, 255, 0.05);
+              border: 1px solid rgba(255, 255, 255, 0.1);
+              color: white;
+            }
+            
+            .user-modal .btn-secondary:hover {
+              background: rgba(255, 255, 255, 0.1);
+            }
+            
+            .user-modal .btn-cancel {
+              background: transparent;
+              border: 1px solid rgba(255, 255, 255, 0.2);
+              color: rgba(255, 255, 255, 0.8);
+              padding: 12px 24px;
+              border-radius: 10px;
+              font-weight: 600;
+              cursor: pointer;
+              transition: all 0.2s;
+            }
+            
+            .user-modal .btn-cancel:hover {
+              background: rgba(255, 255, 255, 0.05);
+              border-color: rgba(255, 255, 255, 0.4);
+              color: white;
+            }
+            
+            .user-modal .btn-primary {
+              background: #1976D2;
+              border: none;
+              color: white;
+            }
+            
+            .user-modal .btn-primary:hover {
+              background: #1565C0;
+            }
+            
+            @media (max-width: 540px) {
+              .form-grid {
+                grid-template-columns: 1fr;
+              }
+              .form-group.full-width {
+                grid-column: span 1;
+              }
+            }
+          `}</style>
         </div>
       )}
     </div>

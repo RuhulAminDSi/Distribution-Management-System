@@ -58,18 +58,28 @@ export default function Stock() {
   const fetchCompanies = async () => {
     try {
       const response = await companyService.getCompanies();
-      setCompanies(response.data);
+      let companiesData = response.data;
+      if (companiesData && companiesData.data) {
+        companiesData = companiesData.data;
+      }
+      setCompanies(Array.isArray(companiesData) ? companiesData : []);
     } catch (error) {
       console.error('Failed to fetch companies:', error);
+      setCompanies([]);
     }
   };
 
   const fetchProducts = async () => {
     try {
       const response = await productService.getAll({ limit: 100 });
-      setProducts(response.data.data);
+      let productsData = response.data;
+      if (productsData && productsData.data) {
+        productsData = productsData.data;
+      }
+      setProducts(Array.isArray(productsData) ? productsData : []);
     } catch (error) {
       console.error('Failed to fetch products:', error);
+      setProducts([]);
     }
   };
 
@@ -79,6 +89,8 @@ export default function Stock() {
         productService.getExpired(),
         productService.getExpiringSoon(30)
       ]);
+      setExpiredProducts(expired.data?.data || expired.data || expired || []);
+      setExpiringSoonProducts(expiringSoon.data?.data || expiringSoon.data || expiringSoon || []);
       setExpiredProducts(expired.data || expired || []);
       setExpiringSoonProducts(expiringSoon.data || expiringSoon || []);
     } catch (error) {
@@ -339,12 +351,12 @@ export default function Stock() {
 
       {showModal && (
         <div className="modal-overlay" onClick={() => setShowModal(false)}>
-          <div className="modal" style={{ maxWidth: '700px' }} onClick={e => e.stopPropagation()}>
-            <div className="modal-header">
-              <h2 className="modal-title">{t('NewPurchaseOrder')}</h2>
-              <button className="modal-close" onClick={() => setShowModal(false)}>×</button>
-            </div>
+          <div className="stock-modal" onClick={e => e.stopPropagation()}>
             <form onSubmit={handleSubmit}>
+              <div className="modal-header">
+                <h2>{t('NewPurchaseOrder')}</h2>
+                <button type="button" className="modal-close" onClick={() => setShowModal(false)}>×</button>
+              </div>
               <div className="modal-body">
                 <div className="grid-2">
                   <div className="form-group">
@@ -427,6 +439,70 @@ export default function Stock() {
           </div>
         </div>
       )}
+
+      <style>{`
+        .stock-modal {
+          background: var(--surface);
+          border-radius: 16px;
+          width: 90%;
+          max-width: 700px;
+          max-height: 90vh;
+          overflow-y: auto;
+          box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+          animation: slideUp 0.3s ease;
+        }
+        
+        @keyframes slideUp {
+          from { transform: translateY(20px); opacity: 0; }
+          to { transform: translateY(0); opacity: 1; }
+        }
+        
+        .stock-modal .modal-header {
+          padding: 20px 24px;
+          border-bottom: 1px solid var(--border);
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          background: var(--primary);
+          border-radius: 16px 16px 0 0;
+        }
+        
+        .stock-modal .modal-header h2 {
+          color: white;
+          margin: 0;
+          font-size: 1.25rem;
+        }
+        
+        .stock-modal .modal-close {
+          background: rgba(255,255,255,0.2);
+          border: none;
+          color: white;
+          width: 32px;
+          height: 32px;
+          border-radius: 8px;
+          cursor: pointer;
+          font-size: 1.25rem;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+        }
+        
+        .stock-modal .modal-close:hover {
+          background: rgba(255,255,255,0.3);
+        }
+        
+        .stock-modal .modal-body {
+          padding: 24px;
+        }
+        
+        .stock-modal .modal-footer {
+          padding: 16px 24px;
+          border-top: 1px solid var(--border);
+          display: flex;
+          justify-content: flex-end;
+          gap: 12px;
+        }
+      `}</style>
     </div>
   );
 }
