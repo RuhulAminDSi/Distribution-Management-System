@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { stockService, companyService, productService } from '../services/api';
 import { useLanguage, formatCurrency, formatNumber, formatDateTime, formatDate } from '../context/LanguageContext';
-import { Plus, ArrowDownToLine, ChevronLeft, ChevronRight, AlertTriangle } from 'lucide-react';
+import { Plus, ArrowDownToLine, ChevronLeft, ChevronRight, AlertTriangle, Search } from 'lucide-react';
 
 export default function Stock() {
   const { t, language } = useLanguage();
@@ -18,6 +18,7 @@ export default function Stock() {
   const [totalPages, setTotalPages] = useState(1);
   const [total, setTotal] = useState(0);
   const [limit, setLimit] = useState(10);
+  const [search, setSearch] = useState('');
   const [formData, setFormData] = useState({
     company_id: '', order_date: new Date().toISOString().split('T')[0],
     notes: '', items: [{ product_id: '', quantity: 1, rate: 0 }]
@@ -29,11 +30,11 @@ export default function Stock() {
     fetchCompanies();
     fetchProducts();
     fetchExpiryProducts();
-  }, [page, limit]);
+  }, [search, page, limit]);
 
   const fetchHistory = async () => {
     try {
-      const response = await stockService.getHistory({ page, limit });
+      const response = await stockService.getHistory({ page, limit, search });
       const data = response.data?.data || response.data || [];
       const totalVal = response.data?.pagination?.total || response.data?.total || data.length || 0;
       setHistory(data);
@@ -153,7 +154,7 @@ export default function Stock() {
   return (
     <div>
       <div className="page-header">
-        <h1 className="page-title">{t('Stock')}</h1>
+        <h1 className="page-title">{t('StockNav')}</h1>
         <button className="btn btn-primary" onClick={() => setShowModal(true)}>
           <Plus size={18} /> {t('NewPurchaseOrder')}
         </button>
@@ -173,6 +174,17 @@ export default function Stock() {
 
       {activeTab === 'history' && (
         <div className="card">
+          <div className="card-header">
+            <div className="search-bar" style={{ flex: 1, maxWidth: '500px' }}>
+              <Search size={18} />
+              <input
+                type="text"
+                placeholder={t('SearchStock')}
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+              />
+            </div>
+          </div>
           <div className="table-container">
             <table className="table">
               <thead>
@@ -289,7 +301,7 @@ export default function Stock() {
                       <th>{t('Code')}</th>
                       <th>{t('Name')}</th>
                       <th>{t('Company')}</th>
-                      <th className="text-right">{t('Stock')}</th>
+                      <th className="text-right">{t('StockLabel')}</th>
                       <th>{t('ExpiryDate')}</th>
                     </tr>
                   </thead>
@@ -321,7 +333,7 @@ export default function Stock() {
                       <th>{t('Code')}</th>
                       <th>{t('Name')}</th>
                       <th>{t('Company')}</th>
-                      <th className="text-right">{t('Stock')}</th>
+                      <th className="text-right">{t('StockLabel')}</th>
                       <th>{t('ExpiryDate')}</th>
                     </tr>
                   </thead>

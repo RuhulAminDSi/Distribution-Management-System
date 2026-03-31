@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useLanguage } from '../context/LanguageContext';
 import { companyService } from '../services/api';
-import { X, Plus, Pencil, Trash2, ChevronLeft, ChevronRight, Building2, User, Phone, MapPin, CreditCard, Save } from 'lucide-react';
+import { X, Plus, Pencil, Trash2, ChevronLeft, ChevronRight, Building2, User, Phone, MapPin, CreditCard, Save, Search } from 'lucide-react';
 
 export default function Companies() {
   const { t } = useLanguage();
@@ -14,15 +14,16 @@ export default function Companies() {
   const [totalPages, setTotalPages] = useState(1);
   const [total, setTotal] = useState(0);
   const [limit, setLimit] = useState(10);
+  const [search, setSearch] = useState('');
 
   useEffect(() => {
     fetchCompanies();
-  }, [page, limit]);
+  }, [search, page, limit]);
 
   const fetchCompanies = async () => {
     setLoading(true);
     try {
-      const res = await companyService.getCompanies({ page, limit });
+      const res = await companyService.getCompanies({ page, limit, search });
       const data = res.data?.data || res.data || [];
       const totalVal = res.data?.pagination?.total || res.data?.total || data.length || 0;
       setCompanies(data);
@@ -79,6 +80,17 @@ export default function Companies() {
       </div>
 
       <div className="card">
+        <div className="card-header">
+          <div className="search-bar" style={{ flex: 1, maxWidth: '500px' }}>
+            <Search size={18} />
+            <input
+              type="text"
+              placeholder={t('SearchCompanies')}
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+            />
+          </div>
+        </div>
         <table className="table">
           <thead>
             <tr>

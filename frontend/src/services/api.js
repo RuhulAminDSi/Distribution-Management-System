@@ -14,7 +14,7 @@ export const authService = {
   logout: () => api.post('/auth/logout'),
   me: () => api.get('/auth/me'),
   register: (data) => api.post('/auth/register', data),
-  getUsers: () => api.get('/auth/users'),
+  getUsers: (params) => api.get('/auth/users', { params }),
   updateUser: (id, data) => api.put(`/auth/users/${id}`, data),
   deleteUser: (id) => api.delete(`/auth/users/${id}`),
   changePassword: (data) => api.post('/auth/change-password', data),
@@ -80,7 +80,7 @@ export const dashboardService = {
 };
 
 export const companyService = {
-  getCompanies: () => api.get('/companies'),
+  getCompanies: (params) => api.get('/companies', { params }),
   createCompany: (data) => api.post('/companies', data),
   updateCompany: (id, data) => api.put(`/companies/${id}`, data),
   deleteCompany: (id) => api.delete(`/companies/${id}`),

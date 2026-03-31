@@ -2,7 +2,7 @@ import { query, getConnection } from '../config/database.js';
 import { generatePONo, buildPaginatedResponse } from '../utils/helpers.js';
 
 export const stockService = {
-  async getStockHistory(page = 1, limit = 20, productId = null, startDate = null, endDate = null) {
+  async getStockHistory(page = 1, limit = 20, productId = null, startDate = null, endDate = null, search = '') {
     let sql = `
       SELECT 
         sl.*,
@@ -31,15 +31,32 @@ export const stockService = {
       params.push(endDate);
     }
 
-    const countSql = 'SELECT COUNT(*) as total FROM stock_logs sl WHERE 1=1' +
-      (productId ? ' AND sl.product_id = ?' : '') +
-      (startDate ? ' AND DATE(sl.created_at) >= ?' : '') +
-      (endDate ? ' AND DATE(sl.created_at) <= ?' : '');
-    
+    if (search) {
+      sql += ' AND (p.name LIKE ? OR p.code LIKE ?)';
+      const searchTerm = `%${search}%`;
+      params.push(searchTerm, searchTerm);
+    }
+
+    let countSql = 'SELECT COUNT(*) as total FROM stock_logs sl LEFT JOIN products p ON sl.product_id = p.id WHERE 1=1';
     const countParams = [];
-    if (productId) countParams.push(productId);
-    if (startDate) countParams.push(startDate);
-    if (endDate) countParams.push(endDate);
+    
+    if (productId) {
+      countSql += ' AND sl.product_id = ?';
+      countParams.push(productId);
+    }
+    if (startDate) {
+      countSql += ' AND DATE(sl.created_at) >= ?';
+      countParams.push(startDate);
+    }
+    if (endDate) {
+      countSql += ' AND DATE(sl.created_at) <= ?';
+      countParams.push(endDate);
+    }
+    if (search) {
+      countSql += ' AND (p.name LIKE ? OR p.code LIKE ?)';
+      const searchTerm = `%${search}%`;
+      countParams.push(searchTerm, searchTerm);
+    }
     
     const countResult = await query(countSql, countParams);
     const total = countResult[0]?.total || 0;

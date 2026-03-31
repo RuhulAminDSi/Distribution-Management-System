@@ -3,8 +3,8 @@ import { companyService, categoryService } from '../services/companyService.js';
 export const companyController = {
   async findAll(req, res, next) {
     try {
-      const { page = 1, limit = 20 } = req.query;
-      const result = await companyService.findAll(parseInt(page), parseInt(limit));
+      const { page = 1, limit = 20, search = '' } = req.query;
+      const result = await companyService.findAll(parseInt(page), parseInt(limit), search);
       res.json(result);
     } catch (error) {
       next(error);

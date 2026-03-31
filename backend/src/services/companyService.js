@@ -2,12 +2,31 @@ import { query } from '../config/database.js';
 import { generateCode } from '../utils/helpers.js';
 
 export const companyService = {
-  async findAll(page = 1, limit = 20) {
+  async findAll(page = 1, limit = 20, search = '') {
     const offset = (page - 1) * limit;
-    const data = await query('SELECT * FROM companies WHERE is_active = 1 ORDER BY name LIMIT ? OFFSET ?', [limit, offset]);
-    const countResult = await query('SELECT COUNT(*) as total FROM companies WHERE is_active = 1');
+    let whereClause = 'WHERE is_active = 1';
+    let params = [];
+    
+    if (search) {
+      whereClause += ' AND (name LIKE ? OR code LIKE ? OR contact_person LIKE ?)';
+      const searchTerm = `%${search}%`;
+      params = [searchTerm, searchTerm, searchTerm, limit, offset];
+    } else {
+      params = [limit, offset];
+    }
+    
+    const data = await query(`SELECT * FROM companies ${whereClause} ORDER BY name LIMIT ? OFFSET ?`, params);
+    
+    let countSql = 'SELECT COUNT(*) as total FROM companies WHERE is_active = 1';
+    let countParams = [];
+    if (search) {
+      countSql += ' AND (name LIKE ? OR code LIKE ? OR contact_person LIKE ?)';
+      const searchTerm = `%${search}%`;
+      countParams = [searchTerm, searchTerm, searchTerm];
+    }
+    const countResult = await query(countSql, countParams);
     const total = countResult[0]?.total || 0;
-    return { data, total };
+    return { data, total, pagination: { page, limit, total } };
   },
 
   async findById(id) {

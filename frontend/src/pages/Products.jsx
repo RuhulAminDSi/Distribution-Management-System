@@ -99,11 +99,11 @@ export default function Products() {
 
       <div className="card">
         <div className="card-header">
-          <div className="search-bar" style={{ maxWidth: '300px' }}>
+          <div className="search-bar" style={{ flex: 1, maxWidth: '500px' }}>
             <Search size={18} />
             <input
               type="text"
-              placeholder={t('Search') + '...'}
+              placeholder={t('SearchProducts')}
               value={search}
               onChange={(e) => setSearch(e.target.value)}
             />
@@ -119,7 +119,7 @@ export default function Products() {
                 <th className="text-right">{t('PurchasePrice')}</th>
                 <th className="text-right">{t('DealerPrice')}</th>
                 <th className="text-right">{t('MRP')}</th>
-                <th className="text-right">{t('Stock')}</th>
+                <th className="text-right">{t('StockLabel')}</th>
                 <th>{t('ExpiryDate')}</th>
                 <th></th>
               </tr>
@@ -276,7 +276,7 @@ export default function Products() {
 
                 <div className="grid-3">
                   <div className="form-group">
-                    <label className="form-label">{t('Stock')}</label>
+                    <label className="form-label">{t('StockLabel')}</label>
                     <input
                       type="number"
                       className="form-input"

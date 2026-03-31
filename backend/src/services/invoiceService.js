@@ -4,7 +4,7 @@ import { productService } from './productService.js';
 import { retailerService } from './retailerService.js';
 
 export const invoiceService = {
-  async findAll(page = 1, limit = 20, retailerId = null, status = null, startDate = null, endDate = null) {
+  async findAll(page = 1, limit = 20, retailerId = null, status = null, startDate = null, endDate = null, search = '') {
     let sql = `
       SELECT i.*, r.name as retailer_name, r.phone as retailer_phone, u.full_name as created_by_name
       FROM invoices i
@@ -32,6 +32,12 @@ export const invoiceService = {
     if (endDate) {
       sql += ' AND i.invoice_date <= ?';
       params.push(endDate);
+    }
+
+    if (search) {
+      sql += ' AND (i.invoice_no LIKE ? OR r.name LIKE ?)';
+      const searchTerm = `%${search}%`;
+      params.push(searchTerm, searchTerm);
     }
 
     const countSql = sql.replace(/SELECT i\.\*, r\.name as retailer_name, r\.phone as retailer_phone, u\.full_name as created_by_name/, 'SELECT COUNT(*) as total');

@@ -2,7 +2,7 @@ import { query, getConnection } from '../config/database.js';
 import { generatePaymentNo, buildPaginatedResponse, paginate } from '../utils/helpers.js';
 
 export const paymentService = {
-  async findAll(page = 1, limit = 20, retailerId = null, startDate = null, endDate = null) {
+  async findAll(page = 1, limit = 20, retailerId = null, startDate = null, endDate = null, search = '') {
     let sql = `
       SELECT p.*, r.name as retailer_name, u.full_name as collected_by_name
       FROM payments p
@@ -27,15 +27,32 @@ export const paymentService = {
       params.push(endDate);
     }
 
-    const countSql = 'SELECT COUNT(*) as total FROM payments p WHERE 1=1' + 
-      (retailerId ? ' AND p.retailer_id = ?' : '') +
-      (startDate ? ' AND p.payment_date >= ?' : '') +
-      (endDate ? ' AND p.payment_date <= ?' : '');
-    
+    if (search) {
+      sql += ' AND (p.payment_no LIKE ? OR r.name LIKE ? OR p.reference_no LIKE ?)';
+      const searchTerm = `%${search}%`;
+      params.push(searchTerm, searchTerm, searchTerm);
+    }
+
+    let countSql = 'SELECT COUNT(*) as total FROM payments p LEFT JOIN retailers r ON p.retailer_id = r.id WHERE 1=1';
     const countParams = [];
-    if (retailerId) countParams.push(retailerId);
-    if (startDate) countParams.push(startDate);
-    if (endDate) countParams.push(endDate);
+    
+    if (retailerId) {
+      countSql += ' AND p.retailer_id = ?';
+      countParams.push(retailerId);
+    }
+    if (startDate) {
+      countSql += ' AND p.payment_date >= ?';
+      countParams.push(startDate);
+    }
+    if (endDate) {
+      countSql += ' AND p.payment_date <= ?';
+      countParams.push(endDate);
+    }
+    if (search) {
+      countSql += ' AND (p.payment_no LIKE ? OR r.name LIKE ? OR p.reference_no LIKE ?)';
+      const searchTerm = `%${search}%`;
+      countParams.push(searchTerm, searchTerm, searchTerm);
+    }
     
     const countResult = await query(countSql, countParams);
     const total = countResult[0]?.total || 0;

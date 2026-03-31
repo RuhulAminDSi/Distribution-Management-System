@@ -14,6 +14,7 @@ export default function Sales() {
   const [totalPages, setTotalPages] = useState(1);
   const [totalCount, setTotalCount] = useState(0);
   const [limit, setLimit] = useState(10);
+  const [search, setSearch] = useState('');
   const [formData, setFormData] = useState({
     retailer_id: '', invoice_date: new Date().toISOString().split('T')[0],
     discount_percent: 0, paid_amount: 0, notes: '', items: []
@@ -24,11 +25,11 @@ export default function Sales() {
     fetchInvoices();
     fetchRetailers();
     fetchProducts();
-  }, [page, limit]);
+  }, [search, page, limit]);
 
   const fetchInvoices = async () => {
     try {
-      const response = await invoiceService.getAll({ page, limit });
+      const response = await invoiceService.getAll({ page, limit, search });
       const data = response.data?.data || response.data || [];
       const totalVal = response.data?.pagination?.total || response.data?.total || data.length || 0;
       setInvoices(data);
@@ -141,6 +142,17 @@ export default function Sales() {
       </div>
 
       <div className="card">
+        <div className="card-header">
+          <div className="search-bar" style={{ flex: 1, maxWidth: '500px' }}>
+            <Search size={18} />
+            <input
+              type="text"
+              placeholder={t('SearchSales')}
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+            />
+          </div>
+        </div>
         <div className="table-container">
           <table className="table">
             <thead>
@@ -151,7 +163,7 @@ export default function Sales() {
                 <th>{t('Retailer')}</th>
                 <th className="text-right">{t('Total')}</th>
                 <th className="text-right">{t('Paid')}</th>
-                <th className="text-right">{t('Due')}</th>
+                <th className="text-right">{t('DueLabel')}</th>
                 <th>{t('Status')}</th>
               </tr>
             </thead>

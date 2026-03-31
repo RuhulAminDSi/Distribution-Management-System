@@ -3,13 +3,14 @@ import { paymentService } from '../services/paymentService.js';
 export const paymentController = {
   async findAll(req, res, next) {
     try {
-      const { page = 1, limit = 20, retailer_id, start_date, end_date } = req.query;
+      const { page = 1, limit = 20, retailer_id, start_date, end_date, search } = req.query;
       const result = await paymentService.findAll(
         parseInt(page),
         parseInt(limit),
         retailer_id ? parseInt(retailer_id) : null,
         start_date,
-        end_date
+        end_date,
+        search
       );
       res.json(result);
     } catch (error) {

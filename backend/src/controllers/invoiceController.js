@@ -3,14 +3,15 @@ import { invoiceService } from '../services/invoiceService.js';
 export const invoiceController = {
   async findAll(req, res, next) {
     try {
-      const { page = 1, limit = 20, retailer_id, status, start_date, end_date } = req.query;
+      const { page = 1, limit = 20, retailer_id, status, start_date, end_date, search } = req.query;
       const result = await invoiceService.findAll(
         parseInt(page),
         parseInt(limit),
         retailer_id ? parseInt(retailer_id) : null,
         status,
         start_date,
-        end_date
+        end_date,
+        search
       );
       res.json(result);
     } catch (error) {

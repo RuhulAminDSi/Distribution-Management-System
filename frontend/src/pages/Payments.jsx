@@ -13,6 +13,7 @@ export default function Payments() {
   const [totalPages, setTotalPages] = useState(1);
   const [total, setTotal] = useState(0);
   const [limit, setLimit] = useState(10);
+  const [search, setSearch] = useState('');
   const [formData, setFormData] = useState({
     retailer_id: '', amount: 0, payment_method: 'cash',
     reference_no: '', payment_date: new Date().toISOString().split('T')[0], notes: ''
@@ -21,11 +22,11 @@ export default function Payments() {
   useEffect(() => {
     fetchPayments();
     fetchRetailers();
-  }, [page, limit]);
+  }, [search, page, limit]);
 
   const fetchPayments = async () => {
     try {
-      const response = await paymentService.getAll({ page, limit });
+      const response = await paymentService.getAll({ page, limit, search });
       const data = response.data?.data || response.data || [];
       const totalVal = response.data?.pagination?.total || response.data?.total || data.length || 0;
       setPayments(data);
@@ -93,6 +94,17 @@ export default function Payments() {
       </div>
 
       <div className="card">
+        <div className="card-header">
+          <div className="search-bar" style={{ flex: 1, maxWidth: '500px' }}>
+            <Search size={18} />
+            <input
+              type="text"
+              placeholder={t('SearchPayments')}
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+            />
+          </div>
+        </div>
         <div className="table-container">
           <table className="table">
             <thead>
@@ -164,7 +176,7 @@ export default function Payments() {
                     onChange={(e) => setFormData({ ...formData, retailer_id: e.target.value })}
                     required
                   >
-                    <option value="">{t('SelectRetailer')}</option>
+                    <option value="">{t('SelectRetailerPayment')}</option>
                     {retailers.map(r => (
                       <option key={r.id} value={r.id}>
                         {r.name} - Due: {formatCurrency(r.outstanding_balance || 0, language)}

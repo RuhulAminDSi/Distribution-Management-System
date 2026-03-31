@@ -98,11 +98,11 @@ export default function Retailers() {
 
       <div className="card">
         <div className="card-header">
-          <div className="search-bar" style={{ maxWidth: '300px' }}>
+          <div className="search-bar" style={{ flex: 1, maxWidth: '500px' }}>
             <Search size={18} />
             <input
               type="text"
-              placeholder={t('Search') + '...'}
+              placeholder={t('SearchRetailers')}
               value={search}
               onChange={(e) => setSearch(e.target.value)}
             />

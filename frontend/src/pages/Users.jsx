@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { authService, roleService } from '../services/api';
 import { useLanguage } from '../context/LanguageContext';
-import { X, Plus, Pencil, Trash2, ChevronLeft, ChevronRight, User, Mail, Phone, Lock, Shield } from 'lucide-react';
+import { X, Plus, Pencil, Trash2, ChevronLeft, ChevronRight, User, Mail, Phone, Lock, Shield, Search } from 'lucide-react';
 
 export default function Users() {
   const { t } = useLanguage();
@@ -15,11 +15,12 @@ export default function Users() {
   const [totalPages, setTotalPages] = useState(1);
   const [total, setTotal] = useState(0);
   const [limit, setLimit] = useState(10);
+  const [search, setSearch] = useState('');
 
   useEffect(() => {
     fetchUsers();
     fetchRoles();
-  }, [page, limit]);
+  }, [search, page, limit]);
 
   const fetchRoles = async () => {
     try {
@@ -33,7 +34,7 @@ export default function Users() {
   const fetchUsers = async () => {
     setLoading(true);
     try {
-      const res = await authService.getUsers({ page, limit });
+      const res = await authService.getUsers({ page, limit, search });
       const data = res.data?.data || res.data || [];
       const totalVal = res.data?.pagination?.total || res.data?.total || data.length || 0;
       setUsers(data);
@@ -159,6 +160,17 @@ export default function Users() {
       </div>
 
       <div className="card">
+        <div className="card-header">
+          <div className="search-bar" style={{ flex: 1, maxWidth: '500px' }}>
+            <Search size={18} />
+            <input
+              type="text"
+              placeholder={t('SearchUsers')}
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+            />
+          </div>
+        </div>
         <table className="table">
           <thead>
             <tr>
