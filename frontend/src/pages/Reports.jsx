@@ -484,8 +484,8 @@ export default function Reports() {
     { id: 'product', label: t('ProductWise') },
     { id: 'company', label: t('CompanyWise') },
     { id: 'profit', label: t('Profit') },
-    { id: 'stock', label: t('Stock') },
-    { id: 'due', label: t('Due') },
+    { id: 'stock', label: t('StockLabel') },
+    { id: 'due', label: t('DueLabel') },
     { id: 'expiry', label: t('ExpiryProducts') }
   ];
 
@@ -570,7 +570,7 @@ export default function Reports() {
               </div>
               <div className="stat-card">
                 <div className="stat-icon red"><AlertTriangle size={24} /></div>
-                <div className="stat-label">{t('Due') || 'Due'}</div>
+                <div className="stat-label">{t('DueLabel') || 'Due'}</div>
                 <div className="stat-value">{formatCurrency(summary.daily?.totalDue, language)}</div>
               </div>
             </>
@@ -708,7 +708,7 @@ export default function Reports() {
                     <th>{t('Retailer')}</th>
                     <th className="text-right">{t('Total')}</th>
                     <th className="text-right">{t('Paid')}</th>
-                    <th className="text-right">{t('Due')}</th>
+                    <th className="text-right">{t('DueLabel')}</th>
                     <th>{t('Status')}</th>
                   </tr>
                 </thead>
@@ -733,7 +733,7 @@ export default function Reports() {
                   <tr>
                     <th>{t('Product')}</th>
                     <th>{t('Company')}</th>
-                    <th>{t('Category')}</th>
+                    <th>{t('CategoryLabel')}</th>
                     <th className="text-right">{t('Quantity')}</th>
                     <th className="text-right">{t('Amount')}</th>
                   </tr>
@@ -810,7 +810,7 @@ export default function Reports() {
                   <tr>
                     <th>{t('Product')}</th>
                     <th>{t('Company')}</th>
-                    <th className="text-right">{t('Stock')}</th>
+                    <th className="text-right">{t('StockLabel')}</th>
                     <th className="text-right">{t('StockValue')}</th>
                     <th className="text-right">{t('DealerPrice')}</th>
                   </tr>
@@ -863,7 +863,7 @@ export default function Reports() {
                     <th>{t('Code')}</th>
                     <th>{t('Name')}</th>
                     <th>{t('Company')}</th>
-                    <th className="text-right">{t('Stock')}</th>
+                    <th className="text-right">{t('StockLabel')}</th>
                     <th>{t('ExpiryDate')}</th>
                     <th>{t('Status')}</th>
                   </tr>
@@ -900,7 +900,9 @@ export default function Reports() {
                 <option value={50}>50</option>
                 <option value={100}>100</option>
               </select>
-              <span style={{ fontSize: '14px' }}>of {total} entries</span>
+              <span style={{ fontSize: '14px', marginLeft: 'auto' }}>
+                {Math.min((page - 1) * limit + limit, total)} of {total} entries
+              </span>
             </div>
             <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
               <button className="btn btn-secondary btn-sm" onClick={() => setPage(p => Math.max(1, p - 1))} disabled={page === 1}>

@@ -229,7 +229,9 @@ export default function Stock() {
                 <option value={50}>50</option>
                 <option value={100}>100</option>
               </select>
-              <span style={{ fontSize: '14px' }}>of {total} entries</span>
+              <span style={{ fontSize: '14px', marginLeft: 'auto' }}>
+                {Math.min((page - 1) * limit + limit, total)} of {total} entries
+              </span>
             </div>
             <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
               <button className="btn btn-secondary btn-sm" onClick={() => setPage(p => Math.max(1, p - 1))} disabled={page === 1}>
