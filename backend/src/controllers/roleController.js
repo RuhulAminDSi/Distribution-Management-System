@@ -1,4 +1,5 @@
 import { roleModel, permissionModel } from '../models/index.js';
+import { ApiError } from '../utils/ApiError.js';
 
 export const roleController = {
   async getAllRoles(req, res, next) {
@@ -25,7 +26,7 @@ export const roleController = {
       const role = await roleModel.findByIdWithPermissions(id);
       
       if (!role) {
-        return res.status(404).json({ message: 'Role not found' });
+        throw new ApiError(404, 'Role not found');
       }
       
       res.json({ role });
@@ -39,12 +40,12 @@ export const roleController = {
       const { name, description, permissions, color } = req.body;
 
       if (!name) {
-        return res.status(400).json({ message: 'Name is required' });
+        throw new ApiError(400, 'Name is required');
       }
 
       const existing = await roleModel.findByName(name);
       if (existing) {
-        return res.status(400).json({ message: 'Role already exists' });
+        throw new ApiError(400, 'Role already exists');
       }
 
       const role = await roleModel.createWithPermissions(
@@ -65,12 +66,12 @@ export const roleController = {
 
       const existing = await roleModel.findById(id);
       if (!existing) {
-        return res.status(404).json({ message: 'Role not found' });
+        throw new ApiError(404, 'Role not found');
       }
 
       const systemRoles = ['system_admin', 'admin'];
       if (systemRoles.includes(existing.name)) {
-        return res.status(400).json({ message: 'Cannot modify system roles' });
+        throw new ApiError(400, 'Cannot modify system roles');
       }
 
       const updateData = {};
@@ -98,7 +99,7 @@ export const roleController = {
       const result = await roleModel.deleteWithCheck(id);
 
       if (!result.success) {
-        return res.status(400).json({ message: result.message });
+        throw new ApiError(400, result.message);
       }
       
       res.json({ message: result.message });

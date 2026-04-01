@@ -1,4 +1,5 @@
 import { invoiceService } from '../services/invoiceService.js';
+import { ApiError } from '../utils/ApiError.js';
 
 export const invoiceController = {
   async findAll(req, res, next) {
@@ -23,7 +24,7 @@ export const invoiceController = {
     try {
       const invoice = await invoiceService.findById(req.params.id);
       if (!invoice) {
-        return res.status(404).json({ message: 'Invoice not found' });
+        throw new ApiError(404, 'Invoice not found');
       }
       res.json(invoice);
     } catch (error) {

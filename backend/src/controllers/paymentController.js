@@ -1,4 +1,5 @@
 import { paymentService } from '../services/paymentService.js';
+import { ApiError } from '../utils/ApiError.js';
 
 export const paymentController = {
   async findAll(req, res, next) {
@@ -22,7 +23,7 @@ export const paymentController = {
     try {
       const payment = await paymentService.findById(req.params.id);
       if (!payment) {
-        return res.status(404).json({ message: 'Payment not found' });
+        throw new ApiError(404, 'Payment not found');
       }
       res.json(payment);
     } catch (error) {

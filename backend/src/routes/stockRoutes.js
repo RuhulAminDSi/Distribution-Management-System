@@ -1,6 +1,7 @@
 import express from 'express';
 import { stockController } from '../controllers/stockController.js';
 import { authenticate, permit } from '../middleware/auth.js';
+import { validateAdjustStock } from '../utils/validation.js';
 
 const router = express.Router();
 

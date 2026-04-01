@@ -1,4 +1,5 @@
 import { companyService, categoryService } from '../services/companyService.js';
+import { ApiError } from '../utils/ApiError.js';
 
 export const companyController = {
   async findAll(req, res, next) {
@@ -15,7 +16,7 @@ export const companyController = {
     try {
       const company = await companyService.findById(req.params.id);
       if (!company) {
-        return res.status(404).json({ message: 'Company not found' });
+        throw new ApiError(404, 'Company not found');
       }
       res.json(company);
     } catch (error) {
@@ -66,7 +67,7 @@ export const categoryController = {
     try {
       const category = await categoryService.findById(req.params.id);
       if (!category) {
-        return res.status(404).json({ message: 'Category not found' });
+        throw new ApiError(404, 'Category not found');
       }
       res.json(category);
     } catch (error) {
