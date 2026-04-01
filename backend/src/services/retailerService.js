@@ -1,38 +1,31 @@
 import { query, getConnection } from '../config/database.js';
 import { generateCode, buildPaginatedResponse, paginate } from '../utils/helpers.js';
+import { QueryBuilder } from '../utils/QueryBuilder.js';
 
 export const retailerService = {
   async findAll(page = 1, limit = 20, search = '', area = null) {
-    let sql = `
-      SELECT * FROM retailers WHERE is_active = 1
-    `;
-    const params = [];
+    // Build query with QueryBuilder
+    let builder = new QueryBuilder('retailers')
+      .where('is_active', 1)
+      .orderBy('id', 'DESC');
 
     if (search) {
-      sql += ' AND (name LIKE ? OR code LIKE ? OR phone LIKE ?)';
-      params.push(`%${search}%`, `%${search}%`, `%${search}%`);
+      const searchTerm = `%${search}%`;
+      builder.whereRaw('(name LIKE ? OR code LIKE ? OR phone LIKE ?)', [searchTerm, searchTerm, searchTerm]);
     }
 
     if (area) {
-      sql += ' AND area = ?';
-      params.push(area);
+      builder.where('area', area);
     }
 
-    const countSql = sql.replace('SELECT *', 'SELECT COUNT(*) as total');
-    const countResult = await query(countSql, params);
-    const total = countResult[0]?.total || 0;
-
-    sql += ' ORDER BY id DESC LIMIT ? OFFSET ?';
-    const { offset, limit: parsedLimit } = paginate(page, limit);
-    params.push(parsedLimit, offset);
-
-    const retailers = await query(sql, params);
-    return buildPaginatedResponse(retailers, total, page, limit);
+    return builder.paginate(page, limit);
   },
 
   async findById(id) {
-    const retailers = await query('SELECT * FROM retailers WHERE id = ? AND is_active = 1', [id]);
-    return retailers[0] || null;
+    return new QueryBuilder('retailers')
+      .where('id', id)
+      .where('is_active', 1)
+      .first();
   },
 
   async create(data) {
@@ -86,21 +79,16 @@ export const retailerService = {
     const retailer = await this.findById(id);
     if (!retailer) throw new Error('Retailer not found');
     
-    const sql = `
-      SELECT 
-        COALESCE(SUM(total_amount), 0) as total_sales,
-        COALESCE(SUM(paid_amount), 0) as total_collected,
-        COALESCE(SUM(due_amount), 0) as outstanding
-      FROM invoices 
-      WHERE retailer_id = ?
-    `;
-    const result = await query(sql, [id]);
+    const result = await new QueryBuilder('invoices')
+      .select('COALESCE(SUM(total_amount), 0) as total_sales, COALESCE(SUM(paid_amount), 0) as total_collected, COALESCE(SUM(due_amount), 0) as outstanding')
+      .where('retailer_id', id)
+      .first();
     
     return {
       retailer_id: id,
-      total_sales: result[0]?.total_sales || 0,
-      total_collected: result[0]?.total_collected || 0,
-      outstanding: result[0]?.outstanding || 0,
+      total_sales: result?.total_sales || 0,
+      total_collected: result?.total_collected || 0,
+      outstanding: result?.outstanding || 0,
       credit_limit: retailer.credit_limit,
       due_limit: retailer.due_limit
     };
@@ -113,7 +101,12 @@ export const retailerService = {
   },
 
   async getAllAreas() {
-    const result = await query('SELECT DISTINCT area FROM retailers WHERE is_active = 1 AND area IS NOT NULL ORDER BY area');
+    const result = await new QueryBuilder('retailers')
+      .select('DISTINCT area')
+      .where('is_active', 1)
+      .whereRaw('area IS NOT NULL', [])
+      .orderBy('area', 'ASC')
+      .get();
     return result.map(r => r.area);
   }
 };

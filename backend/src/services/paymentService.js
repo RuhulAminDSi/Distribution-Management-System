@@ -1,79 +1,43 @@
 import { query, getConnection } from '../config/database.js';
 import { generatePaymentNo, buildPaginatedResponse, paginate } from '../utils/helpers.js';
+import { QueryBuilder } from '../utils/QueryBuilder.js';
 
 export const paymentService = {
   async findAll(page = 1, limit = 20, retailerId = null, startDate = null, endDate = null, search = '') {
-    let sql = `
-      SELECT p.*, r.name as retailer_name, u.full_name as collected_by_name
-      FROM payments p
-      LEFT JOIN retailers r ON p.retailer_id = r.id
-      LEFT JOIN users u ON p.collected_by = u.id
-      WHERE 1=1
-    `;
-    const params = [];
+    // Build query with QueryBuilder
+    let builder = new QueryBuilder('payments p')
+      .select('p.*, r.name as retailer_name, u.full_name as collected_by_name')
+      .join('retailers r', 'p.retailer_id = r.id')
+      .join('users u', 'p.collected_by = u.id')
+      .orderBy('p.id', 'DESC');
 
     if (retailerId) {
-      sql += ' AND p.retailer_id = ?';
-      params.push(retailerId);
+      builder.where('p.retailer_id', retailerId);
     }
 
     if (startDate) {
-      sql += ' AND p.payment_date >= ?';
-      params.push(startDate);
+      builder.where('p.payment_date', '>=', startDate);
     }
 
     if (endDate) {
-      sql += ' AND p.payment_date <= ?';
-      params.push(endDate);
+      builder.where('p.payment_date', '<=', endDate);
     }
 
     if (search) {
-      sql += ' AND (p.payment_no LIKE ? OR r.name LIKE ? OR p.reference_no LIKE ?)';
       const searchTerm = `%${search}%`;
-      params.push(searchTerm, searchTerm, searchTerm);
+      builder.whereRaw('(p.payment_no LIKE ? OR r.name LIKE ? OR p.reference_no LIKE ?)', [searchTerm, searchTerm, searchTerm]);
     }
 
-    let countSql = 'SELECT COUNT(*) as total FROM payments p LEFT JOIN retailers r ON p.retailer_id = r.id WHERE 1=1';
-    const countParams = [];
-    
-    if (retailerId) {
-      countSql += ' AND p.retailer_id = ?';
-      countParams.push(retailerId);
-    }
-    if (startDate) {
-      countSql += ' AND p.payment_date >= ?';
-      countParams.push(startDate);
-    }
-    if (endDate) {
-      countSql += ' AND p.payment_date <= ?';
-      countParams.push(endDate);
-    }
-    if (search) {
-      countSql += ' AND (p.payment_no LIKE ? OR r.name LIKE ? OR p.reference_no LIKE ?)';
-      const searchTerm = `%${search}%`;
-      countParams.push(searchTerm, searchTerm, searchTerm);
-    }
-    
-    const countResult = await query(countSql, countParams);
-    const total = countResult[0]?.total || 0;
-
-    const { offset, limit: parsedLimit } = paginate(page, limit);
-    const dataSql = sql + ' ORDER BY p.id DESC LIMIT ? OFFSET ?';
-    const dataParams = [...params, parsedLimit, offset];
-    
-    const payments = await query(dataSql, dataParams);
-    return buildPaginatedResponse(payments, total, page, limit);
+    return builder.paginate(page, limit);
   },
 
   async findById(id) {
-    const payments = await query(`
-      SELECT p.*, r.name as retailer_name, u.full_name as collected_by_name
-      FROM payments p
-      LEFT JOIN retailers r ON p.retailer_id = r.id
-      LEFT JOIN users u ON p.collected_by = u.id
-      WHERE p.id = ?
-    `, [id]);
-    return payments[0] || null;
+    return new QueryBuilder('payments p')
+      .select('p.*, r.name as retailer_name, u.full_name as collected_by_name')
+      .join('retailers r', 'p.retailer_id = r.id')
+      .join('users u', 'p.collected_by = u.id')
+      .where('p.id', id)
+      .first();
   },
 
   async create(data, userId) {
@@ -153,12 +117,12 @@ export const paymentService = {
   },
 
   async getRetailerPayments(retailerId) {
-    return query(`
-      SELECT p.*, u.full_name as collected_by_name
-      FROM payments p
-      LEFT JOIN users u ON p.collected_by = u.id
-      WHERE p.retailer_id = ?
-      ORDER BY p.payment_date DESC, p.id DESC
-    `, [retailerId]);
+    return new QueryBuilder('payments p')
+      .select('p.*, u.full_name as collected_by_name')
+      .join('users u', 'p.collected_by = u.id')
+      .where('p.retailer_id', retailerId)
+      .orderBy('p.payment_date', 'DESC')
+      .orderBy('p.id', 'DESC')
+      .get();
   }
 };

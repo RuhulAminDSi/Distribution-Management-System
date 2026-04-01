@@ -1,37 +1,27 @@
 import { query } from '../config/database.js';
 import { generateCode } from '../utils/helpers.js';
+import { QueryBuilder } from '../utils/QueryBuilder.js';
 
 export const companyService = {
   async findAll(page = 1, limit = 20, search = '') {
-    const offset = (page - 1) * limit;
-    let whereClause = 'WHERE is_active = 1';
-    let params = [];
-    
+    // Build query with QueryBuilder
+    let builder = new QueryBuilder('companies')
+      .where('is_active', 1)
+      .orderBy('name', 'ASC');
+
     if (search) {
-      whereClause += ' AND (name LIKE ? OR code LIKE ? OR contact_person LIKE ?)';
       const searchTerm = `%${search}%`;
-      params = [searchTerm, searchTerm, searchTerm, limit, offset];
-    } else {
-      params = [limit, offset];
+      builder.whereRaw('(name LIKE ? OR code LIKE ? OR contact_person LIKE ?)', [searchTerm, searchTerm, searchTerm]);
     }
-    
-    const data = await query(`SELECT * FROM companies ${whereClause} ORDER BY name LIMIT ? OFFSET ?`, params);
-    
-    let countSql = 'SELECT COUNT(*) as total FROM companies WHERE is_active = 1';
-    let countParams = [];
-    if (search) {
-      countSql += ' AND (name LIKE ? OR code LIKE ? OR contact_person LIKE ?)';
-      const searchTerm = `%${search}%`;
-      countParams = [searchTerm, searchTerm, searchTerm];
-    }
-    const countResult = await query(countSql, countParams);
-    const total = countResult[0]?.total || 0;
-    return { data, total, pagination: { page, limit, total } };
+
+    return builder.paginate(page, limit);
   },
 
   async findById(id) {
-    const companies = await query('SELECT * FROM companies WHERE id = ? AND is_active = 1', [id]);
-    return companies[0] || null;
+    return new QueryBuilder('companies')
+      .where('id', id)
+      .where('is_active', 1)
+      .first();
   },
 
   async create(data) {
@@ -70,19 +60,22 @@ export const companyService = {
 
 export const categoryService = {
   async findAll(companyId = null) {
-    let sql = 'SELECT * FROM categories WHERE is_active = 1';
-    const params = [];
+    let builder = new QueryBuilder('categories')
+      .where('is_active', 1)
+      .orderBy('name', 'ASC');
+
     if (companyId) {
-      sql += ' AND company_id = ?';
-      params.push(companyId);
+      builder.where('company_id', companyId);
     }
-    sql += ' ORDER BY name';
-    return query(sql, params);
+
+    return builder.get();
   },
 
   async findById(id) {
-    const categories = await query('SELECT * FROM categories WHERE id = ? AND is_active = 1', [id]);
-    return categories[0] || null;
+    return new QueryBuilder('categories')
+      .where('id', id)
+      .where('is_active', 1)
+      .first();
   },
 
   async create(data) {

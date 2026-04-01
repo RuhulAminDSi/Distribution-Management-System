@@ -1,72 +1,34 @@
 import { query, getConnection } from '../config/database.js';
 import { generatePONo, buildPaginatedResponse } from '../utils/helpers.js';
+import { QueryBuilder } from '../utils/QueryBuilder.js';
 
 export const stockService = {
   async getStockHistory(page = 1, limit = 20, productId = null, startDate = null, endDate = null, search = '') {
-    let sql = `
-      SELECT 
-        sl.*,
-        p.name as product_name,
-        p.code as product_code,
-        u.full_name as created_by_name
-      FROM stock_logs sl
-      LEFT JOIN products p ON sl.product_id = p.id
-      LEFT JOIN users u ON sl.created_by = u.id
-      WHERE 1=1
-    `;
-    const params = [];
+    // Build query with QueryBuilder
+    let builder = new QueryBuilder('stock_logs sl')
+      .select('sl.*, p.name as product_name, p.code as product_code, u.full_name as created_by_name')
+      .join('products p', 'sl.product_id = p.id')
+      .join('users u', 'sl.created_by = u.id')
+      .orderBy('sl.id', 'DESC');
 
     if (productId) {
-      sql += ' AND sl.product_id = ?';
-      params.push(productId);
+      builder.where('sl.product_id', productId);
     }
 
     if (startDate) {
-      sql += ' AND DATE(sl.created_at) >= ?';
-      params.push(startDate);
+      builder.whereRaw('DATE(sl.created_at) >= ?', [startDate]);
     }
 
     if (endDate) {
-      sql += ' AND DATE(sl.created_at) <= ?';
-      params.push(endDate);
+      builder.whereRaw('DATE(sl.created_at) <= ?', [endDate]);
     }
 
     if (search) {
-      sql += ' AND (p.name LIKE ? OR p.code LIKE ?)';
       const searchTerm = `%${search}%`;
-      params.push(searchTerm, searchTerm);
+      builder.whereRaw('(p.name LIKE ? OR p.code LIKE ?)', [searchTerm, searchTerm]);
     }
 
-    let countSql = 'SELECT COUNT(*) as total FROM stock_logs sl LEFT JOIN products p ON sl.product_id = p.id WHERE 1=1';
-    const countParams = [];
-    
-    if (productId) {
-      countSql += ' AND sl.product_id = ?';
-      countParams.push(productId);
-    }
-    if (startDate) {
-      countSql += ' AND DATE(sl.created_at) >= ?';
-      countParams.push(startDate);
-    }
-    if (endDate) {
-      countSql += ' AND DATE(sl.created_at) <= ?';
-      countParams.push(endDate);
-    }
-    if (search) {
-      countSql += ' AND (p.name LIKE ? OR p.code LIKE ?)';
-      const searchTerm = `%${search}%`;
-      countParams.push(searchTerm, searchTerm);
-    }
-    
-    const countResult = await query(countSql, countParams);
-    const total = countResult[0]?.total || 0;
-
-    const offset = (page - 1) * limit;
-    const dataSql = sql + ` ORDER BY sl.id DESC LIMIT ? OFFSET ?`;
-    params.push(limit, offset);
-    const data = await query(dataSql, params);
-
-    return buildPaginatedResponse(data, total, page, limit);
+    return builder.paginate(page, limit);
   },
 
   async createPurchaseOrder(data, userId) {
@@ -151,21 +113,16 @@ export const stockService = {
   },
 
   async getPurchaseOrders(status = null) {
-    let sql = `
-      SELECT po.*, c.name as company_name, u.full_name as created_by_name
-      FROM purchase_orders po
-      LEFT JOIN companies c ON po.company_id = c.id
-      LEFT JOIN users u ON po.created_by = u.id
-      WHERE 1=1
-    `;
-    const params = [];
+    let builder = new QueryBuilder('purchase_orders po')
+      .select('po.*, c.name as company_name, u.full_name as created_by_name')
+      .join('companies c', 'po.company_id = c.id')
+      .join('users u', 'po.created_by = u.id')
+      .orderBy('po.id', 'DESC');
 
     if (status) {
-      sql += ' AND po.status = ?';
-      params.push(status);
+      builder.where('po.status', status);
     }
 
-    sql += ' ORDER BY po.id DESC';
-    return query(sql, params);
+    return builder.get();
   }
 };

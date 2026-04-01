@@ -1,75 +1,59 @@
 import { query, getConnection } from '../config/database.js';
 import { generateInvoiceNo, calculateDiscount, buildPaginatedResponse, paginate } from '../utils/helpers.js';
+import { QueryBuilder } from '../utils/QueryBuilder.js';
 import { productService } from './productService.js';
 import { retailerService } from './retailerService.js';
 
 export const invoiceService = {
   async findAll(page = 1, limit = 20, retailerId = null, status = null, startDate = null, endDate = null, search = '') {
-    let sql = `
-      SELECT i.*, r.name as retailer_name, r.phone as retailer_phone, u.full_name as created_by_name
-      FROM invoices i
-      LEFT JOIN retailers r ON i.retailer_id = r.id
-      LEFT JOIN users u ON i.created_by = u.id
-      WHERE 1=1
-    `;
-    const params = [];
+    // Build query with QueryBuilder
+    let builder = new QueryBuilder('invoices i')
+      .select('i.*, r.name as retailer_name, r.phone as retailer_phone, u.full_name as created_by_name')
+      .join('retailers r', 'i.retailer_id = r.id')
+      .join('users u', 'i.created_by = u.id')
+      .orderBy('i.id', 'DESC');
 
     if (retailerId) {
-      sql += ' AND i.retailer_id = ?';
-      params.push(retailerId);
+      builder.where('i.retailer_id', retailerId);
     }
 
     if (status) {
-      sql += ' AND i.status = ?';
-      params.push(status);
+      builder.where('i.status', status);
     }
 
     if (startDate) {
-      sql += ' AND i.invoice_date >= ?';
-      params.push(startDate);
+      builder.where('i.invoice_date', '>=', startDate);
     }
 
     if (endDate) {
-      sql += ' AND i.invoice_date <= ?';
-      params.push(endDate);
+      builder.where('i.invoice_date', '<=', endDate);
     }
 
     if (search) {
-      sql += ' AND (i.invoice_no LIKE ? OR r.name LIKE ?)';
       const searchTerm = `%${search}%`;
-      params.push(searchTerm, searchTerm);
+      builder.whereRaw('(i.invoice_no LIKE ? OR r.name LIKE ?)', [searchTerm, searchTerm]);
     }
 
-    const countSql = sql.replace(/SELECT i\.\*, r\.name as retailer_name, r\.phone as retailer_phone, u\.full_name as created_by_name/, 'SELECT COUNT(*) as total');
-    const countResult = await query(countSql, params);
-    const total = countResult[0]?.total || 0;
-
-    sql += ' ORDER BY i.id DESC LIMIT ? OFFSET ?';
-    const { offset, limit: parsedLimit } = paginate(page, limit);
-    params.push(parsedLimit, offset);
-
-    const invoices = await query(sql, params);
-    return buildPaginatedResponse(invoices, total, page, limit);
+    return builder.paginate(page, limit);
   },
 
   async findById(id) {
-    const invoices = await query(`
-      SELECT i.*, r.name as retailer_name, r.phone as retailer_phone, r.address as retailer_address, u.full_name as created_by_name
-      FROM invoices i
-      LEFT JOIN retailers r ON i.retailer_id = r.id
-      LEFT JOIN users u ON i.created_by = u.id
-      WHERE i.id = ?
-    `, [id]);
+    // Get invoice with details
+    const invoice = await new QueryBuilder('invoices i')
+      .select('i.*, r.name as retailer_name, r.phone as retailer_phone, r.address as retailer_address, u.full_name as created_by_name')
+      .join('retailers r', 'i.retailer_id = r.id')
+      .join('users u', 'i.created_by = u.id')
+      .where('i.id', id)
+      .first();
 
-    if (invoices.length === 0) return null;
+    if (!invoice) return null;
 
-    const invoice = invoices[0];
-    const items = await query(`
-      SELECT ii.*, p.name as product_name, p.code as product_code, p.unit
-      FROM invoice_items ii
-      LEFT JOIN products p ON ii.product_id = p.id
-      WHERE ii.invoice_id = ?
-    `, [id]);
+    // Get invoice items with product details
+    const items = await new QueryBuilder('invoice_items ii')
+      .select('ii.*, p.name as product_name, p.code as product_code, p.unit')
+      .join('products p', 'ii.product_id = p.id')
+      .where('ii.invoice_id', id)
+      .get();
 
     return { ...invoice, items };
   },

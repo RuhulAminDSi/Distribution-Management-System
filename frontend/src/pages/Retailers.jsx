@@ -2,6 +2,11 @@ import { useState, useEffect } from 'react';
 import { retailerService } from '../services/api';
 import { useLanguage, formatCurrency } from '../context/LanguageContext';
 import { Plus, Search, Edit, Trash2, Phone, MapPin, ChevronLeft, ChevronRight } from 'lucide-react';
+import { usePagination, useFormData, useAsyncError } from '../hooks';
+
+const initialFormData = {
+  name: '', code: '', owner_name: '', phone: '', address: '', area: '', credit_limit: 0, due_limit: 0
+};
 
 export default function Retailers() {
   const { t, language } = useLanguage();
@@ -9,27 +14,23 @@ export default function Retailers() {
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
   const [search, setSearch] = useState('');
-  const [page, setPage] = useState(1);
-  const [totalPages, setTotalPages] = useState(1);
-  const [total, setTotal] = useState(0);
-  const [limit, setLimit] = useState(10);
-  const [error, setError] = useState('');
-  const [formData, setFormData] = useState({
-    name: '', code: '', owner_name: '', phone: '', address: '', area: '', credit_limit: 0, due_limit: 0
-  });
+
+  const pagination = usePagination(10);
+  const form = useFormData(initialFormData);
+  const { error, setError, handleAsyncError, clearError } = useAsyncError();
 
   useEffect(() => {
     fetchRetailers();
-  }, [search, page, limit]);
+  }, [search, pagination.page, pagination.limit]);
 
   const fetchRetailers = async () => {
     try {
-      const response = await retailerService.getAll({ search, page, limit });
+      const response = await retailerService.getAll({ search, page: pagination.page, limit: pagination.limit });
       const data = response.data?.data || response.data || [];
       const totalVal = response.data?.pagination?.total || response.data?.total || data.length || 0;
       setRetailers(data);
-      setTotal(totalVal);
-      setTotalPages(Math.ceil(totalVal / limit) || 1);
+      pagination.setTotalCount(totalVal);
+      pagination.setTotalPages(Math.ceil(totalVal / pagination.limit) || 1);
     } catch (error) {
       console.error('Failed to fetch retailers:', error);
     } finally {
@@ -39,38 +40,36 @@ export default function Retailers() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setError('');
+    clearError();
     try {
       const data = {
-        name: formData.name,
-        code: formData.code || null,
-        owner_name: formData.owner_name || null,
-        phone: formData.phone,
-        address: formData.address || null,
-        area: formData.area || null,
-        credit_limit: parseFloat(formData.credit_limit) || 0,
-        due_limit: parseFloat(formData.due_limit) || 0
+        name: form.formData.name,
+        code: form.formData.code || null,
+        owner_name: form.formData.owner_name || null,
+        phone: form.formData.phone,
+        address: form.formData.address || null,
+        area: form.formData.area || null,
+        credit_limit: parseFloat(form.formData.credit_limit) || 0,
+        due_limit: parseFloat(form.formData.due_limit) || 0
       };
       
-      if (formData.id) {
-        await retailerService.update(formData.id, data);
+      if (form.formData.id) {
+        await retailerService.update(form.formData.id, data);
       } else {
         await retailerService.create(data);
       }
       setShowModal(false);
       fetchRetailers();
-      setFormData({ name: '', code: '', owner_name: '', phone: '', address: '', area: '', credit_limit: 0, due_limit: 0 });
+      form.resetForm();
     } catch (err) {
-      const msg = err.response?.data?.message || err.message || 'Failed to save retailer';
-      setError(msg);
-      // Focus on error element
+      handleAsyncError(err);
       setTimeout(() => document.getElementById('retailer-error')?.scrollIntoView({ behavior: 'smooth' }), 100);
     }
   };
 
   const handleEdit = (retailer) => {
-    setFormData(retailer);
-    setError('');
+    form.setFormData(retailer);
+    clearError();
     setShowModal(true);
   };
 
@@ -91,7 +90,7 @@ export default function Retailers() {
     <div>
       <div className="page-header">
         <h1 className="page-title">{t('Retailers')}</h1>
-        <button className="btn btn-primary" onClick={() => { setShowModal(true); setError(''); setFormData({ name: '', code: '', owner_name: '', phone: '', address: '', area: '', credit_limit: 0, due_limit: 0 }); }}>
+        <button className="btn btn-primary" onClick={() => { setShowModal(true); clearError(); form.resetForm(); }}>
           <Plus size={18} /> {t('AddRetailer')}
         </button>
       </div>
@@ -156,8 +155,8 @@ export default function Retailers() {
           <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
             <span style={{ fontSize: '14px' }}>Show</span>
             <select 
-              value={limit} 
-              onChange={(e) => { setLimit(Number(e.target.value)); setPage(1); }}
+              value={pagination.limit} 
+              onChange={(e) => pagination.setLimit(Number(e.target.value))}
               style={{ padding: '6px 10px', borderRadius: '4px', border: '1px solid var(--border)' }}
             >
               <option value={10}>10</option>
@@ -166,15 +165,15 @@ export default function Retailers() {
               <option value={100}>100</option>
             </select>
             <span style={{ fontSize: '14px', marginLeft: 'auto' }}>
-              {Math.min((page - 1) * limit + limit, total)} of {total} entries
+              {Math.min((pagination.page - 1) * pagination.limit + pagination.limit, pagination.totalCount)} of {pagination.totalCount} entries
             </span>
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-            <button className="btn btn-secondary btn-sm" onClick={() => setPage(p => Math.max(1, p - 1))} disabled={page === 1}>
+            <button className="btn btn-secondary btn-sm" onClick={() => pagination.prevPage()} disabled={pagination.page === 1}>
               <ChevronLeft size={16} />
             </button>
-            <span style={{ fontSize: '14px' }}>{t('Page')} {page} / {totalPages}</span>
-            <button className="btn btn-secondary btn-sm" onClick={() => setPage(p => Math.min(totalPages, p + 1))} disabled={page === totalPages}>
+            <span style={{ fontSize: '14px' }}>{t('Page')} {pagination.page} / {pagination.totalPages}</span>
+            <button className="btn btn-secondary btn-sm" onClick={() => pagination.nextPage()} disabled={pagination.page === pagination.totalPages}>
               <ChevronRight size={16} />
             </button>
           </div>
@@ -185,7 +184,7 @@ export default function Retailers() {
         <div className="modal-overlay" onClick={() => setShowModal(false)}>
           <div className="modal" onClick={e => e.stopPropagation()}>
             <div className="modal-header">
-              <h2 className="modal-title">{formData.id ? t('EditRetailer') : t('AddRetailer')}</h2>
+              <h2 className="modal-title">{form.formData.id ? t('EditRetailer') : t('AddRetailer')}</h2>
               <button className="modal-close" onClick={() => setShowModal(false)}>×</button>
             </div>
             <form onSubmit={handleSubmit}>
@@ -206,8 +205,8 @@ export default function Retailers() {
                     <input
                       type="text"
                       className="form-input"
-                      value={formData.name}
-                      onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                      value={form.formData.name}
+                      onChange={(e) => form.updateField('name', e.target.value)}
                       required
                     />
                   </div>
@@ -216,8 +215,8 @@ export default function Retailers() {
                     <input
                       type="text"
                       className="form-input"
-                      value={formData.code}
-                      onChange={(e) => setFormData({ ...formData, code: e.target.value })}
+                      value={form.formData.code}
+                      onChange={(e) => form.updateField('code', e.target.value)}
                     />
                   </div>
                 </div>
@@ -228,8 +227,8 @@ export default function Retailers() {
                     <input
                       type="text"
                       className="form-input"
-                      value={formData.owner_name}
-                      onChange={(e) => setFormData({ ...formData, owner_name: e.target.value })}
+                      value={form.formData.owner_name}
+                      onChange={(e) => form.updateField('owner_name', e.target.value)}
                     />
                   </div>
                   <div className="form-group">
@@ -237,8 +236,8 @@ export default function Retailers() {
                     <input
                       type="text"
                       className="form-input"
-                      value={formData.phone}
-                      onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                      value={form.formData.phone}
+                      onChange={(e) => form.updateField('phone', e.target.value)}
                       required
                     />
                   </div>
@@ -249,8 +248,8 @@ export default function Retailers() {
                   <input
                     type="text"
                     className="form-input"
-                    value={formData.address}
-                    onChange={(e) => setFormData({ ...formData, address: e.target.value })}
+                    value={form.formData.address}
+                    onChange={(e) => form.updateField('address', e.target.value)}
                   />
                 </div>
 
@@ -259,8 +258,8 @@ export default function Retailers() {
                   <input
                     type="text"
                     className="form-input"
-                    value={formData.area}
-                    onChange={(e) => setFormData({ ...formData, area: e.target.value })}
+                    value={form.formData.area}
+                    onChange={(e) => form.updateField('area', e.target.value)}
                   />
                 </div>
 
@@ -270,8 +269,8 @@ export default function Retailers() {
                     <input
                       type="number"
                       className="form-input"
-                      value={formData.credit_limit}
-                      onChange={(e) => setFormData({ ...formData, credit_limit: e.target.value })}
+                      value={form.formData.credit_limit}
+                      onChange={(e) => form.updateField('credit_limit', e.target.value)}
                     />
                   </div>
                   <div className="form-group">
@@ -279,8 +278,8 @@ export default function Retailers() {
                     <input
                       type="number"
                       className="form-input"
-                      value={formData.due_limit}
-                      onChange={(e) => setFormData({ ...formData, due_limit: e.target.value })}
+                      value={form.formData.due_limit}
+                      onChange={(e) => form.updateField('due_limit', e.target.value)}
                     />
                   </div>
                 </div>
