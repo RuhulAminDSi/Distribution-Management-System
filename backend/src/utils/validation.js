@@ -48,17 +48,17 @@ export const validateRegister = [
   body('username').trim().notEmpty().withMessage('Username is required'),
   body('password').isLength({ min: 6 }).withMessage('Password must be at least 6 characters'),
   body('full_name').trim().notEmpty().withMessage('Full name is required'),
-  body('email').optional().isEmail().withMessage('Valid email required'),
-  body('phone').optional().matches(/^\d{10,}$/).withMessage('Valid phone required'),
+  body('email').optional(),
+  body('phone').optional(),
   handleValidationErrors
 ];
 
 export const validateUpdateUser = [
-  param('id').isInt().withMessage('Invalid user ID'),
+  param('id').notEmpty().withMessage('Invalid user ID'),
   body('username').optional().trim().notEmpty().withMessage('Username cannot be empty'),
   body('full_name').optional().trim().notEmpty().withMessage('Full name cannot be empty'),
-  body('email').optional().isEmail().withMessage('Valid email required'),
-  body('phone').optional().matches(/^\d{10,}$/).withMessage('Valid phone required'),
+  body('email').optional(),
+  body('phone').optional(),
   handleValidationErrors
 ];
 
@@ -82,27 +82,24 @@ export const validateResetPassword = [
 export const validateCreateProduct = [
   body('name').trim().notEmpty().withMessage('Product name is required'),
   body('code').trim().notEmpty().withMessage('Product code is required'),
-  body('category_id').isInt().withMessage('Valid category required'),
-  body('unit_price').isFloat({ min: 0 }).withMessage('Price must be a positive number'),
-  body('stock_quantity').isInt({ min: 0 }).withMessage('Stock must be a non-negative number'),
+  body('category_id').optional(),
+  body('stock_quantity').optional().isInt({ min: 0 }).withMessage('Stock must be a non-negative number'),
   handleValidationErrors
 ];
 
 export const validateUpdateProduct = [
-  param('id').isInt().withMessage('Invalid product ID'),
+  param('id').notEmpty().withMessage('Invalid product ID'),
   body('name').optional().trim().notEmpty().withMessage('Product name cannot be empty'),
   body('code').optional().trim().notEmpty().withMessage('Product code cannot be empty'),
-  body('unit_price').optional().isFloat({ min: 0 }).withMessage('Price must be a positive number'),
   handleValidationErrors
 ];
 
 // ============ INVOICE VALIDATIONS ============
 export const validateCreateInvoice = [
-  body('retailer_id').isInt().withMessage('Valid retailer required'),
-  body('company_id').isInt().withMessage('Valid company required'),
+  body('retailer_id').notEmpty().withMessage('Valid retailer required'),
   body('invoice_date').notEmpty().withMessage('Invoice date is required'),
   body('items').isArray({ min: 1 }).withMessage('At least one item is required'),
-  body('items.*.product_id').isInt().withMessage('Valid product ID required for each item'),
+  body('items.*.product_id').notEmpty().withMessage('Valid product ID required for each item'),
   body('items.*.quantity').isInt({ min: 1 }).withMessage('Quantity must be at least 1'),
   handleValidationErrors
 ];
@@ -111,15 +108,15 @@ export const validateCreateInvoice = [
 export const validateCreateRetailer = [
   body('name').trim().notEmpty().withMessage('Retailer name is required'),
   body('contact_person').trim().notEmpty().withMessage('Contact person is required'),
-  body('phone').matches(/^\d{10,}$/).withMessage('Valid phone number is required'),
+  body('phone').notEmpty().withMessage('Phone number is required'),
   body('email').optional().isEmail().withMessage('Valid email required'),
   handleValidationErrors
 ];
 
 export const validateUpdateRetailer = [
-  param('id').isInt().withMessage('Invalid retailer ID'),
+  param('id').notEmpty().withMessage('Invalid retailer ID'),
   body('name').optional().trim().notEmpty().withMessage('Retailer name cannot be empty'),
-  body('phone').optional().matches(/^\d{10,}$/).withMessage('Valid phone number is required'),
+  body('phone').optional().notEmpty().withMessage('Phone number cannot be empty'),
   handleValidationErrors
 ];
 
@@ -133,8 +130,8 @@ export const validateAdjustStock = [
 
 // ============ PAYMENT VALIDATIONS ============
 export const validateCreatePayment = [
-  body('invoice_id').isInt().withMessage('Valid invoice required'),
-  body('amount').isFloat({ min: 0.01 }).withMessage('Amount must be greater than 0'),
+  body('invoice_id').notEmpty().withMessage('Valid invoice required'),
+  body('amount').notEmpty().withMessage('Amount is required'),
   body('payment_date').notEmpty().withMessage('Payment date is required'),
   body('payment_method').notEmpty().withMessage('Payment method is required'),
   handleValidationErrors
@@ -143,16 +140,53 @@ export const validateCreatePayment = [
 // ============ COMPANY VALIDATIONS ============
 export const validateCreateCompany = [
   body('name').trim().notEmpty().withMessage('Company name is required'),
-  body('email').isEmail().withMessage('Valid email is required'),
-  body('phone').matches(/^\d{10,}$/).withMessage('Valid phone number is required'),
+  body('email').notEmpty().withMessage('Email is required'),
+  body('phone').notEmpty().withMessage('Phone number is required'),
   body('address').optional().trim(),
   handleValidationErrors
 ];
 
 export const validateUpdateCompany = [
-  param('id').isInt().withMessage('Invalid company ID'),
+  param('id').notEmpty().withMessage('Invalid company ID'),
   body('name').optional().trim().notEmpty().withMessage('Company name cannot be empty'),
-  body('email').optional().isEmail().withMessage('Valid email required'),
+  body('email').optional().notEmpty().withMessage('Email cannot be empty'),
+  handleValidationErrors
+];
+
+// ============ ROLE VALIDATIONS ============
+export const validateCreateRole = [
+  body('name').trim().notEmpty().withMessage('Role name is required'),
+  body('description').optional().trim(),
+  handleValidationErrors
+];
+
+export const validateUpdateRolePermissions = [
+  param('id').notEmpty().withMessage('Invalid role ID'),
+  body('permission_ids').isArray().withMessage('Permission IDs must be an array'),
+  handleValidationErrors
+];
+
+// ============ STOCK VALIDATIONS ============
+export const validateAdjustStock = [
+  body('product_id').notEmpty().withMessage('Valid product ID required'),
+  body('quantity').notEmpty().withMessage('Quantity is required'),
+  body('type').notEmpty().withMessage('Stock type is required'),
+  handleValidationErrors
+];
+
+// ============ COMPANY VALIDATIONS ============
+export const validateCreateCompany = [
+  body('name').trim().notEmpty().withMessage('Company name is required'),
+  body('email').notEmpty().withMessage('Email is required'),
+  body('phone').notEmpty().withMessage('Phone number is required'),
+  body('address').optional().trim(),
+  handleValidationErrors
+];
+
+export const validateUpdateCompany = [
+  param('id').notEmpty().withMessage('Invalid company ID'),
+  body('name').optional().trim().notEmpty().withMessage('Company name cannot be empty'),
+  body('email').optional().notEmpty().withMessage('Email cannot be empty'),
   handleValidationErrors
 ];
 
