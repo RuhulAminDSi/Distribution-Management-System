@@ -60,32 +60,25 @@ export const userService = {
   },
 
   /**
-   * Get all users with pagination and search
+   * Get all users with pagination and search (optimized with JOIN)
    */
   async getAllUsers(page = 1, limit = 20, search = '') {
-    let builder = new QueryBuilder('users')
-      .select('id, username, full_name, email, role_id, phone, is_active, created_at');
+    let builder = new QueryBuilder('users u')
+      .select('u.id, u.username, u.full_name, u.email, u.role_id, u.phone, u.is_active, u.created_at, r.name as role')
+      .leftJoin('roles r', 'r.id = u.role_id');
 
     if (search) {
-      builder.where('full_name', 'LIKE', `%${search}%`)
-        .orWhere = (field, value) => builder.whereRaw(`${field} LIKE ?`, [`%${value}%`]);
-      // Alternative: use whereLike for simpler syntax
-      builder = new QueryBuilder('users').whereLike('full_name', search);
+      builder = builder.whereLike('u.full_name', search);
     }
 
     const result = await builder.paginate(page, limit);
 
-    // Add role information to each user
-    const usersWithRoles = await Promise.all(
-      result.data.map(async (user) => {
-        const role = await query('SELECT name FROM roles WHERE id = ?', [user.role_id]);
-        return { ...user, role: role[0]?.name || 'unknown' };
-      })
-    );
-
     return {
       ...result,
-      data: usersWithRoles
+      data: result.data.map(user => ({
+        ...user,
+        role: user.role || 'unknown'
+      }))
     };
   },
 
