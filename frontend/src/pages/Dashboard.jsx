@@ -23,7 +23,22 @@ export default function Dashboard() {
     }
   };
 
-  if (loading) return <div>{t('Loading')}</div>;
+  if (loading) {
+    return (
+      <div className="page-loading">
+        <div className="page-loading-spinner"></div>
+        <span>{t('Loading')}</span>
+      </div>
+    );
+  }
+
+  if (!data) {
+    return (
+      <div className="page-loading">
+        <span>{t('NoDataFound')}</span>
+      </div>
+    );
+  }
 
   return (
     <div>

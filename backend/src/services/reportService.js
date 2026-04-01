@@ -22,7 +22,7 @@ export const reportService = {
       .select('COUNT(DISTINCT comp.id) as total_companies, COALESCE(SUM(ii.amount), 0) as total_sales')
       .join('products p', 'p.company_id = comp.id')
       .join('invoice_items ii', 'ii.product_id = p.id')
-      .join('invoices i', 'ii.invoice_id = i.id AND i.invoice_date BETWEEN ? AND ?')
+      .join('invoices i', 'ii.invoice_id = i.id')
       .where('comp.is_active', 1)
       .whereRaw('i.invoice_date BETWEEN ? AND ?', [startDate, endDate])
       .first();
@@ -146,8 +146,9 @@ export const reportService = {
       .select('comp.id as company_id, comp.name as company_name, COUNT(DISTINCT ii.invoice_id) as total_invoices, SUM(ii.quantity) as total_quantity, SUM(ii.amount) as total_sales, SUM((ii.rate - p.purchase_price) * ii.quantity) as total_profit')
       .join('products p', 'p.company_id = comp.id')
       .join('invoice_items ii', 'ii.product_id = p.id')
-      .join('invoices i', 'ii.invoice_id = i.id AND i.invoice_date BETWEEN ? AND ?')
+      .join('invoices i', 'ii.invoice_id = i.id')
       .where('comp.is_active', 1)
+      .whereRaw('i.invoice_date BETWEEN ? AND ?', [startDate, endDate])
       .groupBy('comp.id')
       .orderBy('total_sales', 'DESC')
       .paginate(page, limit);

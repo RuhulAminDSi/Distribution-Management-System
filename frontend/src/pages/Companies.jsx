@@ -10,6 +10,7 @@ export default function Companies() {
   const [showModal, setShowModal] = useState(false);
   const [editItem, setEditItem] = useState(null);
   const [formData, setFormData] = useState({});
+  const [fieldErrors, setFieldErrors] = useState({});
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [total, setTotal] = useState(0);
@@ -38,6 +39,7 @@ export default function Companies() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setFieldErrors({});
     try {
       if (editItem) {
         await companyService.updateCompany(editItem.id, formData);
@@ -49,8 +51,12 @@ export default function Companies() {
       setFormData({});
       fetchCompanies();
     } catch (error) {
-      console.error('Failed to save:', error);
-      alert(error.response?.data?.message || 'Failed to save');
+      const errors = error.response?.data?.errors;
+      if (errors) {
+        setFieldErrors(errors);
+      } else {
+        alert(error.response?.data?.message || 'Failed to save');
+      }
     }
   };
 
@@ -67,6 +73,7 @@ export default function Companies() {
   const openModal = (item = null) => {
     setEditItem(item);
     setFormData(item || { name: '', code: '', contact_person: '', phone: '', address: '', due_limit: 0 });
+    setFieldErrors({});
     setShowModal(true);
   };
 
@@ -177,12 +184,13 @@ export default function Companies() {
                       <input 
                         type="text" 
                         value={formData.name || ''}
-                        onChange={e => setFormData({...formData, name: e.target.value})}
+                        onChange={e => { setFormData({...formData, name: e.target.value}); setFieldErrors({...fieldErrors, name: null}); }}
                         required 
                         placeholder={t('CompanyName')}
-                        className="form-input"
+                        className={`form-input ${fieldErrors.name ? 'input-error' : ''}`}
                       />
                     </div>
+                    {fieldErrors.name && <div className="field-error">{fieldErrors.name}</div>}
                   </div>
                   <div className="form-group">
                     <label>{t('Code')}</label>
@@ -217,17 +225,34 @@ export default function Companies() {
                     </div>
                   </div>
                   <div className="form-group">
-                    <label>{t('Phone')}</label>
+                    <label>{t('Phone')} *</label>
                     <div className="input-with-icon">
                       <Phone size={18} className="input-icon" />
                       <input 
                         type="text" 
                         value={formData.phone || ''}
-                        onChange={e => setFormData({...formData, phone: e.target.value})}
+                        onChange={e => { setFormData({...formData, phone: e.target.value}); setFieldErrors({...fieldErrors, phone: null}); }}
                         placeholder={t('Phone')}
-                        className="form-input"
+                        className={`form-input ${fieldErrors.phone ? 'input-error' : ''}`}
                       />
                     </div>
+                    {fieldErrors.phone && <div className="field-error">{fieldErrors.phone}</div>}
+                  </div>
+                </div>
+                <div className="form-row">
+                  <div className="form-group" style={{flex: 1}}>
+                    <label>{t('Email')} *</label>
+                    <div className="input-with-icon">
+                      <span className="input-icon" style={{fontWeight:'bold'}}>@</span>
+                      <input 
+                        type="text" 
+                        value={formData.email || ''}
+                        onChange={e => { setFormData({...formData, email: e.target.value}); setFieldErrors({...fieldErrors, email: null}); }}
+                        placeholder={t('Email')}
+                        className={`form-input ${fieldErrors.email ? 'input-error' : ''}`}
+                      />
+                    </div>
+                    {fieldErrors.email && <div className="field-error">{fieldErrors.email}</div>}
                   </div>
                 </div>
                 <div className="form-group">

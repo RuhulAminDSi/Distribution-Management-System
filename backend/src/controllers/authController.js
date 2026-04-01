@@ -55,7 +55,8 @@ export const authController = {
           role_id: user.role_id,
           role: roleName,
           phone: user.phone
-        }
+        },
+        token
       });
     } catch (error) {
       next(error);

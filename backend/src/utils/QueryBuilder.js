@@ -63,6 +63,13 @@ export class QueryBuilder {
   }
 
   /**
+   * LEFT JOIN another table
+   */
+  leftJoin(table, condition) {
+    return this.join(table, condition, 'LEFT JOIN');
+  }
+
+  /**
    * INNER JOIN another table
    */
   innerJoin(table, condition) {

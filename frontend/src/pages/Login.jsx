@@ -84,21 +84,31 @@ export default function Login() {
   const [forgotMessage, setForgotMessage] = useState('');
   const [forgotLoading, setForgotLoading] = useState(false);
   const [isVisible, setIsVisible] = useState(false);
-  const { login } = useAuth();
+  const { login, user } = useAuth();
   const navigate = useNavigate();
+
+  useEffect(() => {
+    // If user is already logged in, redirect to dashboard
+    if (user) {
+      navigate('/dashboard', { replace: true });
+    }
+  }, [user, navigate]);
 
   useEffect(() => {
     setIsVisible(true);
   }, []);
 
   useEffect(() => {
+    // Only redirect if not already authenticated
+    if (user) return;
+    
     const token = localStorage.getItem('token');
     const tokenExpiry = localStorage.getItem('token_expiry');
     if (token && tokenExpiry && new Date(tokenExpiry) > new Date()) {
       sessionStorage.setItem('fromLanding', 'true');
       navigate('/dashboard');
     }
-  }, [navigate]);
+  }, [navigate, user]);
 
   useEffect(() => {
     const handleStorageChange = () => {
@@ -134,7 +144,14 @@ export default function Login() {
     setLoading(true);
 
     try {
-      await login(username, password);
+      const userData = await login(username, password);
+      
+      const token = localStorage.getItem('token') || 
+        document.cookie.split('token=')[1]?.split(';')[0];
+      if (token) {
+        localStorage.setItem('token', token);
+      }
+      
       sessionStorage.setItem('fromLanding', 'true');
       navigate('/dashboard');
     } catch (err) {

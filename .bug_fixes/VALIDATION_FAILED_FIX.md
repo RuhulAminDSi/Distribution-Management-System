@@ -96,6 +96,37 @@ body('phone').optional(),
 
 ---
 
+## Additional Fix: Validation Error Field Name Showing "undefined"
+
+**Date:** 2026-04-01  
+**Issue:** Validation errors show `"undefined"` as field name instead of actual field name  
+**Root Cause:** express-validator uses `err.param` but newer versions use `err.path`  
+**Fix Applied:** Updated handleValidationErrors to use both `err.path` and `err.param`
+
+### Solution
+
+```javascript
+// Before (err.param only)
+const fieldErrors = errors.array().reduce((acc, err) => {
+  acc[err.param] = err.msg;
+  return acc;
+}, {});
+
+// After (supports both err.path and err.param)
+const fieldErrors = errors.array().reduce((acc, err) => {
+  const field = err.path || err.param || 'field';
+  acc[field] = err.msg;
+  return acc;
+}, {});
+```
+
+### Result
+
+Before: `{"errors":{"undefined":"Phone number is required"}}`  
+After: `{"errors":{"phone":"Phone number is required"}}`
+
+---
+
 ## Testing
 
 ### Before Fix
@@ -109,6 +140,7 @@ body('phone').optional(),
 - Create Retailer: ✅ Working correctly  
 - Create Product: ✅ Working correctly
 - Create Company: ✅ Working correctly
+- Validation error field names: ✅ Showing correct field names (not "undefined")
 
 ---
 

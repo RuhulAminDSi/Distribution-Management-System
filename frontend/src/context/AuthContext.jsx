@@ -12,6 +12,18 @@ export function AuthProvider({ children }) {
   useEffect(() => {
     fetchUser();
     fetchRoles();
+
+    // Listen for auth:logout event from axios interceptor
+    const handleLogoutEvent = () => {
+      setUser(null);
+      setUserPermissions([]);
+      setLoading(false);
+    };
+    window.addEventListener('auth:logout', handleLogoutEvent);
+
+    return () => {
+      window.removeEventListener('auth:logout', handleLogoutEvent);
+    };
   }, []);
 
   const fetchRoles = async () => {
@@ -48,10 +60,19 @@ export function AuthProvider({ children }) {
   };
 
   const login = async (username, password) => {
-    await authService.login(username, password);
-    await fetchUser();
-    const currentUser = user || (await api.get('/auth/me')).data.user;
-    return currentUser;
+    try {
+      const response = await authService.login(username, password);
+      if (response.data.token) {
+        localStorage.setItem('token', response.data.token);
+      }
+      const meResponse = await api.get('/auth/me');
+      const currentUser = meResponse.data.user;
+      setUser(currentUser);
+      return currentUser;
+    } catch (error) {
+      setLoading(false);
+      throw error;
+    }
   };
 
   const logout = async () => {
@@ -62,6 +83,7 @@ export function AuthProvider({ children }) {
     }
     setUser(null);
     setUserPermissions([]);
+    setLoading(false);
   };
 
   const hasPermission = (permission) => {

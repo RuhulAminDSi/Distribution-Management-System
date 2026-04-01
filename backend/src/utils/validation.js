@@ -10,31 +10,17 @@
 import { body, param, query as queryValidator, validationResult } from 'express-validator';
 import { ApiError } from './ApiError.js';
 
-/**
- * Middleware to handle validation errors
- * Throws ApiError with validation details
- */
 export const handleValidationErrors = (req, res, next) => {
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
     const fieldErrors = errors.array().reduce((acc, err) => {
-      acc[err.param] = err.msg;
+      const field = err.path || err.param || 'field';
+      acc[field] = err.msg;
       return acc;
     }, {});
     throw new ApiError(400, 'Validation failed', fieldErrors);
   }
   next();
-};
-
-/**
- * Wrap validation middleware to catch errors
- */
-const validate = (validations) => async (req, res, next) => {
-  for (let validation of validations) {
-    const result = await validation.run(req);
-    if (!result.array().length) continue;
-  }
-  handleValidationErrors(req, res, next);
 };
 
 // ============ AUTH VALIDATIONS ============
@@ -107,30 +93,31 @@ export const validateCreateInvoice = [
 // ============ RETAILER VALIDATIONS ============
 export const validateCreateRetailer = [
   body('name').trim().notEmpty().withMessage('Retailer name is required'),
-  body('contact_person').trim().notEmpty().withMessage('Contact person is required'),
+  body('owner_name').optional().trim(),
   body('phone').notEmpty().withMessage('Phone number is required'),
-  body('email').optional().isEmail().withMessage('Valid email required'),
+  body('email').optional(),
   handleValidationErrors
 ];
 
 export const validateUpdateRetailer = [
   param('id').notEmpty().withMessage('Invalid retailer ID'),
   body('name').optional().trim().notEmpty().withMessage('Retailer name cannot be empty'),
+  body('owner_name').optional().trim(),
   body('phone').optional().notEmpty().withMessage('Phone number cannot be empty'),
   handleValidationErrors
 ];
 
 // ============ STOCK VALIDATIONS ============
 export const validateAdjustStock = [
-  body('product_id').isInt().withMessage('Valid product ID required'),
-  body('quantity').isInt().withMessage('Quantity must be an integer'),
-  body('type').isIn(['IN', 'OUT', 'ADJUSTMENT']).withMessage('Invalid stock type'),
+  body('product_id').notEmpty().withMessage('Valid product ID required'),
+  body('quantity').notEmpty().withMessage('Quantity is required'),
+  body('type').notEmpty().withMessage('Stock type is required'),
   handleValidationErrors
 ];
 
 // ============ PAYMENT VALIDATIONS ============
 export const validateCreatePayment = [
-  body('invoice_id').notEmpty().withMessage('Valid invoice required'),
+  body('retailer_id').notEmpty().withMessage('Retailer is required'),
   body('amount').notEmpty().withMessage('Amount is required'),
   body('payment_date').notEmpty().withMessage('Payment date is required'),
   body('payment_method').notEmpty().withMessage('Payment method is required'),
@@ -162,43 +149,6 @@ export const validateCreateRole = [
 
 export const validateUpdateRolePermissions = [
   param('id').notEmpty().withMessage('Invalid role ID'),
-  body('permission_ids').isArray().withMessage('Permission IDs must be an array'),
-  handleValidationErrors
-];
-
-// ============ STOCK VALIDATIONS ============
-export const validateAdjustStock = [
-  body('product_id').notEmpty().withMessage('Valid product ID required'),
-  body('quantity').notEmpty().withMessage('Quantity is required'),
-  body('type').notEmpty().withMessage('Stock type is required'),
-  handleValidationErrors
-];
-
-// ============ COMPANY VALIDATIONS ============
-export const validateCreateCompany = [
-  body('name').trim().notEmpty().withMessage('Company name is required'),
-  body('email').notEmpty().withMessage('Email is required'),
-  body('phone').notEmpty().withMessage('Phone number is required'),
-  body('address').optional().trim(),
-  handleValidationErrors
-];
-
-export const validateUpdateCompany = [
-  param('id').notEmpty().withMessage('Invalid company ID'),
-  body('name').optional().trim().notEmpty().withMessage('Company name cannot be empty'),
-  body('email').optional().notEmpty().withMessage('Email cannot be empty'),
-  handleValidationErrors
-];
-
-// ============ ROLE VALIDATIONS ============
-export const validateCreateRole = [
-  body('name').trim().notEmpty().withMessage('Role name is required'),
-  body('description').optional().trim(),
-  handleValidationErrors
-];
-
-export const validateUpdateRolePermissions = [
-  param('id').isInt().withMessage('Invalid role ID'),
   body('permission_ids').isArray().withMessage('Permission IDs must be an array'),
   handleValidationErrors
 ];

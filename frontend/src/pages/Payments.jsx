@@ -18,6 +18,7 @@ export default function Payments() {
     retailer_id: '', amount: 0, payment_method: 'cash',
     reference_no: '', payment_date: new Date().toISOString().split('T')[0], notes: ''
   });
+  const [fieldErrors, setFieldErrors] = useState({});
 
   useEffect(() => {
     fetchPayments();
@@ -50,12 +51,20 @@ export default function Payments() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!formData.retailer_id || !formData.amount) {
-      alert(t('SelectRetailer') + ' ' + t('EnterAmount'));
+    setFieldErrors({});
+    
+    const errors = {};
+    if (!formData.retailer_id || formData.retailer_id === '') {
+      errors.retailer_id = t('RetailerRequired');
+    }
+    if (!formData.amount || formData.amount <= 0) {
+      errors.amount = t('AmountRequired');
+    }
+    
+    if (Object.keys(errors).length > 0) {
+      setFieldErrors(errors);
       return;
     }
-
-    console.log('Submitting payment:', formData);
     
     try {
       const paymentData = {
@@ -66,9 +75,7 @@ export default function Payments() {
         notes: formData.notes || null,
         payment_date: formData.payment_date
       };
-      console.log('Payment data:', paymentData);
       const result = await paymentService.create(paymentData);
-      console.log('Payment created:', result);
       setShowModal(false);
       fetchPayments();
       fetchRetailers();
@@ -76,9 +83,14 @@ export default function Payments() {
         retailer_id: '', amount: 0, payment_method: 'cash',
         reference_no: '', payment_date: new Date().toISOString().split('T')[0], notes: ''
       });
+      setFieldErrors({});
     } catch (error) {
-      console.error('Failed to record payment:', error);
-      alert(error.response?.data?.message || error.message || 'Failed to record payment');
+      const errors = error.response?.data?.errors;
+      if (errors) {
+        setFieldErrors(errors);
+      } else {
+        alert(error.response?.data?.message || error.message || 'Failed to record payment');
+      }
     }
   };
 
@@ -88,7 +100,7 @@ export default function Payments() {
     <div>
       <div className="page-header">
         <h1 className="page-title">{t('Payments')}</h1>
-        <button className="btn btn-primary" onClick={() => setShowModal(true)}>
+          <button className="btn btn-primary" onClick={() => { setShowModal(true); setFieldErrors({}); setFormData({ retailer_id: '', amount: 0, payment_method: 'cash', reference_no: '', payment_date: new Date().toISOString().split('T')[0], notes: '' }); }}>
           <Plus size={18} /> {t('RecordPayment')}
         </button>
       </div>
@@ -173,9 +185,9 @@ export default function Payments() {
                 <div className="form-group">
                   <label className="form-label">{t('Retailer')} *</label>
                   <select
-                    className="form-select"
+                    className={`form-select ${fieldErrors.retailer_id ? 'input-error' : ''}`}
                     value={formData.retailer_id}
-                    onChange={(e) => setFormData({ ...formData, retailer_id: e.target.value })}
+                    onChange={(e) => { setFormData({ ...formData, retailer_id: e.target.value }); setFieldErrors({...fieldErrors, retailer_id: null}); }}
                     required
                   >
                     <option value="">{t('SelectRetailerPayment')}</option>
@@ -185,6 +197,7 @@ export default function Payments() {
                       </option>
                     ))}
                   </select>
+                  {fieldErrors.retailer_id && <div className="field-error">{fieldErrors.retailer_id}</div>}
                 </div>
 
                 <div className="grid-2">
@@ -193,11 +206,12 @@ export default function Payments() {
                     <input
                       type="number"
                       step="0.01"
-                      className="form-input"
+                      className={`form-input ${fieldErrors.amount ? 'input-error' : ''}`}
                       value={formData.amount}
-                      onChange={(e) => setFormData({ ...formData, amount: parseFloat(e.target.value) || 0 })}
+                      onChange={(e) => { setFormData({ ...formData, amount: parseFloat(e.target.value) || 0 }); setFieldErrors({...fieldErrors, amount: null}); }}
                       required
                     />
+                    {fieldErrors.amount && <div className="field-error">{fieldErrors.amount}</div>}
                   </div>
                   <div className="form-group">
                     <label className="form-label">{t('PaymentMethod')}</label>

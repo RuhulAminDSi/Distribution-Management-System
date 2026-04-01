@@ -14,10 +14,10 @@ export default function Retailers() {
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
   const [search, setSearch] = useState('');
+  const [fieldErrors, setFieldErrors] = useState({});
 
   const pagination = usePagination(10);
   const form = useFormData(initialFormData);
-  const { error, setError, handleAsyncError, clearError } = useAsyncError();
 
   useEffect(() => {
     fetchRetailers();
@@ -40,7 +40,7 @@ export default function Retailers() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    clearError();
+    setFieldErrors({});
     try {
       const data = {
         name: form.formData.name,
@@ -62,14 +62,18 @@ export default function Retailers() {
       fetchRetailers();
       form.resetForm();
     } catch (err) {
-      handleAsyncError(err);
-      setTimeout(() => document.getElementById('retailer-error')?.scrollIntoView({ behavior: 'smooth' }), 100);
+      const errors = err.response?.data?.errors;
+      if (errors) {
+        setFieldErrors(errors);
+      } else {
+        alert(err.response?.data?.message || 'Failed to save');
+      }
     }
   };
 
   const handleEdit = (retailer) => {
     form.setFormData(retailer);
-    clearError();
+    setFieldErrors({});
     setShowModal(true);
   };
 
@@ -84,13 +88,19 @@ export default function Retailers() {
     }
   };
 
+  const openModal = (retailer = null) => {
+    form.setFormData(retailer || initialFormData);
+    setFieldErrors({});
+    setShowModal(true);
+  };
+
   if (loading) return <div>{t('Loading')}</div>;
 
   return (
     <div>
       <div className="page-header">
         <h1 className="page-title">{t('Retailers')}</h1>
-        <button className="btn btn-primary" onClick={() => { setShowModal(true); clearError(); form.resetForm(); }}>
+          <button className="btn btn-primary" onClick={() => { setShowModal(true); form.resetForm(); setFieldErrors({}); }}>
           <Plus size={18} /> {t('AddRetailer')}
         </button>
       </div>
@@ -189,26 +199,17 @@ export default function Retailers() {
             </div>
             <form onSubmit={handleSubmit}>
               <div className="modal-body">
-                {error && (
-                  <div id="retailer-error" className="alert alert-danger" style={{ marginBottom: '16px' }}>
-                    <strong>{t('Error')}: </strong>{error}
-                    {error.includes('access denied') && (
-                      <div style={{ marginTop: '8px', fontSize: '12px' }}>
-                        {t('Error')}: Only admin or salesman can add/edit retailers.
-                      </div>
-                    )}
-                  </div>
-                )}
                 <div className="grid-2">
                   <div className="form-group">
                     <label className="form-label">{t('ShopName')} *</label>
                     <input
                       type="text"
-                      className="form-input"
+                      className={`form-input ${fieldErrors.name ? 'input-error' : ''}`}
                       value={form.formData.name}
-                      onChange={(e) => form.updateField('name', e.target.value)}
+                      onChange={(e) => { form.updateField('name', e.target.value); setFieldErrors({...fieldErrors, name: null}); }}
                       required
                     />
+                    {fieldErrors.name && <div className="field-error">{fieldErrors.name}</div>}
                   </div>
                   <div className="form-group">
                     <label className="form-label">{t('Code')}</label>
@@ -235,11 +236,12 @@ export default function Retailers() {
                     <label className="form-label">{t('Phone')} *</label>
                     <input
                       type="text"
-                      className="form-input"
+                      className={`form-input ${fieldErrors.phone ? 'input-error' : ''}`}
                       value={form.formData.phone}
-                      onChange={(e) => form.updateField('phone', e.target.value)}
+                      onChange={(e) => { form.updateField('phone', e.target.value); setFieldErrors({...fieldErrors, phone: null}); }}
                       required
                     />
+                    {fieldErrors.phone && <div className="field-error">{fieldErrors.phone}</div>}
                   </div>
                 </div>
 
