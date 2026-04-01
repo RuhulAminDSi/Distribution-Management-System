@@ -1,13 +1,14 @@
 import express from 'express';
 import { companyController, categoryController } from '../controllers/companyController.js';
 import { authenticate, permit } from '../middleware/auth.js';
+import { validateCreateCompany, validateUpdateCompany } from '../utils/validation.js';
 
 const router = express.Router();
 
 router.get('/companies', authenticate, permit('companies_view'), companyController.findAll);
 router.get('/companies/:id', authenticate, permit('companies_view'), companyController.findById);
-router.post('/companies', authenticate, permit('companies_create'), companyController.create);
-router.put('/companies/:id', authenticate, permit('companies_edit'), companyController.update);
+router.post('/companies', authenticate, permit('companies_create'), validateCreateCompany, companyController.create);
+router.put('/companies/:id', authenticate, permit('companies_edit'), validateUpdateCompany, companyController.update);
 router.delete('/companies/:id', authenticate, permit('companies_delete'), companyController.delete);
 
 router.get('/categories', authenticate, permit('companies_view'), categoryController.findAll);
