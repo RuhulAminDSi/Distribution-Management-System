@@ -1,54 +1,41 @@
 import { query } from '../config/database.js';
 import { generateCode, buildPaginatedResponse, paginate } from '../utils/helpers.js';
+import { QueryBuilder } from '../utils/QueryBuilder.js';
 
 export const productService = {
   async findAll(page = 1, limit = 20, search = '', companyId = null, categoryId = null) {
-    let sql = `
-      SELECT p.*, c.name as category_name, comp.name as company_name 
-      FROM products p 
-      LEFT JOIN categories c ON p.category_id = c.id 
-      LEFT JOIN companies comp ON p.company_id = comp.id 
-      WHERE p.is_active = 1
-    `;
-    const params = [];
+    // Build query with QueryBuilder
+    let builder = new QueryBuilder('products p')
+      .select('p.*, c.name as category_name, comp.name as company_name')
+      .join('categories c', 'p.category_id = c.id')
+      .join('companies comp', 'p.company_id = comp.id')
+      .where('p.is_active', 1)
+      .orderBy('p.id', 'DESC');
 
     if (search) {
-      sql += ' AND (p.name LIKE ? OR p.code LIKE ?)';
-      params.push(`%${search}%`, `%${search}%`);
+      const searchTerm = `%${search}%`;
+      builder.whereRaw('(p.name LIKE ? OR p.code LIKE ?)', [searchTerm, searchTerm]);
     }
 
     if (companyId) {
-      sql += ' AND p.company_id = ?';
-      params.push(companyId);
+      builder.where('p.company_id', companyId);
     }
 
     if (categoryId) {
-      sql += ' AND p.category_id = ?';
-      params.push(categoryId);
+      builder.where('p.category_id', categoryId);
     }
 
-    const countSql = sql.replace('SELECT p.*, c.name as category_name, comp.name as company_name', 'SELECT COUNT(*) as total');
-    const countResult = await query(countSql, params);
-    const total = countResult[0]?.total || 0;
-
-    sql += ' ORDER BY p.id DESC LIMIT ? OFFSET ?';
-    const { offset, limit: parsedLimit } = paginate(page, limit);
-    params.push(parsedLimit, offset);
-
-    const products = await query(sql, params);
-    return buildPaginatedResponse(products, total, page, limit);
+    return builder.paginate(page, limit);
   },
 
   async findById(id) {
-    const sql = `
-      SELECT p.*, c.name as category_name, comp.name as company_name 
-      FROM products p 
-      LEFT JOIN categories c ON p.category_id = c.id 
-      LEFT JOIN companies comp ON p.company_id = comp.id 
-      WHERE p.id = ? AND p.is_active = 1
-    `;
-    const products = await query(sql, [id]);
-    return products[0] || null;
+    return new QueryBuilder('products p')
+      .select('p.*, c.name as category_name, comp.name as company_name')
+      .join('categories c', 'p.category_id = c.id')
+      .join('companies comp', 'p.company_id = comp.id')
+      .where('p.id', id)
+      .where('p.is_active', 1)
+      .first();
   },
 
   async create(data) {
@@ -103,39 +90,36 @@ export const productService = {
   },
 
   async getLowStock() {
-    const sql = `
-      SELECT p.*, c.name as category_name, comp.name as company_name 
-      FROM products p 
-      LEFT JOIN categories c ON p.category_id = c.id 
-      LEFT JOIN companies comp ON p.company_id = comp.id 
-      WHERE p.is_active = 1 AND p.stock_quantity <= p.low_stock_alert
-      ORDER BY p.stock_quantity ASC
-    `;
-    return query(sql);
+    return new QueryBuilder('products p')
+      .select('p.*, c.name as category_name, comp.name as company_name')
+      .join('categories c', 'p.category_id = c.id')
+      .join('companies comp', 'p.company_id = comp.id')
+      .where('p.is_active', 1)
+      .whereRaw('p.stock_quantity <= p.low_stock_alert', [])
+      .orderBy('p.stock_quantity', 'ASC')
+      .get();
   },
 
   async getExpired() {
-    const sql = `
-      SELECT p.*, c.name as category_name, comp.name as company_name 
-      FROM products p 
-      LEFT JOIN categories c ON p.category_id = c.id 
-      LEFT JOIN companies comp ON p.company_id = comp.id 
-      WHERE p.is_active = 1 AND p.expiry_date IS NOT NULL AND p.expiry_date <= CURDATE() AND p.stock_quantity > 0
-      ORDER BY p.expiry_date ASC
-    `;
-    return query(sql);
+    return new QueryBuilder('products p')
+      .select('p.*, c.name as category_name, comp.name as company_name')
+      .join('categories c', 'p.category_id = c.id')
+      .join('companies comp', 'p.company_id = comp.id')
+      .where('p.is_active', 1)
+      .whereRaw('p.expiry_date IS NOT NULL AND p.expiry_date <= CURDATE() AND p.stock_quantity > 0', [])
+      .orderBy('p.expiry_date', 'ASC')
+      .get();
   },
 
   async getExpiringSoon(days = 30) {
-    const sql = `
-      SELECT p.*, c.name as category_name, comp.name as company_name 
-      FROM products p 
-      LEFT JOIN categories c ON p.category_id = c.id 
-      LEFT JOIN companies comp ON p.company_id = comp.id 
-      WHERE p.is_active = 1 AND p.expiry_date IS NOT NULL AND p.expiry_date > CURDATE() AND p.expiry_date <= DATE_ADD(CURDATE(), INTERVAL ? DAY) AND p.stock_quantity > 0
-      ORDER BY p.expiry_date ASC
-    `;
-    return query(sql, [days]);
+    return new QueryBuilder('products p')
+      .select('p.*, c.name as category_name, comp.name as company_name')
+      .join('categories c', 'p.category_id = c.id')
+      .join('companies comp', 'p.company_id = comp.id')
+      .where('p.is_active', 1)
+      .whereRaw('p.expiry_date IS NOT NULL AND p.expiry_date > CURDATE() AND p.expiry_date <= DATE_ADD(CURDATE(), INTERVAL ? DAY) AND p.stock_quantity > 0', [days])
+      .orderBy('p.expiry_date', 'ASC')
+      .get();
   },
 
   async updateStock(id, quantity, type, referenceType = null, referenceId = null, notes = null, userId) {

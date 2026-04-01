@@ -1,64 +1,59 @@
 import { query } from '../config/database.js';
+import { QueryBuilder } from '../utils/QueryBuilder.js';
 
 export const dashboardService = {
   async getSummary() {
     const today = new Date().toISOString().split('T')[0];
 
-    const todaySales = await query(`
-      SELECT 
-        COUNT(*) as total_invoices,
-        COALESCE(SUM(total_amount), 0) as total_amount,
-        COALESCE(SUM(paid_amount), 0) as total_collected,
-        COALESCE(SUM(due_amount), 0) as total_due
-      FROM invoices 
-      WHERE invoice_date = ?
-    `, [today]);
+    // Today's sales using QueryBuilder
+    const todaySales = await new QueryBuilder('invoices')
+      .select('COUNT(*) as total_invoices, COALESCE(SUM(total_amount), 0) as total_amount, COALESCE(SUM(paid_amount), 0) as total_collected, COALESCE(SUM(due_amount), 0) as total_due')
+      .where('invoice_date', today)
+      .first();
 
-    const allTimeSales = await query(`
-      SELECT 
-        COUNT(*) as total_invoices,
-        COALESCE(SUM(total_amount), 0) as total_amount,
-        COALESCE(SUM(paid_amount), 0) as total_collected,
-        COALESCE(SUM(due_amount), 0) as total_due
-      FROM invoices 
-    `);
+    // All time sales using QueryBuilder
+    const allTimeSales = await new QueryBuilder('invoices')
+      .select('COUNT(*) as total_invoices, COALESCE(SUM(total_amount), 0) as total_amount, COALESCE(SUM(paid_amount), 0) as total_collected, COALESCE(SUM(due_amount), 0) as total_due')
+      .first();
 
-    const totalOutstanding = await query(`
-      SELECT COALESCE(SUM(outstanding_balance), 0) as total
-      FROM retailers WHERE is_active = 1
-    `);
+    // Outstanding balance using QueryBuilder
+    const totalOutstanding = await new QueryBuilder('retailers')
+      .select('COALESCE(SUM(outstanding_balance), 0) as total')
+      .where('is_active', 1)
+      .first();
 
-    const totalProducts = await query(`
-      SELECT COUNT(*) as total FROM products WHERE is_active = 1
-    `);
+    // Total products using QueryBuilder
+    const totalProducts = await new QueryBuilder('products')
+      .select('COUNT(*) as total')
+      .where('is_active', 1)
+      .first();
 
-    const lowStock = await query(`
-      SELECT COUNT(*) as total FROM products 
-      WHERE is_active = 1 AND stock_quantity <= low_stock_alert
-    `);
+    // Low stock count using QueryBuilder
+    const lowStock = await new QueryBuilder('products')
+      .select('COUNT(*) as total')
+      .where('is_active', 1)
+      .whereRaw('stock_quantity <= low_stock_alert', [])
+      .first();
 
-    const todayInvoices = await query(`
-      SELECT 
-        i.id,
-        i.invoice_no,
-        i.total_amount,
-        i.status,
-        r.name as retailer_name
-      FROM invoices i
-      LEFT JOIN retailers r ON i.retailer_id = r.id
-      WHERE i.invoice_date = ?
-      ORDER BY i.id DESC
-      LIMIT 10
-    `, [today]);
+    // Today's invoices using QueryBuilder
+    const todayInvoices = await new QueryBuilder('invoices i')
+      .select('i.id, i.invoice_no, i.total_amount, i.status, r.name as retailer_name')
+      .join('retailers r', 'i.retailer_id = r.id')
+      .where('i.invoice_date', today)
+      .orderBy('i.id', 'DESC')
+      .limit(10)
+      .get();
 
-    const lowStockProducts = await query(`
-      SELECT id, name, code, stock_quantity, low_stock_alert, unit
-      FROM products
-      WHERE is_active = 1 AND stock_quantity <= low_stock_alert
-      ORDER BY stock_quantity ASC
-      LIMIT 10
-    `);
+    // Low stock products using QueryBuilder
+    const lowStockProducts = await new QueryBuilder('products')
+      .select('id, name, code, stock_quantity, low_stock_alert, unit')
+      .where('is_active', 1)
+      .whereRaw('stock_quantity <= low_stock_alert', [])
+      .orderBy('stock_quantity', 'ASC')
+      .limit(10)
+      .get();
 
+    // Monthly sales (raw query for complex GROUP BY)
     const monthlySales = await query(`
       SELECT 
         DATE_FORMAT(invoice_date, '%Y-%m') as month,
@@ -72,19 +67,19 @@ export const dashboardService = {
 
     return {
       today: {
-        totalInvoices: todaySales[0]?.total_invoices || 0,
-        totalSales: todaySales[0]?.total_amount || 0,
-        totalCollected: todaySales[0]?.total_collected || 0,
-        totalDue: todaySales[0]?.total_due || 0
+        totalInvoices: todaySales?.total_invoices || 0,
+        totalSales: todaySales?.total_amount || 0,
+        totalCollected: todaySales?.total_collected || 0,
+        totalDue: todaySales?.total_due || 0
       },
       allTime: {
-        totalInvoices: allTimeSales[0]?.total_invoices || 0,
-        totalSales: allTimeSales[0]?.total_amount || 0,
-        totalCollected: allTimeSales[0]?.total_collected || 0
+        totalInvoices: allTimeSales?.total_invoices || 0,
+        totalSales: allTimeSales?.total_amount || 0,
+        totalCollected: allTimeSales?.total_collected || 0
       },
-      totalOutstanding: totalOutstanding[0]?.total || 0,
-      totalProducts: totalProducts[0]?.total || 0,
-      lowStockCount: lowStock[0]?.total || 0,
+      totalOutstanding: totalOutstanding?.total || 0,
+      totalProducts: totalProducts?.total || 0,
+      lowStockCount: lowStock?.total || 0,
       recentInvoices: todayInvoices,
       lowStockProducts,
       monthlySales
