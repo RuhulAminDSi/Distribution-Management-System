@@ -40,6 +40,14 @@ export const stockService = {
     try {
       await db.beginTransaction();
 
+      // Validate all product IDs exist
+      for (const item of data.items) {
+        const [products] = await db.execute('SELECT id FROM products WHERE id = ?', [item.product_id]);
+        if (products.length === 0) {
+          throw new Error(`Product with ID ${item.product_id} not found`);
+        }
+      }
+
       const [result] = await db.execute(
         `INSERT INTO purchase_orders (po_no, company_id, total_amount, status, notes, order_date, created_by)
          VALUES (?, ?, ?, ?, ?, ?, ?)`,
