@@ -62,7 +62,8 @@ export const stockService = {
     const total = countResult[0]?.total || 0;
 
     const offset = (page - 1) * limit;
-    const dataSql = sql + ` ORDER BY sl.id DESC LIMIT ${limit} OFFSET ${offset}`;
+    const dataSql = sql + ` ORDER BY sl.id DESC LIMIT ? OFFSET ?`;
+    params.push(limit, offset);
     const data = await query(dataSql, params);
 
     return buildPaginatedResponse(data, total, page, limit);
