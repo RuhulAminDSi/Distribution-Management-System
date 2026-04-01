@@ -15,26 +15,29 @@ git log --oneline -5
 
 ### Step 2: Run Tests
 ```bash
-# Backend tests
-cd backend && npm test
-
-# Frontend build check
-cd frontend && npm run build
+# Run test script
+bash .test_script/test.sh
 
 # Health check
 curl http://localhost:5000/api/health
 ```
 
-### Step 3: Commit & Push
+### Step 3: Commit to dev Branch
 ```bash
-# Add changes
-git add .
+# Add changes (excluding problematic files)
+git add .gitignore AGENTS.md .bug_fixes/ .commands/ .markdown_files/ .test_script/ backend/ frontend/ database/ scripts/
 
 # Commit with message
 git commit -m "fix: [description]"
 
-# Push to remote
-git push origin main
+# Push to dev branch
+git push origin dev
+```
+
+### Step 4: Push dev to main (if needed)
+```bash
+# Force push dev to main (main is behind dev)
+git push origin dev:main --force
 ```
 
 ---
@@ -54,10 +57,10 @@ git push origin main
 4. Check for console errors
 
 ### Push to GitHub
-1. Verify all changes are committed
-2. Run build to ensure no errors
-3. Push to main branch
-4. Verify remote update
+1. All changes committed to dev branch first
+2. Run build to ensure no errors: `cd frontend && npm run build`
+3. Push dev to remote: `git push origin dev`
+4. If syncing to main: `git push origin dev:main --force`
 
 ---
 
@@ -65,7 +68,16 @@ git push origin main
 
 | Issue | Solution |
 |-------|----------|
-| Port in use | `taskkill //PID <PID> //F` |
+| Port in use | `netstat -ano \| findstr :5000` then `taskkill //PID <PID> //F` |
 | Build fails | Check error messages, fix syntax |
 | Test fails | Review test expectations |
 | Push rejected | Pull latest changes first |
+| nul file error | `rm -f nul` before git add |
+
+---
+
+## Important Notes
+
+- All development happens on `dev` branch
+- Push to `dev` first, then sync to `main` if needed
+- Run `bash .test_script/test.sh` to verify 18 tests
