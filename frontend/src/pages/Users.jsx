@@ -55,9 +55,11 @@ export default function Users() {
         const updateData = {
           full_name: formData.full_name,
           email: formData.email,
-          role_id: formData.role_id,
           phone: formData.phone
         };
+        if (editItem.role_id !== 1) {
+          updateData.role_id = formData.role_id;
+        }
         if (formData.password) {
           updateData.password = formData.password;
         }
@@ -76,13 +78,9 @@ export default function Users() {
     }
   };
 
-  const handleDelete = async (id, username) => {
+  const handleDelete = async (id, role_id) => {
+    if (role_id === 1) return;
     if (!confirm(t('ConfirmDelete'))) return;
-    
-    if (username === 'admin') {
-      alert(t('SystemAdmin') + ' ' + t('DeleteError'));
-      return;
-    }
     
     try {
       await authService.deleteUser(id);
@@ -93,10 +91,7 @@ export default function Users() {
   };
 
   const handleToggleStatus = async (user) => {
-    if (user.username === 'admin') {
-      alert(t('SystemAdmin') + ' status cannot be changed');
-      return;
-    }
+    if (user.role_id === 1) return;
     
     const newStatus = user.is_active ? 0 : 1;
     const action = newStatus ? 'activate' : 'deactivate';
@@ -171,55 +166,62 @@ export default function Users() {
             />
           </div>
         </div>
-        <table className="table">
-          <thead>
-            <tr>
-              <th>{t('Username')}</th>
-              <th>{t('FullName')}</th>
-              <th>{t('Email')}</th>
-              <th>{t('Role')}</th>
-              <th>{t('Phone')}</th>
-              <th>{t('Status')}</th>
-              <th>{t('Actions')}</th>
-            </tr>
-          </thead>
-          <tbody>
+        <div className="table-container">
+          <table className="table">
+            <thead>
+              <tr>
+                <th>{t('Username')}</th>
+                <th>{t('FullName')}</th>
+                <th>{t('Email')}</th>
+                <th>{t('Role')}</th>
+                <th>{t('Phone')}</th>
+                <th>{t('Status')}</th>
+                <th>{t('Actions')}</th>
+              </tr>
+            </thead>
+            <tbody>
               {loading ? (
-              <tr><td colSpan="7">{t('Loading')}</td></tr>
-            ) : !users || users.length === 0 ? (
-              <tr><td colSpan="7">{t('NoUsersFound')}</td></tr>
-            ) : (
+                <tr><td colSpan="7">{t('Loading')}</td></tr>
+              ) : !users || users.length === 0 ? (
+                <tr><td colSpan="7">{t('NoUsersFound')}</td></tr>
+              ) : (
                 users.map(u => (
-                <tr key={u.id}>
-                  <td>{u.username}</td>
-                  <td>{u.full_name}</td>
-                  <td>{u.email || '-'}</td>
-                  <td><span className={`badge ${getRoleBadgeClass(u.role)}`}>{formatRole(u.role)}</span></td>
-                  <td>{u.phone}</td>
-                  <td>{u.is_active ? <span className="badge badge-success">{t('Active')}</span> : <span className="badge badge-danger">{t('Inactive')}</span>}</td>
-                  <td>
-                    <button 
-                      className={`btn btn-sm ${u.is_active ? 'btn-warning' : 'btn-success'}`}
-                      onClick={() => handleToggleStatus(u)}
-                      disabled={u.username === 'admin'}
-                      title={u.username === 'admin' ? 'Cannot change admin status' : u.is_active ? 'Deactivate' : 'Activate'}
-                      style={{ marginRight: '4px' }}
-                    >
-                      {u.is_active ? 'Deactivate' : 'Activate'}
-                    </button>
-                    <button className="btn btn-sm" onClick={() => openModal(u)}><Pencil size={14} /></button>
-                    <button 
-                      className="btn btn-sm btn-danger" 
-                      onClick={() => handleDelete(u.id, u.username)}
-                      disabled={u.username === 'admin'}
-                      title={u.username === 'admin' ? t('SystemAdmin') + ' ' + t('DeleteError') : t('Delete')}
-                    ><Trash2 size={14} /></button>
-                  </td>
-                </tr>
-              ))
-            )}
-          </tbody>
-        </table>
+                  <tr key={u.id}>
+                    <td>{u.username}</td>
+                    <td>{u.full_name}</td>
+                    <td>{u.email || '-'}</td>
+                    <td><span className={`badge ${getRoleBadgeClass(u.role)}`}>{formatRole(u.role)}</span></td>
+                    <td>{u.phone || '-'}</td>
+                    <td>{u.is_active ? <span className="badge badge-success">{t('Active')}</span> : <span className="badge badge-danger">{t('Inactive')}</span>}</td>
+                    <td>
+                      <div className="flex gap-2">
+                        <button 
+                          className={`btn btn-sm ${u.is_active ? 'btn-warning' : 'btn-success'}`}
+                          onClick={() => handleToggleStatus(u)}
+                          disabled={u.role_id === 1}
+                          title={u.role_id === 1 ? 'Cannot change Super Admin status' : u.is_active ? 'Deactivate' : 'Activate'}
+                        >
+                          {u.is_active ? 'Deactivate' : 'Activate'}
+                        </button>
+                        <button className="btn btn-secondary btn-sm" onClick={() => openModal(u)}>
+                          <Pencil size={14} />
+                        </button>
+                        <button 
+                          className="btn btn-danger btn-sm" 
+                          onClick={() => handleDelete(u.id, u.role_id)}
+                          disabled={u.role_id === 1}
+                          title={u.role_id === 1 ? 'Cannot delete Super Admin' : t('Delete')}
+                        >
+                          <Trash2 size={14} />
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </table>
+        </div>
       </div>
       
       <div className="pagination" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '15px', flexWrap: 'wrap', gap: '10px' }}>
@@ -340,6 +342,7 @@ export default function Users() {
                     value={formData.role_id || ''}
                     onChange={e => setFormData({...formData, role_id: e.target.value})}
                     required
+                    disabled={editItem?.role_id === 1}
                     className="form-input"
                   >
                     <option value="">Select role</option>

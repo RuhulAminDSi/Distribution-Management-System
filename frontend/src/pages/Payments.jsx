@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { paymentService, retailerService } from '../services/api';
 import { useLanguage, formatCurrency, formatDate } from '../context/LanguageContext';
-import { Plus, Search, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Plus, Search, ChevronLeft, ChevronRight, Eye } from 'lucide-react';
 
 export default function Payments() {
   const { t, language } = useLanguage();
@@ -127,6 +127,7 @@ export default function Payments() {
                 <th className="text-right">{t('Amount')}</th>
                 <th>{t('PaymentMethod')}</th>
                 <th>{t('CollectedBy')}</th>
+                <th>{t('Actions')}</th>
               </tr>
             </thead>
             <tbody>
@@ -138,6 +139,13 @@ export default function Payments() {
                   <td className="text-right text-success">{formatCurrency(payment.amount, language)}</td>
                   <td>{payment.payment_method}</td>
                   <td>{payment.collected_by_name}</td>
+                  <td>
+                    <div className="flex gap-2">
+                      <button className="btn btn-secondary btn-sm" title={t('View')}>
+                        <Eye size={14} />
+                      </button>
+                    </div>
+                  </td>
                 </tr>
               ))}
             </tbody>

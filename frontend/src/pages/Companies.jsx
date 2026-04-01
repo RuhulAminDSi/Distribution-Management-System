@@ -80,7 +80,7 @@ export default function Companies() {
   return (
     <div>
       <div className="page-header">
-        <h2>{t('Companies')}</h2>
+        <h1 className="page-title">{t('Companies')}</h1>
         <button className="btn btn-primary" onClick={() => openModal()}>
           <Plus size={18} /> {t('AddCompany')}
         </button>
@@ -98,39 +98,47 @@ export default function Companies() {
             />
           </div>
         </div>
-        <table className="table">
-          <thead>
-            <tr>
-              <th>{t('Code')}</th>
-              <th>{t('Name')}</th>
-              <th>{t('ContactPerson')}</th>
-              <th>{t('Phone')}</th>
-              <th>{t('DueLimit')}</th>
-              <th>{t('Actions')}</th>
-            </tr>
-          </thead>
-          <tbody>
-            {loading ? (
-              <tr><td colSpan="6">{t('Loading')}</td></tr>
-            ) : !companies || companies.length === 0 ? (
-              <tr><td colSpan="6">{t('NoDataFound')}</td></tr>
-            ) : (
-              companies.map(c => (
-                <tr key={c.id}>
-                  <td>{c.code}</td>
-                  <td>{c.name}</td>
-                  <td>{c.contact_person}</td>
-                  <td>{c.phone}</td>
-                  <td>{c.due_limit}</td>
-                  <td>
-                    <button className="btn btn-sm" onClick={() => openModal(c)}><Pencil size={14} /></button>
-                    <button className="btn btn-sm btn-danger" onClick={() => handleDelete(c.id)}><Trash2 size={14} /></button>
-                  </td>
-                </tr>
-              ))
-            )}
-          </tbody>
-        </table>
+        <div className="table-container">
+          <table className="table">
+            <thead>
+              <tr>
+                <th>{t('Code')}</th>
+                <th>{t('Name')}</th>
+                <th>{t('ContactPerson')}</th>
+                <th>{t('Phone')}</th>
+                <th className="text-right">{t('DueLimit')}</th>
+                <th>{t('Actions')}</th>
+              </tr>
+            </thead>
+            <tbody>
+              {loading ? (
+                <tr><td colSpan="6">{t('Loading')}</td></tr>
+              ) : !companies || companies.length === 0 ? (
+                <tr><td colSpan="6">{t('NoDataFound')}</td></tr>
+              ) : (
+                companies.map(c => (
+                  <tr key={c.id}>
+                    <td>{c.code}</td>
+                    <td>{c.name}</td>
+                    <td>{c.contact_person || '-'}</td>
+                    <td>{c.phone || '-'}</td>
+                    <td className="text-right">{c.due_limit}</td>
+                    <td>
+                      <div className="flex gap-2">
+                        <button className="btn btn-secondary btn-sm" onClick={() => openModal(c)}>
+                          <Pencil size={14} />
+                        </button>
+                        <button className="btn btn-danger btn-sm" onClick={() => handleDelete(c.id)}>
+                          <Trash2 size={14} />
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </table>
+        </div>
       </div>
       
       <div className="pagination" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '15px', flexWrap: 'wrap', gap: '10px' }}>

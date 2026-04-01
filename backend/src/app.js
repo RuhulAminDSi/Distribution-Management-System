@@ -14,6 +14,7 @@ import dashboardRoutes from './routes/dashboardRoutes.js';
 import stockRoutes from './routes/stockRoutes.js';
 import companyRoutes from './routes/companyRoutes.js';
 import roleRoutes from './routes/roleRoutes.js';
+import notificationRoutes from './routes/notificationRoutes.js';
 
 import { errorHandler, notFound } from './middleware/errorHandler.js';
 
@@ -48,6 +49,7 @@ app.use('/api/dashboard', dashboardRoutes);
 app.use('/api/stock', stockRoutes);
 app.use('/api/roles', roleRoutes);
 app.use('/api', companyRoutes);
+app.use('/api/notifications', notificationRoutes);
 
 app.get('/api/health', (req, res) => {
   res.json({ status: 'OK', timestamp: new Date().toISOString() });

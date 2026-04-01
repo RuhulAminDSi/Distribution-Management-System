@@ -228,6 +228,26 @@ export const initializeDatabase = async () => {
     `);
 
     await connection.execute(`
+      CREATE TABLE IF NOT EXISTS notifications (
+        id INT PRIMARY KEY AUTO_INCREMENT,
+        user_id INT NOT NULL,
+        title VARCHAR(255) NOT NULL,
+        message TEXT NOT NULL,
+        type ENUM('info', 'warning', 'error', 'success') DEFAULT 'info',
+        category VARCHAR(50),
+        reference_type VARCHAR(50),
+        reference_id INT,
+        is_read TINYINT DEFAULT 0,
+        action_url VARCHAR(255),
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+        FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+        INDEX idx_user_read (user_id, is_read),
+        INDEX idx_created_at (created_at)
+      )
+    `);
+
+    await connection.execute(`
       CREATE TABLE IF NOT EXISTS roles (
         id INT PRIMARY KEY AUTO_INCREMENT,
         name VARCHAR(50) UNIQUE NOT NULL,

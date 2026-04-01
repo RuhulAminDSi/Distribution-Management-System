@@ -17,6 +17,7 @@ import Stock from './pages/Stock';
 import Reports from './pages/Reports';
 import Users from './pages/Users';
 import Settings from './pages/Settings';
+import Notifications from './pages/Notifications';
 import NotFound from './pages/NotFound';
 
 function PrivateRoute({ children }) {
@@ -84,11 +85,12 @@ export default function App() {
         <Route path="/reset-password" element={<ResetPassword />} />
         
         <Route path="/dashboard" element={
-          <PermissionRoute permission="dashboard_view">
+          <PrivateRoute>
             <MainLayout />
-          </PermissionRoute>
+          </PrivateRoute>
         }>
           <Route index element={<Dashboard />} />
+          <Route path="notifications" element={<Notifications />} />
         </Route>
         
         <Route path="/companies" element={

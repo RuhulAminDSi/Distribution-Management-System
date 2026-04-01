@@ -3,6 +3,7 @@ import { generateInvoiceNo, calculateDiscount, buildPaginatedResponse, paginate 
 import { QueryBuilder } from '../utils/QueryBuilder.js';
 import { productService } from './productService.js';
 import { retailerService } from './retailerService.js';
+import notificationService from './notificationService.js';
 
 export const invoiceService = {
   async findAll(page = 1, limit = 20, retailerId = null, status = null, startDate = null, endDate = null, search = '') {
@@ -128,7 +129,32 @@ export const invoiceService = {
       }
 
       await db.commit();
-      return this.findById(insertId);
+      
+      const createdInvoice = await this.findById(insertId);
+
+      if (invoiceStatus === 'due' || invoiceStatus === 'partial') {
+        try {
+          const notifyUsers = await query(
+            `SELECT DISTINCT u.id FROM users u
+             JOIN role_permissions rp ON u.role_id = rp.role_id
+             WHERE (rp.permission = 'payments_view' OR rp.permission = 'sales_view')
+             AND u.is_active = 1`
+          );
+          for (const userRow of notifyUsers) {
+            await notificationService.notifyInvoiceDue(userRow.id, {
+              id: insertId,
+              invoice_no: invoiceNo,
+              retailer_name: retailer.name,
+              total_amount: totalAmount,
+              due_amount: totalAmount - paidAmount
+            });
+          }
+        } catch (notifError) {
+          console.error('Failed to send invoice notification:', notifError.message);
+        }
+      }
+
+      return createdInvoice;
     } catch (error) {
       await db.rollback();
       throw error;

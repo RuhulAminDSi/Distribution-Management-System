@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { invoiceService, retailerService, productService } from '../services/api';
 import { useLanguage, formatCurrency, formatNumber, formatDate, formatDateTime } from '../context/LanguageContext';
-import { Plus, Search, Eye, Printer, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Plus, Search, Eye, Printer, ChevronLeft, ChevronRight, Edit } from 'lucide-react';
 import { usePagination, useFormData, useAsyncError, useSalesForm } from '../hooks';
 
 const initialFormData = {
@@ -135,15 +135,15 @@ export default function Sales() {
         <div className="table-container">
           <table className="table">
             <thead>
-              <tr>
+                <tr>
                 <th>{t('InvoiceNo')}</th>
                 <th>{t('Date')}</th>
-                <th>{t('Time')}</th>
                 <th>{t('Retailer')}</th>
                 <th className="text-right">{t('Total')}</th>
                 <th className="text-right">{t('Paid')}</th>
                 <th className="text-right">{t('DueLabel')}</th>
                 <th>{t('Status')}</th>
+                <th>{t('Actions')}</th>
               </tr>
             </thead>
             <tbody>
@@ -151,15 +151,24 @@ export default function Sales() {
                 <tr key={invoice.id}>
                   <td>{invoice.invoice_no}</td>
                   <td>{formatDate(invoice.invoice_date)}</td>
-                  <td>{formatDateTime(invoice.created_at)}</td>
                   <td>{invoice.retailer_name}</td>
-<td className="text-right">{formatCurrency(invoice.total_amount, language)}</td>
-                      <td className="text-right">{formatCurrency(invoice.paid_amount, language)}</td>
-                      <td className="text-right">{formatCurrency(invoice.due_amount, language)}</td>
+                  <td className="text-right">{formatCurrency(invoice.total_amount, language)}</td>
+                  <td className="text-right">{formatCurrency(invoice.paid_amount, language)}</td>
+                  <td className="text-right">{formatCurrency(invoice.due_amount, language)}</td>
                   <td>
                     <span className={`badge badge-${invoice.status === 'paid' ? 'success' : invoice.status === 'partial' ? 'warning' : 'danger'}`}>
                       {invoice.status}
                     </span>
+                  </td>
+                  <td>
+                    <div className="flex gap-2">
+                      <button className="btn btn-secondary btn-sm" title={t('View')}>
+                        <Eye size={14} />
+                      </button>
+                      <button className="btn btn-secondary btn-sm" title={t('Print')}>
+                        <Printer size={14} />
+                      </button>
+                    </div>
                   </td>
                 </tr>
               ))}

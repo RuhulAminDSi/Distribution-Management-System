@@ -15,11 +15,13 @@ import {
   Settings,
   Building2,
   UserCircle,
-  Key
+  Key,
+  Bell
 } from 'lucide-react';
 
 const navItems = [
   { path: '/dashboard', icon: LayoutDashboard, labelKey: 'Dashboard', permission: 'dashboard_view' },
+  { path: '/dashboard/notifications', icon: Bell, labelKey: 'Notifications', permission: null },
   { path: '/companies', icon: Building2, labelKey: 'Companies', permission: 'companies_view' },
   { path: '/products', icon: Package, labelKey: 'Products', permission: 'products_view' },
   { path: '/retailers', icon: Users, labelKey: 'Retailers', permission: 'retailers_view' },

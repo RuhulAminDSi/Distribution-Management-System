@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useLanguage, formatDate } from '../context/LanguageContext';
 import { notificationService } from '../services/api';
-import { Bell, CheckCircle, AlertCircle, Info, CheckSquare, X } from 'lucide-react';
+import { Bell, CheckCircle, AlertCircle, Info, CheckSquare, X, ChevronLeft, ChevronRight, Eye, Calendar, Tag, Link } from 'lucide-react';
 
 export default function Notifications() {
   const { t, language } = useLanguage();
@@ -9,9 +9,12 @@ export default function Notifications() {
   const [loading, setLoading] = useState(true);
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
-  const [limit, setLimit] = useState(20);
+  const [total, setTotal] = useState(0);
+  const [limit, setLimit] = useState(10);
   const [filter, setFilter] = useState('all');
   const [search, setSearch] = useState('');
+  const [confirmModal, setConfirmModal] = useState({ show: false, action: null, title: '', message: '' });
+  const [detailModal, setDetailModal] = useState({ show: false, notification: null });
 
   useEffect(() => {
     fetchNotifications();
@@ -27,8 +30,11 @@ export default function Notifications() {
       }
 
       const response = await notificationService.getAll(params);
-      setNotifications(response.data.data);
-      setTotalPages(response.data.pagination.pages);
+      const data = response.data?.data || response.data || [];
+      const totalVal = response.data?.pagination?.total || response.data?.total || data.length || 0;
+      setNotifications(data);
+      setTotal(totalVal);
+      setTotalPages(Math.ceil(totalVal / limit) || 1);
     } catch (error) {
       console.error('Failed to fetch notifications:', error);
     } finally {
@@ -36,10 +42,9 @@ export default function Notifications() {
     }
   };
 
-  const handleMarkAsRead = async (id, isRead) => {
+  const handleMarkAsRead = async (id) => {
     try {
       await notificationService.markAsRead(id);
-      // Update local state
       setNotifications(notifications.map(n => 
         n.id === id ? { ...n, is_read: 1 } : n
       ));
@@ -49,48 +54,85 @@ export default function Notifications() {
   };
 
   const handleMarkAllAsRead = async () => {
+    setConfirmModal({
+      show: true,
+      action: () => markAllAsReadConfirmed(),
+      title: t('ConfirmMarkAllRead'),
+      message: t('ConfirmMarkAllReadMsg')
+    });
+  };
+
+  const markAllAsReadConfirmed = async () => {
     try {
       await notificationService.markAllAsRead();
       setNotifications(notifications.map(n => ({ ...n, is_read: 1 })));
+      setConfirmModal({ show: false, action: null, title: '', message: '' });
     } catch (error) {
       console.error('Failed to mark all as read:', error);
+      setConfirmModal({ show: false, action: null, title: '', message: '' });
     }
   };
 
   const handleDelete = async (id) => {
+    setConfirmModal({
+      show: true,
+      action: () => deleteConfirmed(id),
+      title: t('ConfirmDelete'),
+      message: t('ConfirmDeleteNotification')
+    });
+  };
+
+  const deleteConfirmed = async (id) => {
     try {
       await notificationService.delete(id);
-      setNotifications(notifications.filter(n => n.id !== id));
+      fetchNotifications();
+      setConfirmModal({ show: false, action: null, title: '', message: '' });
     } catch (error) {
       console.error('Failed to delete notification:', error);
+      setConfirmModal({ show: false, action: null, title: '', message: '' });
+    }
+  };
+
+  const handleViewDetails = async (notification) => {
+    try {
+      if (!notification.is_read) {
+        await notificationService.markAsRead(notification.id);
+        setNotifications(notifications.map(n => 
+          n.id === notification.id ? { ...n, is_read: 1 } : n
+        ));
+      }
+      setDetailModal({ show: true, notification });
+    } catch (error) {
+      console.error('Failed to fetch notification details:', error);
+      setDetailModal({ show: true, notification });
     }
   };
 
   const getTypeIcon = (type) => {
     switch (type) {
       case 'success':
-        return <CheckCircle size={18} className="text-green-600" />;
+        return <CheckCircle size={16} className="text-green-600" />;
       case 'warning':
-        return <AlertCircle size={18} className="text-yellow-600" />;
+        return <AlertCircle size={16} className="text-yellow-600" />;
       case 'error':
-        return <AlertCircle size={18} className="text-red-600" />;
+        return <AlertCircle size={16} className="text-red-600" />;
       case 'info':
       default:
-        return <Info size={18} className="text-blue-600" />;
+        return <Info size={16} className="text-blue-600" />;
     }
   };
 
-  const getBadgeClass = (type) => {
+  const getTypeBg = (type) => {
     switch (type) {
       case 'success':
-        return 'badge-success';
+        return 'bg-green-50';
       case 'warning':
-        return 'badge-warning';
+        return 'bg-yellow-50';
       case 'error':
-        return 'badge-danger';
+        return 'bg-red-50';
       case 'info':
       default:
-        return 'badge-primary';
+        return 'bg-blue-50';
     }
   };
 
@@ -120,7 +162,7 @@ export default function Notifications() {
 
       <div className="card">
         <div className="card-header">
-          <div className="header-left">
+          <div className="header-left" style={{ flex: 1, maxWidth: '500px' }}>
             <input
               type="text"
               className="form-input"
@@ -132,6 +174,7 @@ export default function Notifications() {
           <div className="header-right">
             <select
               className="form-select"
+              style={{ width: 'auto', minWidth: '180px' }}
               value={filter}
               onChange={(e) => {
                 setFilter(e.target.value);
@@ -148,108 +191,249 @@ export default function Notifications() {
           </div>
         </div>
 
-        <div className="card-body" style={{ padding: 0 }}>
-          {filteredNotifications.length > 0 ? (
-            <div className="notifications-list">
-              {filteredNotifications.map(notification => (
-                <div
-                  key={notification.id}
-                  className={`notification-item ${!notification.is_read ? 'unread' : ''}`}
-                >
-                  <div className="notification-icon">
-                    {getTypeIcon(notification.type)}
-                  </div>
-                  <div className="notification-content">
-                    <div className="notification-header">
-                      <h4 className="notification-title">{notification.title}</h4>
-                      <span className={`badge ${getBadgeClass(notification.type)}`}>
-                        {notification.type}
+        <div className="table-container">
+          <table className="table">
+            <thead>
+              <tr>
+                <th style={{ width: '40px' }}></th>
+                <th>{t('Type')}</th>
+                <th>{t('Title')}</th>
+                <th>{t('Message')}</th>
+                <th style={{ width: '150px' }}>{t('Date')}</th>
+                <th style={{ width: '100px' }}></th>
+              </tr>
+            </thead>
+            <tbody>
+              {filteredNotifications.length > 0 ? (
+                filteredNotifications.map(notification => (
+                  <tr key={notification.id} className={!notification.is_read ? 'unread-row' : ''}>
+                    <td>
+                      <div className={`flex items-center justify-center p-2 rounded-lg ${getTypeBg(notification.type)}`}>
+                        {getTypeIcon(notification.type)}
+                      </div>
+                    </td>
+                    <td>
+                      <span className={`badge ${notification.type === 'success' ? 'badge-success' : notification.type === 'warning' ? 'badge-warning' : notification.type === 'error' ? 'badge-danger' : 'badge-info'}`}>
+                        {notification.category?.replace(/_/g, ' ')}
                       </span>
+                    </td>
+                    <td className={`font-medium ${!notification.is_read ? 'text-primary' : ''}`}>
+                      {notification.title}
+                    </td>
+                    <td className="text-muted" style={{ maxWidth: '300px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                      {notification.message}
+                    </td>
+                    <td className="text-muted">
+                      {formatDate(notification.created_at, language)}
+                    </td>
+                    <td>
+                      <div className="flex gap-2">
+                        <button className="btn btn-secondary btn-sm" onClick={() => handleViewDetails(notification)} title={t('ViewDetails')}>
+                          <Eye size={14} />
+                        </button>
+                        {!notification.is_read && (
+                          <button className="btn btn-secondary btn-sm" onClick={() => handleMarkAsRead(notification.id)} title={t('MarkAsRead')}>
+                            <CheckSquare size={14} />
+                          </button>
+                        )}
+                        <button className="btn btn-danger btn-sm" onClick={() => handleDelete(notification.id)} title={t('Delete')}>
+                          <X size={14} />
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))
+              ) : (
+                <tr>
+                  <td colSpan="6" className="text-center">
+                    <div className="empty-state">
+                      <Bell size={48} />
+                      <p>{t('NoNotifications')}</p>
                     </div>
-                    <p className="notification-message">{notification.message}</p>
-                    <div className="notification-footer">
-                      <small className="notification-time">
-                        {formatDate(notification.created_at, language)}
-                      </small>
-                      {notification.category && (
-                        <small className="notification-category">
-                          {notification.category.replace(/_/g, ' ')}
-                        </small>
-                      )}
-                    </div>
-                  </div>
-                  <div className="notification-actions">
-                    {!notification.is_read && (
-                      <button
-                        className="btn-icon"
-                        title={t('MarkAsRead')}
-                        onClick={() => handleMarkAsRead(notification.id, notification.is_read)}
-                      >
-                        <CheckSquare size={18} />
-                      </button>
-                    )}
-                    <button
-                      className="btn-icon danger"
-                      title={t('Delete')}
-                      onClick={() => handleDelete(notification.id)}
-                    >
-                      <X size={18} />
-                    </button>
-                  </div>
-                </div>
-              ))}
-            </div>
-          ) : (
-            <div className="empty-state">
-              <Bell size={48} />
-              <p>{t('NoNotifications')}</p>
-            </div>
-          )}
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
         </div>
-
+        
         {filteredNotifications.length > 0 && (
-          <div className="pagination-footer">
-            <div className="pagination-left">
-              <label>{t('EntriesPerPage')}:</label>
-              <select
-                className="form-select sm"
-                value={limit}
-                onChange={(e) => {
-                  setLimit(parseInt(e.target.value));
-                  setPage(1);
-                }}
+          <div className="pagination" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '15px', flexWrap: 'wrap', gap: '10px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+              <span style={{ fontSize: '14px' }}>Show</span>
+              <select 
+                value={limit} 
+                onChange={(e) => { setLimit(Number(e.target.value)); setPage(1); }}
+                style={{ padding: '6px 10px', borderRadius: '4px', border: '1px solid var(--border)' }}
               >
                 <option value={10}>10</option>
-                <option value={20}>20</option>
+                <option value={25}>25</option>
                 <option value={50}>50</option>
                 <option value={100}>100</option>
               </select>
-              <span className="pagination-info">
-                {t('Total')}: {notifications.length}
+              <span style={{ fontSize: '14px', marginLeft: 'auto' }}>
+                {Math.min((page - 1) * limit + limit, total)} of {total} entries
               </span>
             </div>
-            <div className="pagination-right">
-              <button
-                className="btn btn-sm btn-secondary"
-                disabled={page === 1}
-                onClick={() => setPage(page - 1)}
-              >
-                {t('Previous')}
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+              <button className="btn btn-secondary btn-sm" onClick={() => setPage(p => Math.max(1, p - 1))} disabled={page === 1}>
+                <ChevronLeft size={16} />
               </button>
-              <span className="page-info">
-                {t('Page')} {page} {t('Of')} {totalPages}
-              </span>
-              <button
-                className="btn btn-sm btn-secondary"
-                disabled={page >= totalPages}
-                onClick={() => setPage(page + 1)}
-              >
-                {t('Next')}
+              <span style={{ fontSize: '14px' }}>{t('Page')} {page} / {totalPages}</span>
+              <button className="btn btn-secondary btn-sm" onClick={() => setPage(p => Math.min(totalPages, p + 1))} disabled={page === totalPages}>
+                <ChevronRight size={16} />
               </button>
             </div>
           </div>
         )}
       </div>
+
+      {confirmModal.show && (
+        <div className="modal-overlay" onClick={() => setConfirmModal({ show: false, action: null, title: '', message: '' })}>
+          <div className="modal" onClick={e => e.stopPropagation()}>
+            <div className="modal-header">
+              <h3>{confirmModal.title}</h3>
+              <button className="modal-close" onClick={() => setConfirmModal({ show: false, action: null, title: '', message: '' })}>
+                <X size={18} />
+              </button>
+            </div>
+            <div className="modal-body">
+              <p>{confirmModal.message}</p>
+            </div>
+            <div className="modal-footer">
+              <button className="btn btn-secondary" onClick={() => setConfirmModal({ show: false, action: null, title: '', message: '' })}>
+                {t('Cancel')}
+              </button>
+              <button className="btn btn-primary" onClick={confirmModal.action}>
+                {t('Confirm')}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {detailModal.show && detailModal.notification && (
+        <div className="modal-overlay" onClick={() => setDetailModal({ show: false, notification: null })}>
+          <div className="modal" style={{ maxWidth: '600px' }} onClick={e => e.stopPropagation()}>
+            <div className="modal-header">
+              <div className="modal-title-wrapper">
+                <Info size={20} className="modal-header-icon" />
+                <h3>{detailModal.notification.title}</h3>
+              </div>
+              <button className="modal-close" onClick={() => setDetailModal({ show: false, notification: null })}>
+                <X size={18} />
+              </button>
+            </div>
+            <div className="modal-body">
+              <div className="notification-detail">
+                <div className="notification-detail-row">
+                  <div className="notification-detail-label">
+                    <Tag size={16} />
+                    {t('Type')}
+                  </div>
+                  <div className="notification-detail-value">
+                    <span className={`badge ${detailModal.notification.type === 'success' ? 'badge-success' : detailModal.notification.type === 'warning' ? 'badge-warning' : detailModal.notification.type === 'error' ? 'badge-danger' : 'badge-info'}`}>
+                      {detailModal.notification.type?.charAt(0).toUpperCase() + detailModal.notification.type?.slice(1)}
+                    </span>
+                  </div>
+                </div>
+                
+                <div className="notification-detail-row">
+                  <div className="notification-detail-label">
+                    <Tag size={16} />
+                    {t('Category')}
+                  </div>
+                  <div className="notification-detail-value">
+                    {detailModal.notification.category?.replace(/_/g, ' ') || '-'}
+                  </div>
+                </div>
+                
+                <div className="notification-detail-row">
+                  <div className="notification-detail-label">
+                    {t('Message')}
+                  </div>
+                  <div className="notification-detail-value">
+                    {detailModal.notification.message}
+                  </div>
+                </div>
+                
+                <div className="notification-detail-row">
+                  <div className="notification-detail-label">
+                    <Calendar size={16} />
+                    {t('Created')}
+                  </div>
+                  <div className="notification-detail-value">
+                    {formatDate(detailModal.notification.created_at, language)}
+                  </div>
+                </div>
+                
+                {detailModal.notification.updated_at && (
+                  <div className="notification-detail-row">
+                    <div className="notification-detail-label">
+                      <Calendar size={16} />
+                      {t('Updated')}
+                    </div>
+                    <div className="notification-detail-value">
+                      {formatDate(detailModal.notification.updated_at, language)}
+                    </div>
+                  </div>
+                )}
+                
+                <div className="notification-detail-row">
+                  <div className="notification-detail-label">
+                    <CheckSquare size={16} />
+                    {t('Status')}
+                  </div>
+                  <div className="notification-detail-value">
+                    <span className={`badge ${detailModal.notification.is_read ? 'badge-success' : 'badge-warning'}`}>
+                      {detailModal.notification.is_read ? t('Read') : t('Unread')}
+                    </span>
+                  </div>
+                </div>
+                
+                {detailModal.notification.reference_type && (
+                  <div className="notification-detail-row">
+                    <div className="notification-detail-label">
+                      <Link size={16} />
+                      {t('Reference')}
+                    </div>
+                    <div className="notification-detail-value">
+                      {detailModal.notification.reference_type} #{detailModal.notification.reference_id || '-'}
+                    </div>
+                  </div>
+                )}
+                
+                {detailModal.notification.action_url && (
+                  <div className="notification-detail-row">
+                    <div className="notification-detail-label">
+                      {t('ActionURL')}
+                    </div>
+                    <div className="notification-detail-value">
+                      <code style={{ background: 'var(--background)', padding: '4px 8px', borderRadius: '4px', fontSize: '12px' }}>
+                        {detailModal.notification.action_url}
+                      </code>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+            <div className="modal-footer">
+              {!detailModal.notification.is_read && (
+                <button className="btn btn-secondary" onClick={() => {
+                  handleMarkAsRead(detailModal.notification.id);
+                  setDetailModal({ ...detailModal, notification: { ...detailModal.notification, is_read: 1 } });
+                }}>
+                  <CheckSquare size={16} />
+                  {t('MarkAsRead')}
+                </button>
+              )}
+              <button className="btn btn-secondary" onClick={() => setDetailModal({ show: false, notification: null })}>
+                {t('Close')}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

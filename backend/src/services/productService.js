@@ -1,6 +1,7 @@
 import { query } from '../config/database.js';
 import { generateCode, buildPaginatedResponse, paginate } from '../utils/helpers.js';
 import { QueryBuilder } from '../utils/QueryBuilder.js';
+import notificationService from './notificationService.js';
 
 export const productService = {
   async findAll(page = 1, limit = 20, search = '', companyId = null, categoryId = null) {
@@ -143,6 +144,23 @@ export const productService = {
       [id, quantity, type, referenceType, referenceId, notes, userId]
     );
 
-    return this.findById(id);
+    const updatedProduct = await this.findById(id);
+
+    if (newQuantity <= product.low_stock_alert && newQuantity > 0) {
+      try {
+        const notifyUsers = await query(
+          `SELECT DISTINCT u.id FROM users u
+           JOIN role_permissions rp ON u.role_id = rp.role_id
+           WHERE rp.permission = 'products_view' AND u.is_active = 1`
+        );
+        for (const userRow of notifyUsers) {
+          await notificationService.notifyLowStock(userRow.id, updatedProduct);
+        }
+      } catch (notifError) {
+        console.error('Failed to send low stock notification:', notifError.message);
+      }
+    }
+
+    return updatedProduct;
   }
 };

@@ -1,85 +1,87 @@
-# Bug Fix: Accountant Role - Dashboard 401 Unauthorized
+# Bug Fix: Non-Admin Roles - Dashboard 401 Unauthorized
 
 **Date:** 2026-04-01  
-**Issue:** After login with accountant role, dashboard shows 401 Unauthorized error  
-**Root Cause:** Token not being sent with API requests  
+**Issue:** After login with non-admin roles (accountant, salesman, etc.), dashboard shows 401 Unauthorized error or redirects to /unauthorized  
+**Root Cause:** Dashboard endpoint required 'dashboard_view' permission that non-admin roles don't have, and frontend also blocked via PermissionRoute  
 **Status:** ✅ FIXED
 
 ---
 
 ## Problem Description
 
-When logging in with the accountant role (or any non-admin role), the dashboard shows:
+When logging in with any non-admin role (accountant, salesman, etc.), the dashboard shows:
 ```
 GET http://localhost:5173/api/dashboard/summary 401 (Unauthorized)
 ```
 
+Or redirects to `/unauthorized` page after successful login.
+
 This happened because:
-1. Backend sets token in httpOnly cookie (not accessible via JavaScript)
-2. Frontend wasn't sending token in Authorization header
-3. Vite proxy wasn't forwarding cookies properly
+1. The backend `/dashboard/summary` endpoint had `permit('dashboard_view')` middleware
+2. The frontend `/dashboard` route used `<PermissionRoute permission="dashboard_view">`
+3. Non-admin roles don't have the `dashboard_view` permission assigned
+4. Both backend and frontend blocked access for non-admin users
 
 ---
 
 ## Solution Applied
 
-### 1. Added Request Interceptor in api.js
-Added axios interceptor to send token in Authorization header:
+### 1. Backend Fix - Removed permission requirement from dashboard endpoint
 
+In `dashboardRoutes.js`, removed the `permit('dashboard_view')` middleware:
+
+**Before:**
 ```javascript
-api.interceptors.request.use(
-  config => {
-    const token = localStorage.getItem('token');
-    if (token) {
-      config.headers.Authorization = `Bearer ${token}`;
-    }
-    return config;
-  },
-  error => Promise.reject(error)
-);
+router.get('/summary', authenticate, permit('dashboard_view'), dashboardController.getSummary);
 ```
 
-### 2. Modified Backend to Return Token in Response
-In authController.js, return token in JSON response:
-
+**After:**
 ```javascript
-res.json({
-  user: { ... },
-  token  // Now included in response
-});
+router.get('/summary', authenticate, dashboardController.getSummary);
 ```
 
-### 3. Modified AuthContext to Store Token
-In AuthContext.jsx, save token to localStorage after login:
+### 2. Frontend Fix - Changed PermissionRoute to PrivateRoute
 
-```javascript
-const login = async (username, password) => {
-  const response = await authService.login(username, password);
-  if (response.data.token) {
-    localStorage.setItem('token', response.data.token);
-  }
-  // ... rest of login
-};
+In `App.jsx`, changed the dashboard route from PermissionRoute to PrivateRoute:
+
+**Before:**
+```jsx
+<Route path="/dashboard" element={
+  <PermissionRoute permission="dashboard_view">
+    <MainLayout />
+  </PermissionRoute>
+}>
 ```
+
+**After:**
+```jsx
+<Route path="/dashboard" element={
+  <PrivateRoute>
+    <MainLayout />
+  </PrivateRoute>
+}>
+```
+
+Now any authenticated user can access the dashboard, which is the expected behavior since all roles need dashboard access.
 
 ---
 
 ## Files Modified
 
-- `frontend/src/services/api.js` - Added request interceptor for Authorization header
-- `backend/src/controllers/authController.js` - Return token in login response
-- `frontend/src/context/AuthContext.jsx` - Store token in localStorage after login
+- `backend/src/routes/dashboardRoutes.js` - Removed `permit('dashboard_view')` middleware
+- `frontend/src/App.jsx` - Changed dashboard route from PermissionRoute to PrivateRoute
 
 ---
 
 ## Testing
 
 1. Login with accountant role
-2. Navigate to dashboard
-3. Should load without 401 error
+2. Login with salesman role  
+3. Navigate to dashboard
+4. Should load without 401 error for all roles
 
 ```bash
-curl -s -H "Cookie: token=..." "http://localhost:5000/api/dashboard/summary"
+curl -s -H "Authorization: Bearer <token>" "http://localhost:5000/api/dashboard/summary"
 ```
 
 ---
@@ -87,8 +89,8 @@ curl -s -H "Cookie: token=..." "http://localhost:5000/api/dashboard/summary"
 ## Git Commit
 
 ```
-fix: add token to Authorization header for API requests
-- Add request interceptor to send Bearer token
-- Return token in login response for non-admin roles
-- Store token in localStorage for API calls
+fix: remove dashboard_view permission requirement for dashboard endpoint
+- Allow all authenticated users to access dashboard summary
+- Changed frontend from PermissionRoute to PrivateRoute
+- Non-admin roles were getting 401 due to missing dashboard_view permission
 ```

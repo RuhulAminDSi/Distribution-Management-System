@@ -4,6 +4,6 @@ import { authenticate, permit } from '../middleware/auth.js';
 
 const router = express.Router();
 
-router.get('/summary', authenticate, permit('dashboard_view'), dashboardController.getSummary);
+router.get('/summary', authenticate, dashboardController.getSummary);
 
 export default router;

@@ -68,6 +68,16 @@ export function AuthProvider({ children }) {
       const meResponse = await api.get('/auth/me');
       const currentUser = meResponse.data.user;
       setUser(currentUser);
+
+      const rolesResponse = await roleService.getAll();
+      const rolesData = rolesResponse.data.data || [];
+      setRoles(rolesData);
+
+      const roleFromDb = rolesData.find(r => r.name === currentUser.role);
+      if (roleFromDb && roleFromDb.permissions) {
+        setUserPermissions(roleFromDb.permissions);
+      }
+
       return currentUser;
     } catch (error) {
       setLoading(false);

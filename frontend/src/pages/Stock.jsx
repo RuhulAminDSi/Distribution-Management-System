@@ -294,7 +294,7 @@ export default function Stock() {
           {expiredProducts.length > 0 && (
             <>
               <h4 style={{ color: '#dc3545', marginBottom: '10px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <AlertTriangle size={18} /> Expired Products ({expiredProducts.length})
+                <AlertTriangle size={18} /> {t('ExpiredProducts')} ({expiredProducts.length})
               </h4>
               <div className="table-container" style={{ marginBottom: '30px' }}>
                 <table className="table">
@@ -326,7 +326,7 @@ export default function Stock() {
           {expiringSoonProducts.length > 0 && (
             <>
               <h4 style={{ color: '#ffc107', marginBottom: '10px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <AlertTriangle size={18} /> Expiring Soon (30 days) ({expiringSoonProducts.length})
+                <AlertTriangle size={18} /> {t('ExpiringSoon')} (30 days) ({expiringSoonProducts.length})
               </h4>
               <div className="table-container">
                 <table className="table">

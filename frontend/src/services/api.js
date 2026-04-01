@@ -124,4 +124,14 @@ export const roleService = {
   delete: (id) => api.delete(`/roles/${id}`)
 };
 
+export const notificationService = {
+  getAll: (params) => api.get('/notifications', { params }),
+  getUnread: () => api.get('/notifications/unread'),
+  getById: (id) => api.get(`/notifications/${id}`),
+  getByCategory: (category, params) => api.get(`/notifications/category/${category}`, { params }),
+  markAsRead: (id) => api.put(`/notifications/${id}/read`),
+  markAllAsRead: () => api.put('/notifications/all/read'),
+  delete: (id) => api.delete(`/notifications/${id}`)
+};
+
 export default api;

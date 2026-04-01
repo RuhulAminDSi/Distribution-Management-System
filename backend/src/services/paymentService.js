@@ -1,6 +1,7 @@
 import { query, getConnection } from '../config/database.js';
 import { generatePaymentNo, buildPaginatedResponse, paginate } from '../utils/helpers.js';
 import { QueryBuilder } from '../utils/QueryBuilder.js';
+import notificationService from './notificationService.js';
 
 export const paymentService = {
   async findAll(page = 1, limit = 20, retailerId = null, startDate = null, endDate = null, search = '') {
@@ -107,7 +108,27 @@ export const paymentService = {
 
       await db.commit();
       
-      return this.findById(paymentId);
+      const createdPayment = await this.findById(paymentId);
+
+      try {
+        const notifyUsers = await query(
+          `SELECT DISTINCT u.id FROM users u
+           JOIN role_permissions rp ON u.role_id = rp.role_id
+           WHERE rp.permission = 'payments_view' AND u.is_active = 1`
+        );
+        for (const userRow of notifyUsers) {
+          await notificationService.notifyPaymentReceived(userRow.id, {
+            id: paymentId,
+            amount: data.amount,
+            retailer_name: retailers[0].name,
+            payment_method: data.payment_method || 'cash'
+          });
+        }
+      } catch (notifError) {
+        console.error('Failed to send payment notification:', notifError.message);
+      }
+
+      return createdPayment;
     } catch (error) {
       await db.rollback();
       throw error;
