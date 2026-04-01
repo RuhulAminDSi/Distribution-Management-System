@@ -1,4 +1,5 @@
 import { productService } from '../services/productService.js';
+import { ApiError } from '../utils/ApiError.js';
 
 export const productController = {
   async findAll(req, res, next) {
@@ -21,7 +22,7 @@ export const productController = {
     try {
       const product = await productService.findById(req.params.id);
       if (!product) {
-        return res.status(404).json({ message: 'Product not found' });
+        throw new ApiError(404, 'Product not found');
       }
       res.json(product);
     } catch (error) {

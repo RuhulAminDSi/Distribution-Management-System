@@ -1,4 +1,5 @@
 import { retailerService } from '../services/retailerService.js';
+import { ApiError } from '../utils/ApiError.js';
 
 export const retailerController = {
   async findAll(req, res, next) {
@@ -20,7 +21,7 @@ export const retailerController = {
     try {
       const retailer = await retailerService.findById(req.params.id);
       if (!retailer) {
-        return res.status(404).json({ message: 'Retailer not found' });
+        throw new ApiError(404, 'Retailer not found');
       }
       res.json(retailer);
     } catch (error) {
