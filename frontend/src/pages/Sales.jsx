@@ -2,6 +2,12 @@ import { useState, useEffect } from 'react';
 import { invoiceService, retailerService, productService } from '../services/api';
 import { useLanguage, formatCurrency, formatNumber, formatDate, formatDateTime } from '../context/LanguageContext';
 import { Plus, Search, Eye, Printer, ChevronLeft, ChevronRight } from 'lucide-react';
+import { usePagination, useFormData, useAsyncError, useSalesForm } from '../hooks';
+
+const initialFormData = {
+  retailer_id: '', invoice_date: new Date().toISOString().split('T')[0],
+  discount_percent: 0, paid_amount: 0, notes: ''
+};
 
 export default function Sales() {
   const { t, language } = useLanguage();
@@ -10,31 +16,27 @@ export default function Sales() {
   const [showModal, setShowModal] = useState(false);
   const [retailers, setRetailers] = useState([]);
   const [products, setProducts] = useState([]);
-  const [page, setPage] = useState(1);
-  const [totalPages, setTotalPages] = useState(1);
-  const [totalCount, setTotalCount] = useState(0);
-  const [limit, setLimit] = useState(10);
+  
+  const pagination = usePagination(10);
+  const form = useFormData(initialFormData);
+  const { error, setError, handleAsyncError, clearError } = useAsyncError();
+  const salesForm = useSalesForm();
   const [search, setSearch] = useState('');
-  const [formData, setFormData] = useState({
-    retailer_id: '', invoice_date: new Date().toISOString().split('T')[0],
-    discount_percent: 0, paid_amount: 0, notes: '', items: []
-  });
-  const [error, setError] = useState('');
 
   useEffect(() => {
     fetchInvoices();
     fetchRetailers();
     fetchProducts();
-  }, [search, page, limit]);
+  }, [search, pagination.page, pagination.limit]);
 
   const fetchInvoices = async () => {
     try {
-      const response = await invoiceService.getAll({ page, limit, search });
+      const response = await invoiceService.getAll({ page: pagination.page, limit: pagination.limit, search });
       const data = response.data?.data || response.data || [];
       const totalVal = response.data?.pagination?.total || response.data?.total || data.length || 0;
       setInvoices(data);
-      setTotalCount(totalVal);
-      setTotalPages(Math.ceil(totalVal / limit) || 1);
+      pagination.setTotalCount(totalVal);
+      pagination.setTotalPages(Math.ceil(totalVal / pagination.limit) || 1);
     } catch (error) {
       console.error('Failed to fetch invoices:', error);
     } finally {
@@ -60,75 +62,52 @@ export default function Sales() {
     }
   };
 
-  const addItem = () => {
-    setFormData({
-      ...formData,
-      items: [...formData.items, { product_id: '', quantity: 1, rate: 0 }]
-    });
+  const handleAddItem = () => {
+    salesForm.addItem();
   };
 
-  const updateItem = (index, field, value) => {
-    const newItems = [...formData.items];
-    newItems[index][field] = value;
-    
-    if (field === 'product_id') {
-      const product = products.find(p => p.id === parseInt(value));
-      if (product) {
-        newItems[index].rate = product.dealer_price;
-      }
-    }
-    
-    newItems[index].amount = newItems[index].quantity * newItems[index].rate;
-    setFormData({ ...formData, items: newItems });
+  const handleUpdateItem = (index, field, value) => {
+    salesForm.updateItem(index, field, value, products);
   };
 
-  const removeItem = (index) => {
-    const newItems = formData.items.filter((_, i) => i !== index);
-    setFormData({ ...formData, items: newItems });
-  };
-
-  const calculateTotal = () => {
-    const subtotal = formData.items.reduce((sum, item) => sum + (item.amount || 0), 0);
-    const discount = (subtotal * formData.discount_percent) / 100;
-    return { subtotal, discount, total: subtotal - discount };
+  const handleRemoveItem = (index) => {
+    salesForm.removeItem(index);
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
     
-    if (!formData.retailer_id) {
+    if (!form.formData.retailer_id) {
       setError(t('SelectRetailer'));
       return;
     }
     
-    if (formData.items.length === 0) {
+    if (salesForm.items.length === 0) {
       setError(t('AddItem'));
       return;
     }
 
-    const validItems = formData.items.filter(item => item.product_id && item.quantity > 0);
+    const validItems = salesForm.items.filter(item => item.product_id && item.quantity > 0);
     if (validItems.length === 0) {
       setError(t('SelectProduct'));
       return;
     }
 
     try {
-      await invoiceService.create(formData);
+      const submitData = { ...form.formData, items: salesForm.items };
+      await invoiceService.create(submitData);
       setShowModal(false);
       fetchInvoices();
-      setFormData({
-        retailer_id: '', invoice_date: new Date().toISOString().split('T')[0],
-        discount_percent: 0, paid_amount: 0, notes: '', items: []
-      });
+      form.resetForm();
+      salesForm.resetItems();
       setError('');
     } catch (err) {
-      const errorMsg = err.response?.data?.message || err.message || 'Failed to create invoice';
-      setError(errorMsg);
+      handleAsyncError(err);
     }
   };
 
-  const { subtotal, discount, total } = calculateTotal();
+  const { subtotal, discount, total } = salesForm.calculateTotals(form.formData.discount_percent);
 
   if (loading) return <div>{t('Loading')}</div>;
 
@@ -136,7 +115,7 @@ export default function Sales() {
     <div>
       <div className="page-header">
         <h1 className="page-title">{t('Sales')}</h1>
-        <button className="btn btn-primary" onClick={() => { setShowModal(true); setError(''); }}>
+        <button className="btn btn-primary" onClick={() => { setShowModal(true); clearError(); }}>
           <Plus size={18} /> {t('NewInvoice')}
         </button>
       </div>
@@ -192,8 +171,8 @@ export default function Sales() {
           <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
             <span style={{ fontSize: '14px' }}>Show</span>
             <select 
-              value={limit} 
-              onChange={(e) => { setLimit(Number(e.target.value)); setPage(1); }}
+              value={pagination.limit} 
+              onChange={(e) => pagination.setLimit(Number(e.target.value))}
               style={{ padding: '6px 10px', borderRadius: '4px', border: '1px solid var(--border)' }}
             >
               <option value={10}>10</option>
@@ -202,15 +181,15 @@ export default function Sales() {
               <option value={100}>100</option>
             </select>
             <span style={{ fontSize: '14px', marginLeft: 'auto' }}>
-              {Math.min((page - 1) * limit + limit, totalCount)} of {totalCount} entries
+              {Math.min((pagination.page - 1) * pagination.limit + pagination.limit, pagination.totalCount)} of {pagination.totalCount} entries
             </span>
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-            <button className="btn btn-secondary btn-sm" onClick={() => setPage(p => Math.max(1, p - 1))} disabled={page === 1}>
+            <button className="btn btn-secondary btn-sm" onClick={() => pagination.prevPage()} disabled={pagination.page === 1}>
               <ChevronLeft size={16} />
             </button>
-            <span style={{ fontSize: '14px' }}>{t('Page')} {page} / {totalPages}</span>
-            <button className="btn btn-secondary btn-sm" onClick={() => setPage(p => Math.min(totalPages, p + 1))} disabled={page === totalPages}>
+            <span style={{ fontSize: '14px' }}>{t('Page')} {pagination.page} / {pagination.totalPages}</span>
+            <button className="btn btn-secondary btn-sm" onClick={() => pagination.nextPage()} disabled={pagination.page === pagination.totalPages}>
               <ChevronRight size={16} />
             </button>
           </div>
@@ -251,8 +230,8 @@ export default function Sales() {
                     <label className="form-label">{t('Retailer')} *</label>
                     <select
                       className="form-select"
-                      value={formData.retailer_id}
-                      onChange={(e) => setFormData({ ...formData, retailer_id: e.target.value })}
+                      value={form.formData.retailer_id}
+                      onChange={(e) => form.updateField('retailer_id', e.target.value)}
                       required
                     >
                       <option value="">{t('SelectRetailer')}</option>
@@ -266,21 +245,21 @@ export default function Sales() {
                     <input
                       type="date"
                       className="form-input"
-                      value={formData.invoice_date}
-                      onChange={(e) => setFormData({ ...formData, invoice_date: e.target.value })}
+                      value={form.formData.invoice_date}
+                      onChange={(e) => form.updateField('invoice_date', e.target.value)}
                     />
                   </div>
                 </div>
 
                 <div className="form-group">
                   <label className="form-label">{t('Products')}</label>
-                  {formData.items.map((item, index) => (
+                  {salesForm.items.map((item, index) => (
                     <div key={index} className="flex gap-2 mb-2" style={{ alignItems: 'flex-end' }}>
                       <select
                         className="form-select"
                         style={{ flex: 2 }}
                         value={item.product_id}
-                        onChange={(e) => updateItem(index, 'product_id', e.target.value)}
+                        onChange={(e) => handleUpdateItem(index, 'product_id', e.target.value)}
                       >
                         <option value="">{t('SelectProduct')}</option>
                         {products.filter(p => p.stock_quantity > 0).map(p => (
@@ -293,7 +272,7 @@ export default function Sales() {
                         style={{ flex: 1 }}
                         placeholder={t('Quantity')}
                         value={item.quantity}
-                        onChange={(e) => updateItem(index, 'quantity', parseInt(e.target.value) || 0)}
+                        onChange={(e) => handleUpdateItem(index, 'quantity', parseInt(e.target.value) || 0)}
                       />
                       <input
                         type="number"
@@ -301,7 +280,7 @@ export default function Sales() {
                         style={{ flex: 1 }}
                         placeholder={t('Price')}
                         value={item.rate}
-                        onChange={(e) => updateItem(index, 'rate', parseFloat(e.target.value) || 0)}
+                        onChange={(e) => handleUpdateItem(index, 'rate', parseFloat(e.target.value) || 0)}
                       />
                       <input
                         type="text"
@@ -311,10 +290,10 @@ export default function Sales() {
                         value={item.amount || 0}
                         readOnly
                       />
-                      <button type="button" className="btn btn-danger btn-sm" onClick={() => removeItem(index)}>×</button>
+                      <button type="button" className="btn btn-danger btn-sm" onClick={() => handleRemoveItem(index)}>×</button>
                     </div>
                   ))}
-                  <button type="button" className="btn btn-secondary btn-sm" onClick={addItem}>+ {t('AddItem')}</button>
+                  <button type="button" className="btn btn-secondary btn-sm" onClick={handleAddItem}>+ {t('AddItem')}</button>
                 </div>
 
                 <div className="grid-2">
@@ -323,8 +302,8 @@ export default function Sales() {
                     <input
                       type="number"
                       className="form-input"
-                      value={formData.discount_percent}
-                      onChange={(e) => setFormData({ ...formData, discount_percent: parseFloat(e.target.value) || 0 })}
+                      value={form.formData.discount_percent}
+                      onChange={(e) => form.updateField('discount_percent', parseFloat(e.target.value) || 0)}
                     />
                   </div>
                   <div className="form-group">
@@ -332,8 +311,8 @@ export default function Sales() {
                     <input
                       type="number"
                       className="form-input"
-                      value={formData.paid_amount}
-                      onChange={(e) => setFormData({ ...formData, paid_amount: parseFloat(e.target.value) || 0 })}
+                      value={form.formData.paid_amount}
+                      onChange={(e) => form.updateField('paid_amount', parseFloat(e.target.value) || 0)}
                     />
                   </div>
                 </div>
@@ -358,13 +337,13 @@ export default function Sales() {
                   <input
                     type="text"
                     className="form-input"
-                    value={formData.notes}
-                    onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
+                    value={form.formData.notes}
+                    onChange={(e) => form.updateField('notes', e.target.value)}
                   />
                 </div>
               </div>
               <div className="modal-footer">
-                <button type="button" className="btn btn-secondary" onClick={() => { setShowModal(false); setError(''); }}>{t('Cancel')}</button>
+                <button type="button" className="btn btn-secondary" onClick={() => { setShowModal(false); clearError(); }}>{t('Cancel')}</button>
                 <button type="submit" className="btn btn-primary">{t('CreateInvoice')}</button>
               </div>
             </form>
