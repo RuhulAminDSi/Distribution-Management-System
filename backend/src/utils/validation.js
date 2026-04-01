@@ -67,7 +67,7 @@ export const validateResetPassword = [
 // ============ PRODUCT VALIDATIONS ============
 export const validateCreateProduct = [
   body('name').trim().notEmpty().withMessage('Product name is required'),
-  body('code').trim().notEmpty().withMessage('Product code is required'),
+  body('code').optional({ values: 'falsy' }).trim(),
   body('category_id').optional(),
   body('stock_quantity').optional().isInt({ min: 0 }).withMessage('Stock must be a non-negative number'),
   handleValidationErrors
@@ -149,6 +149,6 @@ export const validateCreateRole = [
 
 export const validateUpdateRolePermissions = [
   param('id').notEmpty().withMessage('Invalid role ID'),
-  body('permission_ids').isArray().withMessage('Permission IDs must be an array'),
+  body('permissions').optional().isArray().withMessage('Permissions must be an array'),
   handleValidationErrors
 ];
