@@ -54,7 +54,7 @@ export class Role extends BaseModel {
       for (const permName of permissions) {
         try {
           await query(
-            'INSERT IGNORE INTO role_permissions (role_id, permission) VALUES (?, ?)',
+            'INSERT INTO role_permissions (role_id, permission) VALUES ($1, $2) ON CONFLICT DO NOTHING',
             [roleId, permName]
           );
         } catch (error) {

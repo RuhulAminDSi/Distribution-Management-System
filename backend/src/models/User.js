@@ -33,10 +33,10 @@ export class User extends BaseModel {
     const values = Object.values(data);
     const placeholders = fields.map(() => '?').join(', ');
 
-    const sql = `INSERT INTO users (${fields.join(', ')}) VALUES (${placeholders})`;
+    const sql = `INSERT INTO users (${fields.join(', ')}) VALUES (${placeholders}) RETURNING id`;
     const result = await query(sql, values);
 
-    return { id: result.insertId, ...data };
+    return { id: result[0].id, ...data };
   }
 
   async update(id, data) {

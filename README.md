@@ -21,7 +21,7 @@ A complete web-based Distribution Management System for small distributors at th
 
 - **Frontend**: React.js with Vite
 - **Backend**: Node.js with Express
-- **Database**: MySQL
+- **Database**: PostgreSQL
 - **Authentication**: JWT
 
 ## Project Structure
@@ -52,7 +52,7 @@ distribution-management-system/
 
 ### 1. Database Setup
 
-1. Install MySQL Server
+1. Install PostgreSQL Server
 2. Create a database:
    ```sql
    CREATE DATABASE dms_db;

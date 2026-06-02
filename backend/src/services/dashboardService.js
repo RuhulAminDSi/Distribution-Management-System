@@ -56,12 +56,12 @@ export const dashboardService = {
     // Monthly sales (raw query for complex GROUP BY)
     const monthlySales = await query(`
       SELECT 
-        DATE_FORMAT(invoice_date, '%Y-%m') as month,
+        TO_CHAR(invoice_date, 'YYYY-MM') as month,
         SUM(total_amount) as total,
         COUNT(*) as count
       FROM invoices
-      WHERE invoice_date >= DATE_SUB(CURDATE(), INTERVAL 6 MONTH)
-      GROUP BY DATE_FORMAT(invoice_date, '%Y-%m')
+      WHERE invoice_date >= CURRENT_DATE - INTERVAL '6 months'
+      GROUP BY TO_CHAR(invoice_date, 'YYYY-MM')
       ORDER BY month ASC
     `);
 

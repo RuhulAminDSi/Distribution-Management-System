@@ -36,14 +36,14 @@ export const reportService = {
     // Due summary
     const dueSummary = await new QueryBuilder('retailers r')
       .select('COUNT(DISTINCT r.id) as total_retailers, COALESCE(SUM(i.due_amount), 0) as total_due')
-      .join('invoices i', 'r.id = i.retailer_id AND i.status IN ("due", "partial")')
+      .join('invoices i', `r.id = i.retailer_id AND i.status IN ('due', 'partial')`)
       .where('r.is_active', 1)
       .whereRaw('r.outstanding_balance > 0', [])
       .first();
 
     // Expiry summary
     const expirySummary = await new QueryBuilder('products')
-      .select('COUNT(*) as total_products, COUNT(CASE WHEN expiry_date < CURDATE() THEN 1 END) as expired, COUNT(CASE WHEN expiry_date BETWEEN CURDATE() AND DATE_ADD(CURDATE(), INTERVAL 30 DAY) THEN 1 END) as expiring_soon')
+      .select("COUNT(*) as total_products, COUNT(CASE WHEN expiry_date < CURRENT_DATE THEN 1 END) as expired, COUNT(CASE WHEN expiry_date BETWEEN CURRENT_DATE AND CURRENT_DATE + INTERVAL '30 days' THEN 1 END) as expiring_soon")
       .where('is_active', 1)
       .whereRaw('expiry_date IS NOT NULL AND stock_quantity > 0', [])
       .first();
@@ -184,7 +184,7 @@ export const reportService = {
   async dueReport(page = 1, limit = 20) {
     const result = await new QueryBuilder('retailers r')
       .select('r.id as retailer_id, r.name as retailer_name, r.phone, r.address, r.area, r.credit_limit, r.due_limit, r.outstanding_balance, COUNT(i.id) as total_invoices, COALESCE(SUM(i.due_amount), 0) as total_due')
-      .join('invoices i', 'r.id = i.retailer_id AND i.status IN ("due", "partial")')
+      .join('invoices i', `r.id = i.retailer_id AND i.status IN ('due', 'partial')`)
       .where('r.is_active', 1)
       .whereRaw('r.outstanding_balance > 0', [])
       .groupBy('r.id')

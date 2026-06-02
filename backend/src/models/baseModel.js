@@ -13,14 +13,21 @@ export class BaseModel {
       const whereClause = Object.keys(conditions)
         .map(key => {
           if (Array.isArray(conditions[key])) {
-            return `${key} IN (?)`;
+            const placeholders = conditions[key].map(() => '?').join(', ');
+            return `${key} IN (${placeholders})`;
           }
           return `${key} = ?`;
         })
         .join(' AND ');
 
       sql += ` WHERE ${whereClause}`;
-      params.push(...Object.values(conditions));
+      for (const val of Object.values(conditions)) {
+        if (Array.isArray(val)) {
+          params.push(...val);
+        } else {
+          params.push(val);
+        }
+      }
     }
 
     if (orderBy) {
@@ -49,10 +56,10 @@ export class BaseModel {
     const values = Object.values(data);
     const placeholders = fields.map(() => '?').join(', ');
 
-    const sql = `INSERT INTO ${this.tableName} (${fields.join(', ')}) VALUES (${placeholders})`;
+    const sql = `INSERT INTO ${this.tableName} (${fields.join(', ')}) VALUES (${placeholders}) RETURNING id`;
     const result = await query(sql, values);
 
-    return { id: result.insertId, ...data };
+    return { id: result[0].id, ...data };
   }
 
   async update(id, data) {

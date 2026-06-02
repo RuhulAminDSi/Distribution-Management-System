@@ -27,10 +27,10 @@ export const companyService = {
   async create(data) {
     const code = data.code || generateCode('COM');
     const result = await query(
-      'INSERT INTO companies (name, code, contact_person, phone, address, due_limit) VALUES (?, ?, ?, ?, ?, ?)',
+      'INSERT INTO companies (name, code, contact_person, phone, address, due_limit) VALUES (?, ?, ?, ?, ?, ?) RETURNING id',
       [data.name, code, data.contact_person || null, data.phone || null, data.address || null, data.due_limit || 0]
     );
-    return this.findById(result.insertId);
+    return this.findById(result[0].id);
   },
 
   async update(id, data) {
@@ -80,10 +80,10 @@ export const categoryService = {
 
   async create(data) {
     const result = await query(
-      'INSERT INTO categories (name, company_id, description) VALUES (?, ?, ?)',
+      'INSERT INTO categories (name, company_id, description) VALUES (?, ?, ?) RETURNING id',
       [data.name, data.company_id || null, data.description || null]
     );
-    return this.findById(result.insertId);
+    return this.findById(result[0].id);
   },
 
   async update(id, data) {

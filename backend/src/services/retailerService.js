@@ -34,7 +34,7 @@ export const retailerService = {
       INSERT INTO retailers (name, code, owner_name, phone, address, area, credit_limit, due_limit)
       VALUES (?, ?, ?, ?, ?, ?, ?, ?)
     `;
-    const result = await query(sql, [
+    const result = await query(sql + ' RETURNING id', [
       data.name,
       code,
       data.owner_name || null,
@@ -44,7 +44,7 @@ export const retailerService = {
       data.credit_limit || 0,
       data.due_limit || 0
     ]);
-    return this.findById(result.insertId);
+    return this.findById(result[0].id);
   },
 
   async update(id, data) {
