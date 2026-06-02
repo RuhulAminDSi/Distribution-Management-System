@@ -11,15 +11,20 @@ export const errorHandler = (err, req, res, next) => {
     });
   }
 
-  // Handle database errors
-  if (err.code === 'ER_DUP_ENTRY') {
+  // Handle database errors (PostgreSQL codes)
+  if (err.code === '23505') {
+    const detail = err.detail || '';
+    let message = 'Duplicate entry';
+    if (detail.includes('email')) message = 'Email already exists';
+    else if (detail.includes('phone')) message = 'Phone number already exists';
+    else if (detail.includes('username')) message = 'Username already exists';
     return res.status(400).json({ 
       success: false,
-      message: 'Duplicate entry' 
+      message
     });
   }
 
-  if (err.code === 'ER_NO_REFERENCED_ROW_2') {
+  if (err.code === '23503') {
     return res.status(400).json({ 
       success: false,
       message: 'Referenced record not found' 

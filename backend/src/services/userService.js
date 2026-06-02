@@ -17,10 +17,18 @@ export const userService = {
   async createUser(userData) {
     const { username, password, full_name, email, role_id, phone } = userData;
 
-    // Check if user already exists
-    const existingUser = await query('SELECT id FROM users WHERE username = ?', [username]);
-    if (existingUser.length > 0) {
-      throw new ApiError(400, 'Username already exists');
+    if (email) {
+      const existingEmail = await query('SELECT id FROM users WHERE email = ?', [email]);
+      if (existingEmail.length > 0) {
+        throw new ApiError(400, 'Email already exists');
+      }
+    }
+
+    if (phone) {
+      const existingPhone = await query('SELECT id FROM users WHERE phone = ?', [phone]);
+      if (existingPhone.length > 0) {
+        throw new ApiError(400, 'Phone number already exists');
+      }
     }
 
     // Hash password
@@ -28,16 +36,16 @@ export const userService = {
 
     // Insert user
     const result = await query(
-      'INSERT INTO users (username, password_hash, full_name, email, role_id, phone) VALUES (?, ?, ?, ?, ?, ?)',
+      'INSERT INTO users (username, password_hash, full_name, email, role_id, phone) VALUES (?, ?, ?, ?, ?, ?) RETURNING id',
       [username, password_hash, full_name, email || null, role_id, phone || null]
     );
 
-    if (!result.insertId) {
+    if (!result[0]?.id) {
       throw new ApiError(500, 'Failed to create user');
     }
 
     // Get created user with role
-    return this.getUserById(result.insertId);
+    return this.getUserById(result[0].id);
   },
 
   /**
@@ -64,7 +72,7 @@ export const userService = {
    */
   async getAllUsers(page = 1, limit = 20, search = '') {
     let builder = new QueryBuilder('users u')
-      .select('u.id, u.username, u.full_name, u.email, u.role_id, u.phone, u.is_active, u.created_at, r.name as role')
+      .select('u.id, u.username, u.full_name, u.email, u.role_id, u.phone, u.is_active, u.profile_picture, u.created_at, r.name as role')
       .leftJoin('roles r', 'r.id = u.role_id');
 
     if (search) {
@@ -108,6 +116,20 @@ export const userService = {
     // Authorization: Cannot edit system_admin or admin users
     if (!isSystemAdmin && (targetRoleName === 'system_admin' || targetRoleName === 'admin')) {
       throw new ApiError(403, 'You cannot edit this user');
+    }
+
+    if (updates.email) {
+      const existingEmail = await query('SELECT id FROM users WHERE email = ? AND id != ?', [updates.email, userId]);
+      if (existingEmail.length > 0) {
+        throw new ApiError(400, 'Email already exists');
+      }
+    }
+
+    if (updates.phone) {
+      const existingPhone = await query('SELECT id FROM users WHERE phone = ? AND id != ?', [updates.phone, userId]);
+      if (existingPhone.length > 0) {
+        throw new ApiError(400, 'Phone number already exists');
+      }
     }
 
     const fields = [];

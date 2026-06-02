@@ -25,6 +25,7 @@ const navItems = [
   { path: '/companies', icon: Building2, labelKey: 'Companies', permission: 'companies_view' },
   { path: '/products', icon: Package, labelKey: 'Products', permission: 'products_view' },
   { path: '/retailers', icon: Users, labelKey: 'Retailers', permission: 'retailers_view' },
+  { path: '/orders', icon: ShoppingCart, labelKey: 'Orders', permission: 'orders_view' },
   { path: '/sales', icon: ShoppingCart, labelKey: 'Sales', permission: 'sales_view' },
   { path: '/payments', icon: CreditCard, labelKey: 'Payments', permission: 'payments_view' },
   { path: '/stock', icon: Warehouse, labelKey: 'StockNav', permission: 'stock_view' },

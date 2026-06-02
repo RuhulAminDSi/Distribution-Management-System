@@ -156,7 +156,11 @@ export default function TopNav({ onSidebarToggle, sidebarOpen }) {
             onClick={() => setDropdownOpen(!dropdownOpen)}
           >
             <div className="user-avatar">
-              {user?.full_name?.charAt(0) || 'U'}
+              {user?.profile_picture ? (
+                <img src={user.profile_picture} alt="" className="avatar-img" />
+              ) : (
+                user?.full_name?.charAt(0) || 'U'
+              )}
             </div>
             <div className="user-info">
               <span className="user-name">{user?.full_name}</span>
@@ -169,8 +173,12 @@ export default function TopNav({ onSidebarToggle, sidebarOpen }) {
             <div className="user-dropdown">
               <div className="dropdown-header">
                 <div className="dropdown-avatar">
-                  {user?.full_name?.charAt(0) || 'U'}
-                </div>
+                {user?.profile_picture ? (
+                  <img src={user.profile_picture} alt="" className="avatar-img" />
+                ) : (
+                  user?.full_name?.charAt(0) || 'U'
+                )}
+              </div>
                 <div className="dropdown-user-info">
                   <span className="dropdown-name">{user?.full_name}</span>
                   <span className="dropdown-email">{user?.username}</span>
@@ -538,6 +546,14 @@ export default function TopNav({ onSidebarToggle, sidebarOpen }) {
           color: #fff;
           font-weight: 700;
           font-size: 0.9rem;
+          overflow: hidden;
+        }
+
+        .avatar-img {
+          width: 100%;
+          height: 100%;
+          object-fit: cover;
+          border-radius: 10px;
         }
 
         .user-info {
@@ -600,6 +616,8 @@ export default function TopNav({ onSidebarToggle, sidebarOpen }) {
           color: #fff;
           font-weight: 700;
           font-size: 1.1rem;
+          overflow: hidden;
+          flex-shrink: 0;
         }
 
         .dropdown-user-info {

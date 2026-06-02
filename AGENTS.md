@@ -1,168 +1,78 @@
-# AGENTS.md - Coding Guidelines for DMS Repository
+# AGENTS.md — DMS
 
-## Build & Run Commands
+## Quick Start
 
-### Development
 ```bash
-# Start entire system (both backend and frontend)
-npm run dev
-
-# Backend only (runs with --watch for hot reload)
-npm run dev:backend
-cd backend && npm run dev
-
-# Frontend only (Vite dev server on http://localhost:5173)
-npm run dev:frontend
-cd frontend && npm run dev
-
-# Production build
-cd frontend && npm run build   # Creates dist/ folder
-cd backend && node src/server.js
+npm run dev              # both backend + frontend
+npm run dev:backend      # backend only (auto-restart via node --watch)
+npm run dev:frontend     # frontend only (Vite, http://localhost:5173)
 ```
 
-### Database & Services
-```bash
-# Start MySQL (Windows XAMPP)
-npm run start:mysql
+Default login: `admin` / `admin123`
 
-# Start Apache (Windows XAMPP)
-npm run start:apache
-```
+## Database
 
-### Health Check
-```bash
-curl http://localhost:5000/api/health
-```
+- **PostgreSQL** (`pg` lib), **not MySQL** despite README saying MySQL. Tables auto-create + seed on startup.
+- Default connection: `postgres`/`postgres`@`localhost:5432`/`dms_db`. Create it: `CREATE DATABASE dms_db;`
+- `query()` helper in `config/database.js` converts `?` → PG `$N` placeholders — always use `?` in SQL.
+- Transactions: use `getConnection()` → `.beginTransaction()`, `.commit()`, `.rollback()`.
+- All tables soft-delete via `is_active SMALLINT DEFAULT 1`.
+- `updated_at` does NOT auto-update (PG has no `ON UPDATE`); set explicitly.
+- PG `LIKE` is case-sensitive — searches match exact case.
+- **Unique columns**: `email`, `phone`. Username is NOT unique (multiple users can share one).
 
----
+## Backend
 
-## Code Style Guidelines
+| Layer | Convention | File Pattern |
+|-------|-----------|-------------|
+| Controllers | Named export object | `camelCaseController.js` |
+| Services | Named export object | `camelCaseService.js` |
+| Routes | Named export default | `camelCaseRoutes.js` |
+| Models | Named export class | `PascalCase.js` |
+| DB columns | `snake_case` |
 
-### JavaScript / Node.js Backend
+- ES Modules (`"type": "module"`). 2-space indent.
+- All async route handlers use `try/catch` + `next(error)`.
+- Input validation via `express-validator`.
+- Entrypoint: `backend/src/server.js` → inits DB, starts notification scanner.
+- JWT: 24h expiry, stored in httpOnly cookie + Authorization Bearer fallback.
+- Role permissions cached in memory (5-min TTL). Clear with `clearPermissionCache()`.
+- Rate limiter disabled in dev (commented out in `app.js`).
+- File uploads: multer saves to `backend/uploads/profile_pictures/`. Served at `/uploads` via `express.static`.
+- No test suite. If adding: Jest/Mocha for backend.
 
-**Imports**
-- Use ES Modules: `import ... from '...'` (not CommonJS `require`)
-- Absolute imports are preferred over relative paths
-- Group imports: external dependencies → local modules → middleware
-- All controllers/services exported as named objects: `export const authController = { ... }`
+## Frontend
 
-**Naming Conventions**
-- Controllers: `camelCase` with `Controller` suffix (e.g., `authController.js`)
-- Services: `camelCase` with `Service` suffix (e.g., `invoiceService.js`)
-- Routes: `camelCase` with `Routes` suffix (e.g., `authRoutes.js`)
-- Model classes: `PascalCase` (e.g., `User.js`, `Role.js`)
-- Variables/functions: `camelCase` (e.g., `const handleInvoiceCreation = ...`)
-- Database columns: `snake_case` (e.g., `created_at`, `outstanding_balance`)
+- Vite + React 18, functional components + hooks only.
+- Components: `PascalCase.jsx` in `src/components/`. Pages: `PascalCase.jsx` in `src/pages/`.
+- Hooks: `camelCase` prefixed with `use` (e.g., `useAuth`, `useLanguage`).
+- API calls: centralized `services/api.js` (Axios instance, 30s timeout, `/api` base).
+  - No default `Content-Type` header — FormData uploads rely on browser-set `multipart/form-data` boundary.
+- Auth: `useAuth()` → `user`, `hasPermission(perm)`, `hasRole(...roles)`, `refreshRoles()`.
+- Route guards: `PermissionRoute` component in `App.jsx`. Sidebar nav items declare `permission`.
+- Language: `useLanguage()` → `t('key')`. English + Bangla translations in `LanguageContext.jsx`.
+- Vite proxies `/api` and `/uploads` to `http://localhost:5000`.
+- If adding tests: Vitest + React Testing Library.
 
-**Formatting**
-- Indentation: 2 spaces (no tabs)
-- Line length: Max 100 characters preferred
-- Arrow functions for callbacks: `(req, res) => { ... }`
-- Always use async/await (no callbacks)
+## Permissions
 
-**Error Handling**
-- All async functions must use try/catch blocks
-- Always pass errors to Express's `next(error)` middleware
-- Return meaningful HTTP status codes (400, 401, 404, 500)
-- Error responses use JSON: `{ message: 'error description' }`
-- Development mode includes stack traces; production doesn't
+- `system_admin` and `admin` bypass all permission checks (`hasPermission` returns `true`).
+- Creating/updating roles requires `roles_manage` permission.
+- When adding a new permission: seed it in `config/database.js` `initializeDatabase()` (INSERT + role_permissions entries), then restart backend.
 
-**Types & Validation**
-- Use express-validator for input validation in controllers
-- No TypeScript; use JSDoc comments for complex functions if needed
-- Validate before querying database (check `username`, `password`, etc.)
-- Use MySQL placeholders (`?`) to prevent SQL injection
+## Architecture
 
----
+- 15 tables, all with `id SERIAL PRIMARY KEY`, `created_at`, `updated_at`.
+- Stock movements logged to `stock_logs` (type: IN/OUT/ADJUSTMENT).
+- Invoice creation runs in a DB transaction (atomic).
+- Notification scanner runs every 5 min (startup + interval), cleanup old notifications daily.
+- `.commands/` directory contains detailed markdown docs: DATABASE.md, BACKEND_API.md, FRONTEND.md, CODE_PATTERNS.md, PERMISSIONS.md, FEATURE_DEV.md, DEBUGGING.md.
 
-### React / Frontend
+## Gotchas
 
-**Imports**
-- Use ES Modules: `import ... from '...'`
-- External libraries first, then relative components/services
-- Example: `import { useAuth } from './context/AuthContext'`
-
-**Naming Conventions**
-- Components: `PascalCase` (e.g., `Dashboard.jsx`, `ProductList.jsx`)
-- Pages: `PascalCase` in `/src/pages/` (e.g., `Sales.jsx`, `Reports.jsx`)
-- Hooks: `camelCase` starting with `use` (e.g., `useAuth()`, `useLanguage()`)
-- Services: `camelCase` objects (e.g., `authService`, `productService`)
-- Variables/state: `camelCase` (e.g., `const [products, setProducts] = ...`)
-
-**Formatting**
-- Indentation: 2 spaces
-- JSX element names: PascalCase for components, lowercase for HTML
-- Use functional components with hooks (no class components)
-- Props destructuring in function parameters: `function Card({ title, children }) { ... }`
-
-**Error Handling**
-- Wrap API calls in try/catch blocks
-- Use `.catch()` chains if needed: `api.get(...).catch(err => handleError(err))`
-- Display user-friendly error messages via context or state
-- Console errors in development only
-
-**Conventions**
-- Authentication check via `useAuth()` hook (returns `{ user, loading, hasPermission() }`)
-- Language support via `useLanguage()` hook (returns `{ t(), formatCurrency(), ... }`)
-- Protected routes wrapped with `<PermissionRoute>` component
-- All API calls through centralized `services/api.js` (Axios instance)
-- Use Context API for state (no Redux/external state managers)
-
----
-
-## Project Structure Quick Reference
-
-```
-backend/src/
-├── controllers/      # Request handlers (export as objects)
-├── services/        # Business logic
-├── routes/          # API route definitions
-├── models/          # Data access layer
-├── middleware/      # Auth, error handling
-├── config/          # Database setup
-└── utils/           # Helpers
-
-frontend/src/
-├── pages/           # Full-page components (routable)
-├── components/      # Reusable UI components
-├── context/         # State providers (Auth, Language)
-├── services/        # API client (api.js)
-├── styles/          # CSS files
-└── utils/           # Helper functions
-```
-
----
-
-## Key Technologies & Usage
-
-| Layer | Tech | Usage |
-|-------|------|-------|
-| Backend | Express.js | Routes, middleware, CORS |
-| Database | MySQL | 14 normalized tables, connection pooling (10 connections) |
-| Auth | JWT + bcryptjs | 24-hour tokens, httpOnly cookies |
-| Frontend | React 18 | Components, hooks, Context API |
-| Build | Vite | HMR, fast builds, dev proxy to `/api` |
-| HTTP | Axios | 30s timeout, auto-retry on 401 |
-| Exports | XLSX/jsPDF | Excel & PDF generation |
-| i18n | Custom Context | English & Bangla (500+ keys) |
-
----
-
-## Testing & Quality
-
-**Currently**: No test suite configured. When adding tests:
-- Backend: Use Jest or Mocha
-- Frontend: Use Vitest or Jest + React Testing Library
-- Test commands will be added to package.json scripts
-
----
-
-## Important Notes for Agents
-
-1. **Soft Deletes**: Users, products, retailers use `is_active` field (no hard deletes)
-2. **Role-Based Access**: 7 roles with 30 fine-grained permissions via `role_permissions` table
-3. **Transactions**: Invoice creation uses database transactions for atomicity
-4. **Stock Tracking**: All movements logged in `stock_logs` table (IN/OUT/ADJUSTMENT)
-5. **Caching**: Role permissions cached in memory with 5-minute TTL
-6. **Bilingual**: All text is translatable via LanguageContext (store in translations object)
-7. **CORS**: Frontend port 5173 whitelisted; configure `FRONTEND_URL` in `.env`
+- Backend restarts automatically with `node --watch` (file changes trigger reload).
+- Vite dev server needs restart to pick up config changes (proxy routes, etc.).
+- Profile picture paths stored as `/uploads/profile_pictures/xxx.png` — resolved through Vite proxy to backend.
+- Hard refresh the browser after backend changes if auth tokens or roles seem stale.
+- PostgreSQL error 23505 = unique violation; `err.detail` contains the column name.
+- email/phone uniqueness checked both at DB level and explicitly in `userService` for friendly messages.

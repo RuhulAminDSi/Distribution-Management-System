@@ -1,7 +1,7 @@
-import { useState, useEffect } from 'react';
+﻿import { useState, useEffect, useRef } from 'react';
 import { authService, roleService } from '../services/api';
 import { useLanguage } from '../context/LanguageContext';
-import { X, Plus, Pencil, Trash2, ChevronLeft, ChevronRight, User, Mail, Phone, Lock, Shield, Search } from 'lucide-react';
+import { X, Plus, Pencil, Trash2, ChevronLeft, ChevronRight, User, Mail, Phone, Lock, Shield, Search, Camera } from 'lucide-react';
 
 export default function Users() {
   const { t } = useLanguage();
@@ -16,6 +16,10 @@ export default function Users() {
   const [total, setTotal] = useState(0);
   const [limit, setLimit] = useState(10);
   const [search, setSearch] = useState('');
+  const [profilePreview, setProfilePreview] = useState(null);
+  const [profileFile, setProfileFile] = useState(null);
+  const [uploading, setUploading] = useState(false);
+  const fileInputRef = useRef(null);
 
   useEffect(() => {
     fetchUsers();
@@ -49,8 +53,8 @@ export default function Users() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    console.log('Submitting formData:', formData);
     try {
+      let userId;
       if (editItem) {
         const updateData = {
           full_name: formData.full_name,
@@ -63,20 +67,83 @@ export default function Users() {
         if (formData.password) {
           updateData.password = formData.password;
         }
-        console.log('Updating user:', editItem.id, updateData);
         await authService.updateUser(editItem.id, updateData);
+        userId = editItem.id;
       } else {
-        await authService.register(formData);
+        const res = await authService.register(formData);
+        userId = res.data?.user?.id;
       }
+
+      if (profileFile && userId) {
+        setUploading(true);
+        const formDataUpload = new FormData();
+        formDataUpload.append('profile_picture', profileFile);
+        const uploadRes = await authService.uploadProfilePicture(userId, formDataUpload);
+        setUploading(false);
+      }
+
       setShowModal(false);
       setEditItem(null);
       setFormData({});
+      setProfilePreview(null);
+      setProfileFile(null);
       fetchUsers();
     } catch (error) {
+      setUploading(false);
       console.error('Failed to save:', error);
-      alert(error.response?.data?.message || 'Failed to save');
+      console.error('Error response:', error.response?.data);
+      console.error('Error status:', error.response?.status);
+      alert(error.response?.data?.message || error.response?.data?.error || 'Failed to save');
     }
   };
+
+  const resizeImage = (file, maxSize) => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        const img = new Image();
+        img.onload = () => {
+          const canvas = document.createElement('canvas');
+          let { width, height } = img;
+          if (width > height) {
+            if (width > maxSize) {
+              height *= maxSize / width;
+              width = maxSize;
+            }
+          } else {
+            if (height > maxSize) {
+              width *= maxSize / height;
+              height = maxSize;
+            }
+          }
+          canvas.width = maxSize;
+          canvas.height = maxSize;
+          const ctx = canvas.getContext('2d');
+          ctx.fillStyle = '#fff';
+          ctx.fillRect(0, 0, maxSize, maxSize);
+          const offsetX = (maxSize - width) / 2;
+          const offsetY = (maxSize - height) / 2;
+          ctx.drawImage(img, offsetX, offsetY, width, height);
+          canvas.toBlob((blob) => {
+            resolve(new File([blob], 'profile_300x300.png', { type: 'image/png' }));
+          }, 'image/png');
+        };
+        img.onerror = reject;
+        img.src = e.target.result;
+      };
+      reader.onerror = reject;
+      reader.readAsDataURL(file);
+    });
+  };
+
+  const handleFileSelect = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    const resized = await resizeImage(file, 300);
+    setProfileFile(resized);
+    setProfilePreview(URL.createObjectURL(resized));
+  };
+
 
   const handleDelete = async (id, role_id) => {
     if (role_id === 1) return;
@@ -117,6 +184,8 @@ export default function Users() {
         role_id: item.role_id || '',
         phone: item.phone || ''
       });
+      setProfilePreview(item.profile_picture ? item.profile_picture : null);
+      setProfileFile(null);
     } else {
       setEditItem(null);
       setFormData({
@@ -127,6 +196,8 @@ export default function Users() {
         role_id: '',
         phone: ''
       });
+      setProfilePreview(null);
+      setProfileFile(null);
     }
     setShowModal(true);
   };
@@ -154,6 +225,22 @@ export default function Users() {
         </button>
       </div>
 
+      <div className="roles-summary" style={{ display: 'flex', gap: '12px', flexWrap: 'wrap', marginBottom: '20px' }}>
+        {roles.map(r => (
+          <div key={r.id} className="role-badge-display" style={{
+            display: 'flex', alignItems: 'center', gap: '8px',
+            padding: '8px 16px', borderRadius: '8px',
+            background: 'var(--card-bg, #fff)', border: '1px solid var(--border, #e0e0e0)',
+            boxShadow: '0 1px 3px rgba(0,0,0,0.06)'
+          }}>
+            <span className={`badge ${getRoleBadgeClass(r.name)}`}>{r.name.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase())}</span>
+            <span style={{ fontSize: '13px', color: 'var(--text-muted, #888)' }}>
+              {users.filter(u => u.role === r.name).length} users
+            </span>
+          </div>
+        ))}
+      </div>
+
       <div className="card">
         <div className="card-header">
           <div className="search-bar" style={{ flex: 1, maxWidth: '500px' }}>
@@ -168,9 +255,10 @@ export default function Users() {
         </div>
         <div className="table-container">
           <table className="table">
-            <thead>
-              <tr>
-                <th>{t('Username')}</th>
+              <thead>
+                <tr>
+                  <th style={{ width: '50px' }}></th>
+                  <th>{t('Username')}</th>
                 <th>{t('FullName')}</th>
                 <th>{t('Email')}</th>
                 <th>{t('Role')}</th>
@@ -181,12 +269,23 @@ export default function Users() {
             </thead>
             <tbody>
               {loading ? (
-                <tr><td colSpan="7">{t('Loading')}</td></tr>
+                <tr><td colSpan="8">{t('Loading')}</td></tr>
               ) : !users || users.length === 0 ? (
-                <tr><td colSpan="7">{t('NoUsersFound')}</td></tr>
+                <tr><td colSpan="8">{t('NoUsersFound')}</td></tr>
               ) : (
                 users.map(u => (
                   <tr key={u.id}>
+                    <td>
+                      <div className="user-avatar-cell">
+                        {u.profile_picture ? (
+                          <img src={u.profile_picture} alt="" className="user-avatar" />
+                        ) : (
+                          <div className="user-avatar-placeholder">
+                            <User size={16} />
+                          </div>
+                        )}
+                      </div>
+                    </td>
                     <td>{u.username}</td>
                     <td>{u.full_name}</td>
                     <td>{u.email || '-'}</td>
@@ -299,6 +398,28 @@ export default function Users() {
                   />
                 </div>
                 
+                  <div className="form-group full-width">
+                    <div className="profile-upload-wrapper">
+                      <div className="profile-preview" onClick={() => fileInputRef.current?.click()}>
+                        {profilePreview ? (
+                          <img src={profilePreview} alt="Preview" />
+                        ) : (
+                          <div className="profile-placeholder">
+                            <Camera size={24} />
+                            <span>300×300</span>
+                          </div>
+                        )}
+                      </div>
+                      <input
+                        ref={fileInputRef}
+                        type="file"
+                        accept="image/*"
+                        onChange={handleFileSelect}
+                        style={{ display: 'none' }}
+                      />
+                    </div>
+                  </div>
+
                 <div className="form-group full-width">
                   <label><User size={14} /> {t('FullName')} *</label>
                   <input 
@@ -374,6 +495,68 @@ export default function Users() {
               border: 1px solid rgba(233, 69, 96, 0.2);
               box-shadow: 0 25px 50px rgba(0, 0, 0, 0.5);
               animation: modalSlide 0.3s ease;
+            }
+
+            .profile-upload-wrapper {
+              display: flex;
+              justify-content: center;
+              padding: 8px 0;
+            }
+
+            .profile-preview {
+              width: 100px;
+              height: 100px;
+              border-radius: 50%;
+              overflow: hidden;
+              cursor: pointer;
+              border: 2px dashed rgba(255,255,255,0.3);
+              display: flex;
+              align-items: center;
+              justify-content: center;
+              transition: border-color 0.2s;
+            }
+
+            .profile-preview:hover {
+              border-color: #e94560;
+            }
+
+            .profile-preview img {
+              width: 100%;
+              height: 100%;
+              object-fit: cover;
+            }
+
+            .profile-placeholder {
+              display: flex;
+              flex-direction: column;
+              align-items: center;
+              gap: 4px;
+              color: rgba(255,255,255,0.4);
+              font-size: 0.75rem;
+            }
+
+            .user-avatar-cell {
+              display: flex;
+              align-items: center;
+              justify-content: center;
+            }
+
+            .user-avatar {
+              width: 36px;
+              height: 36px;
+              border-radius: 50%;
+              object-fit: cover;
+            }
+
+            .user-avatar-placeholder {
+              width: 36px;
+              height: 36px;
+              border-radius: 50%;
+              background: rgba(255,255,255,0.1);
+              display: flex;
+              align-items: center;
+              justify-content: center;
+              color: rgba(255,255,255,0.4);
             }
             
             @keyframes modalSlide {

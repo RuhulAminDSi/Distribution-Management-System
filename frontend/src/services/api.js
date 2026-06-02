@@ -3,9 +3,6 @@ import axios from 'axios';
 const api = axios.create({
   baseURL: '/api',
   withCredentials: true,
-  headers: {
-    'Content-Type': 'application/json'
-  },
   timeout: 30000
 });
 
@@ -44,7 +41,9 @@ export const authService = {
   deleteUser: (id) => api.delete(`/auth/users/${id}`),
   changePassword: (data) => api.post('/auth/change-password', data),
   forgotPassword: (data) => api.post('/auth/forgot-password', data),
-  resetPassword: (data) => api.post('/auth/reset-password', data)
+  resetPassword: (data) => api.post('/auth/reset-password', data),
+  uploadProfilePicture: (id, formData) => api.post(`/users/${id}/upload-photo`, formData),
+  deleteProfilePicture: (id) => api.delete(`/users/${id}/upload-photo`)
 };
 
 export const productService = {
@@ -87,6 +86,11 @@ export const stockService = {
   getPurchaseOrders: (params) => api.get('/stock/purchase-orders', { params }),
   createPurchaseOrder: (data) => api.post('/stock/purchase-orders', data),
   receivePurchaseOrder: (id, data) => api.put(`/stock/purchase-orders/${id}/receive`, data)
+};
+
+export const orderService = {
+  getAll: (params) => api.get('/orders', { params }),
+  create: (data) => api.post('/orders', data)
 };
 
 export const reportService = {

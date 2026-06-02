@@ -54,7 +54,8 @@ export const authController = {
           email: user.email,
           role_id: user.role_id,
           role: roleName,
-          phone: user.phone
+          phone: user.phone,
+          profile_picture: user.profile_picture || null
         },
         token
       });

@@ -12,6 +12,7 @@ import Companies from './pages/Companies';
 import Products from './pages/Products';
 import Retailers from './pages/Retailers';
 import Sales from './pages/Sales';
+import Orders from './pages/Orders';
 import Payments from './pages/Payments';
 import Stock from './pages/Stock';
 import Reports from './pages/Reports';
@@ -106,6 +107,11 @@ export default function App() {
         <Route path="/retailers" element={
           <PermissionRoute permission="retailers_view">
             <MainLayout><Retailers /></MainLayout>
+          </PermissionRoute>
+        } />
+        <Route path="/orders" element={
+          <PermissionRoute permission="orders_view">
+            <MainLayout><Orders /></MainLayout>
           </PermissionRoute>
         } />
         <Route path="/sales" element={

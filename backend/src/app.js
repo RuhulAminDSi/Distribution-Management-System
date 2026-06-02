@@ -3,6 +3,10 @@ import cors from 'cors';
 import rateLimit from 'express-rate-limit';
 import dotenv from 'dotenv';
 import cookieParser from 'cookie-parser';
+import path from 'path';
+import { fileURLToPath } from 'url';
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 import authRoutes from './routes/authRoutes.js';
 import productRoutes from './routes/productRoutes.js';
@@ -15,6 +19,8 @@ import stockRoutes from './routes/stockRoutes.js';
 import companyRoutes from './routes/companyRoutes.js';
 import roleRoutes from './routes/roleRoutes.js';
 import notificationRoutes from './routes/notificationRoutes.js';
+import orderRoutes from './routes/orderRoutes.js';
+import uploadRoutes from './routes/uploadRoutes.js';
 
 import { errorHandler, notFound } from './middleware/errorHandler.js';
 
@@ -30,6 +36,8 @@ app.use(cors({
 app.use(cookieParser());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+
+app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
 
 // Rate limiter disabled for development
 // const limiter = rateLimit({
@@ -50,6 +58,8 @@ app.use('/api/stock', stockRoutes);
 app.use('/api/roles', roleRoutes);
 app.use('/api', companyRoutes);
 app.use('/api/notifications', notificationRoutes);
+app.use('/api/orders', orderRoutes);
+app.use('/api', uploadRoutes);
 
 app.get('/api/health', (req, res) => {
   res.json({ status: 'OK', timestamp: new Date().toISOString() });

@@ -55,6 +55,7 @@ const translations = {
 
     // Navigation
     Dashboard: 'Dashboard',
+    Orders: 'Orders',
     Companies: 'Companies',
     Products: 'Products',
     Retailers: 'Retailers',
@@ -318,6 +319,7 @@ const translations = {
 
     // Navigation
     Dashboard: 'ড্যাশবোর্ড',
+    Orders: 'অর্ডার',
     Companies: 'কোম্পানি',
     Products: 'প্রোডাক্ট',
     Retailers: 'রিটেইলার',
