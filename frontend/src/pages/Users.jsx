@@ -148,7 +148,8 @@ export default function Users() {
 
 
   const handleDelete = async (id, role_id) => {
-    if (role_id === 1 || role_id === 2) return;
+    if (role_id === 1) return;
+    if (user?.role === 'admin' && role_id === 2) return;
     if (!confirm(t('ConfirmDelete'))) return;
     
     try {
@@ -162,14 +163,14 @@ export default function Users() {
   const handleToggleStatus = async (targetUser) => {
     if (targetUser.role_id === 1) return;
     if (targetUser.role_id === 2 && user?.role === 'admin') return;
-    
-    const newStatus = user.is_active ? 0 : 1;
+
+    const newStatus = targetUser.is_active ? 0 : 1;
     const action = newStatus ? 'activate' : 'deactivate';
-    
+
     if (!confirm(`Are you sure you want to ${action} this user?`)) return;
-    
+
     try {
-      await authService.updateUser(user.id, { is_active: newStatus });
+      await authService.updateUser(targetUser.id, { is_active: newStatus });
       fetchUsers();
     } catch (error) {
       alert(error.response?.data?.message || 'Failed to update status');
@@ -309,12 +310,12 @@ export default function Users() {
                         >
                           {u.is_active ? 'Deactivate' : 'Activate'}
                         </button>
-                        {u.role_id !== 2 && (
+                        {!(user?.role === 'admin' && (u.role_id === 1 || u.role_id === 2)) && (
                           <button className="btn btn-secondary btn-sm" onClick={() => openModal(u)}>
                             <Pencil size={14} />
                           </button>
                         )}
-                        {u.role_id !== 1 && u.role_id !== 2 && (
+                        {u.role_id !== 1 && !(user?.role === 'admin' && u.role_id === 2) && (
                           <button 
                             className="btn btn-danger btn-sm" 
                             onClick={() => handleDelete(u.id, u.role_id)}
