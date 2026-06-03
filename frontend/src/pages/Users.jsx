@@ -59,6 +59,7 @@ export default function Users() {
       let userId;
       if (editItem) {
         const updateData = {
+          username: formData.username,
           full_name: formData.full_name,
           email: formData.email,
           phone: formData.phone
@@ -390,7 +391,6 @@ export default function Users() {
                     onChange={e => setFormData({...formData, username: e.target.value})}
                     required 
                     placeholder="Enter username"
-                    disabled={editItem}
                     className="form-input"
                     autoComplete="off"
                   />
