@@ -431,7 +431,22 @@ export const initializeDatabase = async () => {
       console.log('Added settings_view to all roles');
     }
 
-    const adminUser = await client.query("SELECT id FROM users WHERE username = $1 OR username = $2", ['admin', 'SystemAdmin']);
+    // Rename SystemAdmin -> admin if it exists (backward compat)
+    const sysAdmin = await client.query("SELECT id FROM users WHERE username = $1", ['SystemAdmin']);
+    if (sysAdmin.rows.length > 0) {
+      const adminExists = await client.query("SELECT id FROM users WHERE username = $1", ['admin']);
+      if (adminExists.rows.length === 0) {
+        const passwordHash = bcrypt.hashSync('admin123', 10);
+        await client.query(
+          "UPDATE users SET username = $1, password_hash = $2, phone = NULL WHERE username = $3",
+          ['admin', passwordHash, 'SystemAdmin']
+        );
+        console.log('Renamed SystemAdmin -> admin with default password');
+      }
+    }
+
+    // Ensure admin user exists
+    const adminUser = await client.query("SELECT id FROM users WHERE username = $1", ['admin']);
     const adminPhone = await client.query("SELECT id FROM users WHERE phone = $1", ['01700000000']);
     if (adminUser.rows.length === 0 && adminPhone.rows.length === 0) {
       const passwordHash = bcrypt.hashSync('admin123', 10);
