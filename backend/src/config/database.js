@@ -415,8 +415,25 @@ export const initializeDatabase = async () => {
       console.log('Shopkeeper role updated with new permissions');
     }
 
-    const users = await client.query("SELECT id FROM users WHERE username = $1", ['admin']);
-    if (users.rows.length === 0) {
+    // Ensure all roles have settings_view for profile access
+    const settingsPerm = await client.query("SELECT id FROM permissions WHERE name = $1", ['settings_view']);
+    if (settingsPerm.rows.length > 0) {
+      const roleNames = ['manager', 'salesman', 'accountant', 'driver', 'loader'];
+      for (const roleName of roleNames) {
+        const roleRow = await client.query("SELECT id FROM roles WHERE name = $1", [roleName]);
+        if (roleRow.rows.length > 0) {
+          await client.query(
+            'INSERT INTO role_permissions (role_id, permission) VALUES ($1, $2) ON CONFLICT DO NOTHING',
+            [roleRow.rows[0].id, 'settings_view']
+          );
+        }
+      }
+      console.log('Added settings_view to all roles');
+    }
+
+    const adminUser = await client.query("SELECT id FROM users WHERE username = $1 OR username = $2", ['admin', 'SystemAdmin']);
+    const adminPhone = await client.query("SELECT id FROM users WHERE phone = $1", ['01700000000']);
+    if (adminUser.rows.length === 0 && adminPhone.rows.length === 0) {
       const passwordHash = bcrypt.hashSync('admin123', 10);
       await client.query(
         'INSERT INTO users (username, password_hash, full_name, role_id, phone) VALUES ($1, $2, $3, $4, $5)',
