@@ -108,7 +108,7 @@ export const authController = {
         email,
         role_id: newRoleId,
         phone
-      });
+      }, req.user);
 
       res.status(201).json({ user });
     } catch (error) {

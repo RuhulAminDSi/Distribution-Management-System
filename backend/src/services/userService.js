@@ -14,8 +14,27 @@ export const userService = {
    * Create a new user
    * @param {object} userData - { username, password, full_name, email, role_id, phone }
    */
-  async createUser(userData) {
+  async createUser(userData, currentUser) {
     const { username, password, full_name, email, role_id, phone } = userData;
+
+    // Authorization: Only system_admin and admin can create users
+    const isSystemAdmin = currentUser?.role === 'system_admin';
+    const isAdmin = currentUser?.role === 'admin';
+
+    if (!isSystemAdmin && !isAdmin) {
+      throw new ApiError(403, 'Only System Admin and Admin can create users');
+    }
+
+    // Admin cannot create System Admin or Admin users
+    if (isAdmin) {
+      const targetRole = await query('SELECT name FROM roles WHERE id = ?', [role_id]);
+      if (targetRole.length > 0) {
+        const targetRoleName = targetRole[0].name;
+        if (targetRoleName === 'system_admin' || targetRoleName === 'admin') {
+          throw new ApiError(403, 'Cannot create System Admin or Admin users');
+        }
+      }
+    }
 
     if (email) {
       const existingEmail = await query('SELECT id FROM users WHERE email = ?', [email]);
@@ -164,12 +183,18 @@ export const userService = {
       fields.push('password_hash = ?');
       params.push(password_hash);
     }
-    if (updates.role_id && isSystemAdmin) {
-      // Only system admin can change roles
+    if (updates.role_id && (isSystemAdmin || isAdmin)) {
+      // Only system admin and admin can change roles
+      if (isAdmin) {
+        const newRole = await query('SELECT name FROM roles WHERE id = ?', [updates.role_id]);
+        if (newRole.length > 0 && (newRole[0].name === 'system_admin' || newRole[0].name === 'admin')) {
+          throw new ApiError(403, 'Cannot assign System Admin or Admin role');
+        }
+      }
       fields.push('role_id = ?');
       params.push(updates.role_id);
     }
-    if (updates.is_active !== undefined && (isSystemAdmin || isOwnProfile)) {
+    if (updates.is_active !== undefined && (isSystemAdmin || isAdmin || isOwnProfile)) {
       fields.push('is_active = ?');
       params.push(updates.is_active);
     }

@@ -479,7 +479,9 @@ export default function Users() {
                     className="form-input"
                   >
                     <option value="">Select role</option>
-                    {roles.map(r => (
+                    {roles
+                      .filter(r => user?.role !== 'admin' || (r.id !== 1 && r.id !== 2))
+                      .map(r => (
                       <option key={r.id} value={r.id}>{r.name.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase())}</option>
                     ))}
                   </select>
