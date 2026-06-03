@@ -271,7 +271,7 @@ export default function Settings() {
               <div className="system-info-grid">
                 <div className="info-box">
                   <span className="info-label">Database</span>
-                  <span className="info-value">MySQL - dms_db</span>
+                  <span className="info-value">Postgres - dms_db</span>
                 </div>
                 <div className="info-box">
                   <span className="info-label">Backend</span>
@@ -697,9 +697,12 @@ export default function Settings() {
         }
         
         .system-info-grid {
-          display: grid;
-          grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+          display: flex;
           gap: 16px;
+        }
+
+        .system-info-grid .info-box {
+          flex: 1;
         }
         
         .info-box {
