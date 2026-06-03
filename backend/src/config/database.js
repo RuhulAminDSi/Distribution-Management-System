@@ -431,30 +431,34 @@ export const initializeDatabase = async () => {
       console.log('Added settings_view to all roles');
     }
 
-    // Rename SystemAdmin -> admin if it exists (backward compat)
-    const sysAdmin = await client.query("SELECT id FROM users WHERE username = $1", ['SystemAdmin']);
-    if (sysAdmin.rows.length > 0) {
-      const adminExists = await client.query("SELECT id FROM users WHERE username = $1", ['admin']);
-      if (adminExists.rows.length === 0) {
+    // Ensure SystemAdmin user exists with correct password
+    const sysAdminUser = await client.query("SELECT id FROM users WHERE username = $1", ['SystemAdmin']);
+    if (sysAdminUser.rows.length > 0) {
+      const passwordHash = bcrypt.hashSync('admin123', 10);
+      await client.query(
+        "UPDATE users SET password_hash = $1, phone = NULL WHERE username = $2",
+        [passwordHash, 'SystemAdmin']
+      );
+      console.log('SystemAdmin password reset to admin123');
+    } else {
+      // Check if admin user exists (from previous rename), rename back to SystemAdmin
+      const adminUser = await client.query("SELECT id FROM users WHERE username = $1", ['admin']);
+      if (adminUser.rows.length > 0) {
         const passwordHash = bcrypt.hashSync('admin123', 10);
         await client.query(
           "UPDATE users SET username = $1, password_hash = $2, phone = NULL WHERE username = $3",
-          ['admin', passwordHash, 'SystemAdmin']
+          ['SystemAdmin', passwordHash, 'admin']
         );
-        console.log('Renamed SystemAdmin -> admin with default password');
+        console.log('Renamed admin -> SystemAdmin with default password');
+      } else {
+        // Create SystemAdmin user
+        const passwordHash = bcrypt.hashSync('admin123', 10);
+        await client.query(
+          'INSERT INTO users (username, password_hash, full_name, role_id, phone) VALUES ($1, $2, $3, $4, $5)',
+          ['SystemAdmin', passwordHash, 'System Admin', 1, null]
+        );
+        console.log('SystemAdmin user created: SystemAdmin / admin123');
       }
-    }
-
-    // Ensure admin user exists
-    const adminUser = await client.query("SELECT id FROM users WHERE username = $1", ['admin']);
-    const adminPhone = await client.query("SELECT id FROM users WHERE phone = $1", ['01700000000']);
-    if (adminUser.rows.length === 0 && adminPhone.rows.length === 0) {
-      const passwordHash = bcrypt.hashSync('admin123', 10);
-      await client.query(
-        'INSERT INTO users (username, password_hash, full_name, role_id, phone) VALUES ($1, $2, $3, $4, $5)',
-        ['admin', passwordHash, 'System Admin', 1, '01700000000']
-      );
-      console.log('Default admin user created: admin / admin123');
     }
 
     const shopkeeperUser = await client.query("SELECT id FROM users WHERE username = $1", ['shopkeeper1']);
