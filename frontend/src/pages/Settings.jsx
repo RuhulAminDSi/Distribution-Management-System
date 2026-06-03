@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useLanguage } from '../context/LanguageContext';
 import { useAuth } from '../context/AuthContext';
+import { useSearchParams } from 'react-router-dom';
 import { authService, roleService } from '../services/api';
 import { Shield, Key, Database, User, Bell, Globe, Plus, Save, Check, X, Trash2, Edit } from 'lucide-react';
 
@@ -40,7 +41,8 @@ const availablePermissionsDefault = [
 export default function Settings() {
   const { t, language, setLanguage } = useLanguage();
   const { user, setUser, refreshRoles } = useAuth();
-  const [activeTab, setActiveTab] = useState('general');
+  const [searchParams] = useSearchParams();
+  const [activeTab, setActiveTab] = useState(searchParams.get('tab') || 'general');
   const [showRoleModal, setShowRoleModal] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(null);
   const [editingRole, setEditingRole] = useState(null);
