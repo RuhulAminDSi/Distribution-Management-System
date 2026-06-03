@@ -1,10 +1,12 @@
 ﻿import { useState, useEffect, useRef } from 'react';
 import { authService, roleService } from '../services/api';
 import { useLanguage } from '../context/LanguageContext';
+import { useAuth } from '../context/AuthContext';
 import { X, Plus, Pencil, Trash2, ChevronLeft, ChevronRight, User, Mail, Phone, Lock, Shield, Search, Camera } from 'lucide-react';
 
 export default function Users() {
   const { t } = useLanguage();
+  const { user } = useAuth();
   const [users, setUsers] = useState([]);
   const [roles, setRoles] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -147,6 +149,7 @@ export default function Users() {
 
   const handleDelete = async (id, role_id) => {
     if (role_id === 1) return;
+    if (user?.role === 'admin' && role_id === 2) return;
     if (!confirm(t('ConfirmDelete'))) return;
     
     try {
@@ -157,8 +160,9 @@ export default function Users() {
     }
   };
 
-  const handleToggleStatus = async (user) => {
-    if (user.role_id === 1) return;
+  const handleToggleStatus = async (targetUser) => {
+    if (targetUser.role_id === 1) return;
+    if (user?.role === 'admin' && targetUser.role_id === 2) return;
     
     const newStatus = user.is_active ? 0 : 1;
     const action = newStatus ? 'activate' : 'deactivate';
@@ -297,8 +301,12 @@ export default function Users() {
                         <button 
                           className={`btn btn-sm ${u.is_active ? 'btn-warning' : 'btn-success'}`}
                           onClick={() => handleToggleStatus(u)}
-                          disabled={u.role_id === 1}
-                          title={u.role_id === 1 ? 'Cannot change Super Admin status' : u.is_active ? 'Deactivate' : 'Activate'}
+                          disabled={u.role_id === 1 || (user?.role === 'admin' && u.role_id === 2)}
+                          title={
+                            u.role_id === 1 ? 'Cannot change System Admin status' :
+                            user?.role === 'admin' && u.role_id === 2 ? 'Cannot change Admin status' :
+                            u.is_active ? 'Deactivate' : 'Activate'
+                          }
                         >
                           {u.is_active ? 'Deactivate' : 'Activate'}
                         </button>
@@ -308,8 +316,12 @@ export default function Users() {
                         <button 
                           className="btn btn-danger btn-sm" 
                           onClick={() => handleDelete(u.id, u.role_id)}
-                          disabled={u.role_id === 1}
-                          title={u.role_id === 1 ? 'Cannot delete Super Admin' : t('Delete')}
+                          disabled={u.role_id === 1 || (user?.role === 'admin' && u.role_id === 2)}
+                          title={
+                            u.role_id === 1 ? 'Cannot delete System Admin' :
+                            user?.role === 'admin' && u.role_id === 2 ? 'Cannot delete Admin' :
+                            t('Delete')
+                          }
                         >
                           <Trash2 size={14} />
                         </button>

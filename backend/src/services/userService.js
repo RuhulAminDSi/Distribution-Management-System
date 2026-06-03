@@ -108,14 +108,21 @@ export const userService = {
     const targetRole = await query('SELECT name FROM roles WHERE id = ?', [user.role_id]);
     const targetRoleName = targetRole[0]?.name || 'unknown';
 
-    // Authorization: Only allow editing own profile or with proper permissions
-    if (!isOwnProfile && !isSystemAdmin) {
+    // Authorization rules
+    const isAdmin = currentUser.role === 'admin';
+
+    if (!isOwnProfile && !isSystemAdmin && !isAdmin) {
       throw new ApiError(403, 'You can only edit your own profile');
     }
 
-    // Authorization: Cannot edit other system_admin or admin users
-    if (!isOwnProfile && !isSystemAdmin && (targetRoleName === 'system_admin' || targetRoleName === 'admin')) {
-      throw new ApiError(403, 'You cannot edit this user');
+    // System Admin cannot edit other System Admin users
+    if (isSystemAdmin && !isOwnProfile && targetRoleName === 'system_admin') {
+      throw new ApiError(403, 'Cannot edit another System Admin');
+    }
+
+    // Admin cannot edit System Admin or Admin users
+    if (isAdmin && (targetRoleName === 'system_admin' || targetRoleName === 'admin')) {
+      throw new ApiError(403, 'Cannot edit System Admin or Admin users');
     }
 
     if (updates.email) {
