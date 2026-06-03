@@ -50,8 +50,9 @@ export class Notification extends BaseModel {
   }
 
   async deleteOlderThan(days = 30) {
-    const sql = `DELETE FROM ${this.tableName} WHERE created_at < NOW() - (? * INTERVAL '1 DAY')`;
-    return await query(sql, [days]);
+    const sql = `DELETE FROM ${this.tableName} WHERE created_at < NOW() - (? * INTERVAL '1 DAY') RETURNING id`;
+    const rows = await query(sql, [days]);
+    return { count: rows.length };
   }
 
   async createBulk(notifications) {

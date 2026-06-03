@@ -86,43 +86,43 @@ export const invoiceService = {
       const paidAmount = data.paid_amount || 0;
       const invoiceStatus = paidAmount >= totalAmount ? 'paid' : (paidAmount > 0 ? 'partial' : 'due');
 
-      const [result] = await db.execute(
+      const result = await db.query(
         `INSERT INTO invoices (invoice_no, retailer_id, created_by, subtotal, discount_percent, discount_amount, total_amount, paid_amount, due_amount, status, notes, invoice_date)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) RETURNING id`,
         [invoiceNo, data.retailer_id, userId, subtotal, data.discount_percent || 0, discountAmount, totalAmount, paidAmount, totalAmount - paidAmount, invoiceStatus, data.notes || null, invoiceDate]
       );
-      const insertId = result.insertId;
+      const insertId = result.rows[0].id;
 
       for (const item of data.items) {
-        const [productRows] = await db.execute('SELECT stock_quantity FROM products WHERE id = ?', [item.product_id]);
-        const product = productRows[0];
+        const productResult = await db.query('SELECT stock_quantity FROM products WHERE id = ?', [item.product_id]);
+        const product = productResult.rows[0];
         
         if (!product) throw new Error(`Product not found: ${item.product_id}`);
         if (product.stock_quantity < item.quantity) throw new Error(`Insufficient stock for product: ${item.product_id}`);
 
-        await db.execute(
+        await db.query(
           'INSERT INTO invoice_items (invoice_id, product_id, quantity, rate, amount) VALUES (?, ?, ?, ?, ?)',
           [insertId, item.product_id, item.quantity, item.rate, item.quantity * item.rate]
         );
 
-        await db.execute(
+        await db.query(
           'UPDATE products SET stock_quantity = stock_quantity - ? WHERE id = ?',
           [item.quantity, item.product_id]
         );
 
-        await db.execute(
+        await db.query(
           'INSERT INTO stock_logs (product_id, quantity, type, reference_type, reference_id, created_by) VALUES (?, ?, ?, ?, ?, ?)',
           [item.product_id, -item.quantity, 'OUT', 'invoice', insertId, userId]
         );
       }
 
       if (paidAmount > 0) {
-        await db.execute(
+        await db.query(
           'UPDATE retailers SET outstanding_balance = outstanding_balance + ? WHERE id = ?',
           [totalAmount - paidAmount, data.retailer_id]
         );
       } else {
-        await db.execute(
+        await db.query(
           'UPDATE retailers SET outstanding_balance = outstanding_balance + ? WHERE id = ?',
           [totalAmount, data.retailer_id]
         );

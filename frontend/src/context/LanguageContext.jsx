@@ -83,6 +83,7 @@ const translations = {
     NoNotifications: 'No notifications',
     LowStock: 'Low Stock',
     ProductExpiry: 'Product Expiry',
+    Invoice: 'Invoice',
     InvoiceDue: 'Invoice Due',
     PaymentReceived: 'Payment Received',
     FieldDisabled: 'Field Disabled',
@@ -136,6 +137,15 @@ const translations = {
     InvoiceCount: 'Invoice Count',
     ProfitAmount: 'Profit',
     CategoryLabel: 'Category',
+    Product: 'Product',
+    Discount: 'Discount',
+    CreatedBy: 'Created By',
+    PurchaseOrders: 'Purchase Orders',
+    NewPurchaseOrder: 'New Purchase Order',
+    OrderNo: 'Order No',
+    OrderDate: 'Order Date',
+    OrderDetails: 'Order Details',
+    ItemsCount: 'Items',
     Invoices: 'Invoices',
     TotalInvoices: 'Total Invoices',
     Collected: 'Collected',
@@ -265,6 +275,15 @@ const translations = {
     Default: 'Default',
     AccountDeactivated: 'Your account has been deactivated. Please contact administrator.',
     Page: 'Page',
+    RecordPayment: 'Record Payment',
+    PaymentNo: 'Payment No',
+    PaymentMethod: 'Payment Method',
+    ReferenceNo: 'Reference No',
+    PaymentDate: 'Payment Date',
+    CollectedBy: 'Collected By',
+    NoPaymentsFound: 'No Payments Found',
+    SelectRetailerPayment: 'Select Retailer',
+    EnterAmountPayment: 'Enter Amount',
   },
   bn: {
     // Common
@@ -393,6 +412,7 @@ const translations = {
     Invoice: 'ইনভয়েস',
     Retailer: 'রিটেইলার',
     Product: 'প্রোডাক্ট',
+    CreatedBy: 'তৈরি করেছেন',
 
     // Companies
     AddCompany: 'কোম্পানি যোগ করুন',
@@ -482,6 +502,7 @@ const translations = {
     NoStockHistory: 'কোনো স্টক ইতিহাস নেই',
     SelectCompany: 'কোম্পানি নির্বাচন',
     OrderDetails: 'অর্ডার বিবরণ',
+    ItemsCount: 'আইটেম',
     ReceivedQuantity: 'গৃহীত পরিমাণ',
 
     // Reports

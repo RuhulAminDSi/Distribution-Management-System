@@ -16,10 +16,10 @@ async function hasRecentNotification(userId, category, referenceType, referenceI
   const results = await query(
     `SELECT COUNT(*) as count FROM notifications 
      WHERE user_id = ? AND category = ? AND reference_type = ? AND reference_id = ?
-     AND created_at > DATE_SUB(NOW(), INTERVAL ? HOUR)`,
+     AND created_at > CURRENT_TIMESTAMP - INTERVAL '1 hour' * ?`,
     [userId, category, referenceType, referenceId, NOTIFICATION_COOLDOWN_HOURS]
   );
-  const hasRecent = results[0].count > 0;
+  const hasRecent = Number(results[0].count) > 0;
   if (hasRecent) {
     console.log(`[Scanner] Skipping notification for user ${userId}, category ${category}, ref ${referenceType}:${referenceId} (cooldown active)`);
   }
@@ -64,7 +64,7 @@ export const notificationScanner = {
       const expiredProducts = await query(
         `SELECT * FROM products 
          WHERE is_active = 1 AND expiry_date IS NOT NULL 
-         AND expiry_date <= CURDATE() AND stock_quantity > 0`
+         AND expiry_date <= CURRENT_DATE AND stock_quantity > 0`
       );
 
       if (expiredProducts.length === 0) return { scanned: 0, created: 0 };
@@ -99,7 +99,7 @@ export const notificationScanner = {
          FROM invoices i
          JOIN retailers r ON i.retailer_id = r.id
          WHERE i.status IN ('due', 'partial')
-         AND i.invoice_date < CURDATE()`
+         AND i.invoice_date < CURRENT_DATE`
       );
 
       if (dueInvoices.length === 0) return { scanned: 0, created: 0 };
@@ -130,8 +130,8 @@ export const notificationScanner = {
   async cleanupOldNotifications() {
     try {
       const deleted = await notificationService.cleanupOldNotifications(30);
-      console.log(`[Scanner] Cleaned up ${deleted.affectedRows || 0} old notifications`);
-      return { deleted: deleted.affectedRows || 0 };
+      console.log(`[Scanner] Cleaned up ${deleted.count || 0} old notifications`);
+      return { deleted: deleted.count || 0 };
     } catch (error) {
       console.error('[Scanner] Cleanup error:', error.message);
       return { deleted: 0, error: error.message };

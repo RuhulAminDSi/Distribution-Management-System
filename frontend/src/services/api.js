@@ -90,6 +90,7 @@ export const stockService = {
 
 export const orderService = {
   getAll: (params) => api.get('/orders', { params }),
+  getById: (id) => api.get(`/orders/${id}`),
   create: (data) => api.post('/orders', data)
 };
 

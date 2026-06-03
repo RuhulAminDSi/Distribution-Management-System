@@ -50,39 +50,42 @@ export const paymentService = {
       const paymentNo = generatePaymentNo();
       const retailerId = parseInt(data.retailer_id);
       
-      const [retailers] = await db.execute('SELECT * FROM retailers WHERE id = ? AND is_active = 1', [retailerId]);
+      const retailerResult = await db.query('SELECT * FROM retailers WHERE id = ? AND is_active = 1', [retailerId]);
+      const retailers = retailerResult.rows;
       if (!retailers.length) throw new Error('Retailer not found');
 
-      const [result] = await db.execute(
+      const result = await db.query(
         `INSERT INTO payments (payment_no, retailer_id, amount, payment_method, reference_no, notes, collected_by, payment_date)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?) RETURNING id`,
         [paymentNo, retailerId, data.amount, data.payment_method || 'cash', data.reference_no || null, data.notes || null, userId, data.payment_date || new Date().toISOString().split('T')[0]]
       );
-      const paymentId = result.insertId;
+      const paymentId = result.rows[0].id;
 
-      await db.execute(
+      await db.query(
         'UPDATE retailers SET outstanding_balance = outstanding_balance - ? WHERE id = ?',
         [data.amount, retailerId]
       );
 
       if (data.invoice_id) {
-        const [invoices] = await db.execute('SELECT * FROM invoices WHERE id = ?', [data.invoice_id]);
+        const invoiceResult = await db.query('SELECT * FROM invoices WHERE id = ?', [data.invoice_id]);
+        const invoices = invoiceResult.rows;
         if (invoices.length) {
           const invoice = invoices[0];
           const newPaidAmount = invoice.paid_amount + data.amount;
           const newDueAmount = invoice.total_amount - newPaidAmount;
           const status = newDueAmount <= 0 ? 'paid' : (newPaidAmount > 0 ? 'partial' : 'due');
           
-          await db.execute(
+          await db.query(
             'UPDATE invoices SET paid_amount = ?, due_amount = ?, status = ? WHERE id = ?',
             [newPaidAmount, Math.max(0, newDueAmount), status, data.invoice_id]
           );
         }
       } else {
-        const [dueInvoices] = await db.execute(
+        const dueInvoiceResult = await db.query(
           `SELECT id, due_amount FROM invoices WHERE retailer_id = ? AND status IN ('due', 'partial') ORDER BY invoice_date ASC`,
           [retailerId]
         );
+        const dueInvoices = dueInvoiceResult.rows;
 
         let remainingAmount = data.amount;
         for (const invoice of dueInvoices) {
@@ -90,14 +93,15 @@ export const paymentService = {
           
           const paymentForInvoice = Math.min(invoice.due_amount, remainingAmount);
           
-          const [inv] = await db.execute('SELECT * FROM invoices WHERE id = ?', [invoice.id]);
+          const invResult = await db.query('SELECT * FROM invoices WHERE id = ?', [invoice.id]);
+          const inv = invResult.rows;
           if (inv.length) {
             const invoiceData = inv[0];
             const newPaidAmount = invoiceData.paid_amount + paymentForInvoice;
             const newDueAmount = invoiceData.total_amount - newPaidAmount;
             const invStatus = newDueAmount <= 0 ? 'paid' : (newPaidAmount > 0 ? 'partial' : 'due');
             
-            await db.execute(
+            await db.query(
               'UPDATE invoices SET paid_amount = ?, due_amount = ?, status = ? WHERE id = ?',
               [newPaidAmount, Math.max(0, newDueAmount), invStatus, invoice.id]
             );

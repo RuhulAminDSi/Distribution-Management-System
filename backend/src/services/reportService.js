@@ -131,7 +131,7 @@ export const reportService = {
       .join('companies comp', 'p.company_id = comp.id')
       .innerJoin('invoices i', 'ii.invoice_id = i.id')
       .whereRaw('i.invoice_date BETWEEN ? AND ?', [startDate, endDate])
-      .groupBy('p.id')
+      .groupBy('p.id, p.name, p.code, c.name, comp.name')
       .orderBy('total_quantity', 'DESC');
 
     if (productId) {

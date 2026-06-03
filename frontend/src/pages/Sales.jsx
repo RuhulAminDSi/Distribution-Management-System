@@ -16,6 +16,8 @@ export default function Sales() {
   const [showModal, setShowModal] = useState(false);
   const [retailers, setRetailers] = useState([]);
   const [products, setProducts] = useState([]);
+  const [viewInvoice, setViewInvoice] = useState(null);
+  const [showViewModal, setShowViewModal] = useState(false);
   
   const pagination = usePagination(10);
   const form = useFormData(initialFormData);
@@ -107,6 +109,108 @@ export default function Sales() {
     }
   };
 
+  const handleView = async (id) => {
+    try {
+      const response = await invoiceService.getById(id);
+      setViewInvoice(response.data);
+      setShowViewModal(true);
+    } catch (error) {
+      console.error('Failed to fetch invoice:', error);
+    }
+  };
+
+  const handlePrint = (invoice) => {
+    const printWindow = window.open('', '_blank');
+    const statusBn = invoice.status === 'paid' ? 'পরিশোধিত' : invoice.status === 'partial' ? 'আংশিক' : 'বকেয়া';
+    const itemsHtml = invoice.items.map(item => `
+      <tr>
+        <td style="padding: 8px; border: 1px solid #ddd; text-align: center;">${item.product_name || item.product_code}</td>
+        <td style="padding: 8px; border: 1px solid #ddd; text-align: center;">${item.quantity}</td>
+        <td style="padding: 8px; border: 1px solid #ddd; text-align: right;">${formatCurrency(item.rate, language)}</td>
+        <td style="padding: 8px; border: 1px solid #ddd; text-align: right;">${formatCurrency(item.amount, language)}</td>
+      </tr>
+    `).join('');
+
+    printWindow.document.write(`
+      <!DOCTYPE html>
+      <html>
+      <head><meta charset="UTF-8"><title>ইনভয়েস ${invoice.invoice_no}</title>
+      <style>
+        body { font-family: 'Noto Sans Bengali', 'Arial Unicode MS', Arial, sans-serif; margin: 0; padding: 20px; color: #333; }
+        .header { text-align: center; margin-bottom: 30px; border-bottom: 3px solid #1a56db; padding-bottom: 15px; }
+        .header .company-name { font-size: 20px; font-weight: bold; color: #1a56db; margin: 5px 0; }
+        .header .invoice-label { font-size: 14px; color: #6b7280; margin: 2px 0; }
+        .header .invoice-no { font-size: 16px; font-weight: bold; color: #111827; margin: 2px 0; }
+        .info { display: flex; justify-content: space-between; margin-bottom: 20px; }
+        .info div { width: 48%; }
+        .info h3 { margin: 0 0 5px 0; font-size: 13px; color: #1a56db; letter-spacing: 0.5px; }
+        .info p { margin: 3px 0; font-size: 14px; }
+        table { width: 100%; border-collapse: collapse; margin-bottom: 20px; }
+        th { background: #1a56db; color: #fff; padding: 10px 8px; border: 1px solid #1a56db; text-align: center; font-size: 13px; letter-spacing: 0.5px; }
+        td { padding: 8px; border: 1px solid #d1d5db; font-size: 14px; }
+        tbody tr:nth-child(even) { background: #f9fafb; }
+        .totals { width: 300px; margin-left: auto; }
+        .totals td { padding: 6px 8px; border: none; }
+        .totals tr td:first-child { font-weight: 500; color: #6b7280; }
+        .totals .grand-total td { font-weight: bold; font-size: 16px; border-top: 2px solid #1a56db; padding-top: 8px; color: #111827; }
+        .totals .grand-total td:last-child { color: #1a56db; }
+        .note-box { margin-top: 20px; padding: 12px; background: #f0f5ff; border-left: 4px solid #1a56db; border-radius: 4px; }
+        .note-box p { margin: 0; font-size: 13px; color: #374151; }
+        .footer { text-align: center; margin-top: 30px; color: #9ca3af; font-size: 12px; border-top: 1px solid #e5e7eb; padding-top: 15px; }
+        .status-badge { display: inline-block; padding: 3px 10px; border-radius: 12px; font-size: 12px; font-weight: 600; }
+        .status-paid { background: #d1fae5; color: #065f46; }
+        .status-partial { background: #fef3c7; color: #92400e; }
+        .status-due { background: #fee2e2; color: #991b1b; }
+        @media print { body { padding: 0; } }
+      </style>
+      </head>
+      <body>
+        <div class="header">
+          <div class="company-name">রুহানা এন্টারপ্রাইজ</div>
+          <div class="invoice-label">ইনভয়েস</div>
+          <div class="invoice-no">${invoice.invoice_no}</div>
+          <p style="margin: 2px 0; color: #6b7280; font-size: 13px;">তারিখ: ${formatDate(invoice.invoice_date)}</p>
+        </div>
+        <div class="info">
+          <div>
+            <h3>প্রাপক</h3>
+            <p><strong>${invoice.retailer_name}</strong></p>
+            <p>${invoice.retailer_phone || ''}</p>
+            <p>${invoice.retailer_address || ''}</p>
+          </div>
+          <div style="text-align: right;">
+            <h3>ইনভয়েস তথ্য</h3>
+            <p><strong>স্ট্যাটাস:</strong> <span class="status-badge status-${invoice.status}">${statusBn}</span></p>
+            <p><strong>তৈরি করেছেন:</strong> ${invoice.created_by_name || ''}</p>
+          </div>
+        </div>
+        <table>
+          <thead>
+            <tr>
+              <th>পণ্য</th>
+              <th>পরিমাণ</th>
+              <th>দর</th>
+              <th>মোট</th>
+            </tr>
+          </thead>
+          <tbody>${itemsHtml}</tbody>
+        </table>
+        <table class="totals">
+          <tr><td>সাবটোটাল</td><td style="text-align: right;">${formatCurrency(invoice.subtotal, language)}</td></tr>
+          ${invoice.discount_amount > 0 ? `<tr><td>ডিসকাউন্ট (${invoice.discount_percent}%)</td><td style="text-align: right; color: #dc2626;">-${formatCurrency(invoice.discount_amount, language)}</td></tr>` : ''}
+          <tr class="grand-total"><td>সর্বমোট</td><td style="text-align: right;">${formatCurrency(invoice.total_amount, language)}</td></tr>
+          <tr><td>পরিশোধিত</td><td style="text-align: right; color: #059669;">${formatCurrency(invoice.paid_amount, language)}</td></tr>
+          <tr><td>বাকি</td><td style="text-align: right; color: #dc2626;">${formatCurrency(invoice.due_amount, language)}</td></tr>
+        </table>
+        ${invoice.notes ? `<div class="note-box"><p><strong>নোট:</strong> ${invoice.notes}</p></div>` : ''}
+        <div class="footer">আপনার ব্যবসার জন্য ধন্যবাদ!</div>
+        <script>window.print();window.close();</script>
+      </body>
+      </html>
+    `);
+    printWindow.document.close();
+  };
+
   const { subtotal, discount, total } = salesForm.calculateTotals(form.formData.discount_percent);
 
   if (loading) return <div>{t('Loading')}</div>;
@@ -162,12 +266,12 @@ export default function Sales() {
                   </td>
                   <td>
                     <div className="flex gap-2">
-                      <button className="btn btn-secondary btn-sm" title={t('View')}>
+                      <button className="btn btn-secondary btn-sm" title={t('View')} onClick={() => handleView(invoice.id)}>
                         <Eye size={14} />
                       </button>
-                      <button className="btn btn-secondary btn-sm" title={t('Print')}>
-                        <Printer size={14} />
-                      </button>
+<button className="btn btn-secondary btn-sm" title={t('Print')} onClick={() => handlePrint(invoice)}>
+                          <Printer size={14} />
+                        </button>
                     </div>
                   </td>
                 </tr>
@@ -356,6 +460,94 @@ export default function Sales() {
                 <button type="submit" className="btn btn-primary">{t('CreateInvoice')}</button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {showViewModal && viewInvoice && (
+        <div className="modal-overlay" onClick={() => setShowViewModal(false)}>
+          <div className="modal" style={{ maxWidth: '700px' }} onClick={e => e.stopPropagation()}>
+            <div className="modal-header">
+              <h2 className="modal-title">{t('Invoice')} #{viewInvoice.invoice_no}</h2>
+              <button className="modal-close" onClick={() => setShowViewModal(false)}>×</button>
+            </div>
+            <div className="modal-body">
+              <div className="card" style={{ background: 'var(--background)', marginBottom: '16px' }}>
+                <div className="card-body" style={{ display: 'flex', justifyContent: 'space-between' }}>
+                  <div>
+                    <p style={{ margin: '2px 0', fontSize: '13px', color: '#666' }}>{t('Retailer')}</p>
+                    <p style={{ margin: '2px 0', fontWeight: 600 }}>{viewInvoice.retailer_name}</p>
+                    <p style={{ margin: '2px 0', fontSize: '13px' }}>{viewInvoice.retailer_phone}</p>
+                    <p style={{ margin: '2px 0', fontSize: '13px' }}>{viewInvoice.retailer_address}</p>
+                  </div>
+                  <div style={{ textAlign: 'right' }}>
+                    <p style={{ margin: '2px 0', fontSize: '13px', color: '#666' }}>{t('Date')}</p>
+                    <p style={{ margin: '2px 0', fontWeight: 600 }}>{formatDate(viewInvoice.invoice_date)}</p>
+                    <p style={{ margin: '2px 0', fontSize: '13px', color: '#666' }}>{t('CreatedBy')}</p>
+                    <p style={{ margin: '2px 0', fontSize: '13px' }}>{viewInvoice.created_by_name}</p>
+                  </div>
+                </div>
+              </div>
+
+              <table className="table" style={{ marginBottom: '16px' }}>
+                <thead>
+                  <tr>
+                    <th>{t('Product')}</th>
+                    <th className="text-center">{t('Quantity')}</th>
+                    <th className="text-right">{t('Price')}</th>
+                    <th className="text-right">{t('Amount')}</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {viewInvoice.items.map(item => (
+                    <tr key={item.id}>
+                      <td>{item.product_name}</td>
+                      <td className="text-center">{item.quantity}</td>
+                      <td className="text-right">{formatCurrency(item.rate, language)}</td>
+                      <td className="text-right">{formatCurrency(item.amount, language)}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+
+              <div style={{ borderTop: '1px solid var(--border)', paddingTop: '12px' }}>
+                <div className="flex justify-between" style={{ marginBottom: '4px' }}>
+                  <span style={{ fontSize: '14px' }}>{t('Subtotal')}</span>
+                  <span style={{ fontSize: '14px' }}>{formatCurrency(viewInvoice.subtotal, language)}</span>
+                </div>
+                {viewInvoice.discount_amount > 0 && (
+                  <div className="flex justify-between" style={{ marginBottom: '4px' }}>
+                    <span style={{ fontSize: '14px' }}>{t('Discount')} ({viewInvoice.discount_percent}%)</span>
+                    <span style={{ fontSize: '14px', color: '#e74c3c' }}>-{formatCurrency(viewInvoice.discount_amount, language)}</span>
+                  </div>
+                )}
+                <div className="flex justify-between" style={{ marginBottom: '4px', fontWeight: 700, fontSize: '16px', borderTop: '2px solid var(--border)', paddingTop: '8px' }}>
+                  <span>{t('Total')}</span>
+                  <span>{formatCurrency(viewInvoice.total_amount, language)}</span>
+                </div>
+                <div className="flex justify-between" style={{ marginBottom: '4px' }}>
+                  <span style={{ fontSize: '14px', color: '#27ae60' }}>{t('Paid')}</span>
+                  <span style={{ fontSize: '14px', color: '#27ae60' }}>{formatCurrency(viewInvoice.paid_amount, language)}</span>
+                </div>
+                <div className="flex justify-between" style={{ marginBottom: '4px' }}>
+                  <span style={{ fontSize: '14px', color: '#e74c3c' }}>{t('DueLabel')}</span>
+                  <span style={{ fontSize: '14px', color: '#e74c3c' }}>{formatCurrency(viewInvoice.due_amount, language)}</span>
+                </div>
+              </div>
+
+              {viewInvoice.notes && (
+                <div style={{ marginTop: '12px', padding: '10px', background: 'var(--background)', borderRadius: '4px' }}>
+                  <p style={{ margin: '0', fontSize: '13px', color: '#666' }}>{t('Notes')}</p>
+                  <p style={{ margin: '4px 0 0 0', fontSize: '14px' }}>{viewInvoice.notes}</p>
+                </div>
+              )}
+            </div>
+            <div className="modal-footer">
+              <button className="btn btn-primary" onClick={() => { handlePrint(viewInvoice); setShowViewModal(false); }}>
+                <Printer size={16} style={{ marginRight: '6px' }} /> {t('Print')}
+              </button>
+              <button className="btn btn-secondary" onClick={() => setShowViewModal(false)}>{t('Close')}</button>
+            </div>
           </div>
         </div>
       )}

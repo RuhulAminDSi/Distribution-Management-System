@@ -43,7 +43,7 @@ export const productService = {
     const code = data.code || generateCode('PRO');
     const sql = `
       INSERT INTO products (name, code, category_id, company_id, purchase_price, dealer_price, mrp, stock_quantity, low_stock_alert, unit, pack_size, expiry_date)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) RETURNING id
     `;
     const result = await query(sql, [
       data.name,
@@ -59,7 +59,7 @@ export const productService = {
       data.pack_size || 1,
       data.expiry_date || null
     ]);
-    return this.findById(result.insertId);
+    return this.findById(result[0].id);
   },
 
   async update(id, data) {
@@ -107,7 +107,7 @@ export const productService = {
       .join('categories c', 'p.category_id = c.id')
       .join('companies comp', 'p.company_id = comp.id')
       .where('p.is_active', 1)
-      .whereRaw('p.expiry_date IS NOT NULL AND p.expiry_date <= CURDATE() AND p.stock_quantity > 0', [])
+      .whereRaw('p.expiry_date IS NOT NULL AND p.expiry_date <= CURRENT_DATE AND p.stock_quantity > 0', [])
       .orderBy('p.expiry_date', 'ASC')
       .get();
   },
@@ -118,7 +118,7 @@ export const productService = {
       .join('categories c', 'p.category_id = c.id')
       .join('companies comp', 'p.company_id = comp.id')
       .where('p.is_active', 1)
-      .whereRaw('p.expiry_date IS NOT NULL AND p.expiry_date > CURDATE() AND p.expiry_date <= DATE_ADD(CURDATE(), INTERVAL ? DAY) AND p.stock_quantity > 0', [days])
+      .whereRaw('p.expiry_date IS NOT NULL AND p.expiry_date > CURRENT_DATE AND p.expiry_date <= CURRENT_DATE + (? || \' days\')::INTERVAL AND p.stock_quantity > 0', [days])
       .orderBy('p.expiry_date', 'ASC')
       .get();
   },

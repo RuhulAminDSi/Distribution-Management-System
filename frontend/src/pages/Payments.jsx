@@ -1,13 +1,60 @@
 import { useState, useEffect } from 'react';
 import { paymentService, retailerService } from '../services/api';
 import { useLanguage, formatCurrency, formatDate } from '../context/LanguageContext';
-import { Plus, Search, ChevronLeft, ChevronRight, Eye } from 'lucide-react';
+import { Plus, Search, ChevronLeft, ChevronRight, Eye, Printer, FileText } from 'lucide-react';
+
+const bengaliNums = [
+  '', 'এক', 'দুই', 'তিন', 'চার', 'পাঁচ', 'ছয়', 'সাত', 'আট', 'নয়',
+  'দশ', 'এগারো', 'বারো', 'তেরো', 'চৌদ্দ', 'পনেরো', 'ষোল', 'সতেরো', 'আঠারো', 'উনিশ',
+  'বিশ', 'একুশ', 'বাইশ', 'তেইশ', 'চব্বিশ', 'পঁচিশ', 'ছাব্বিশ', 'সাতাশ', 'আঠাশ', 'উনত্রিশ',
+  'ত্রিশ', 'একত্রিশ', 'বত্রিশ', 'তেত্রিশ', 'চৌত্রিশ', 'পঁয়ত্রিশ', 'ছত্রিশ', 'সাইত্রিশ', 'আটত্রিশ', 'উনচল্লিশ',
+  'চল্লিশ', 'একচল্লিশ', 'বিয়াল্লিশ', 'তেতাল্লিশ', 'চুয়াল্লিশ', 'পঁয়তাল্লিশ', 'ছেচাল্লিশ', 'সাতচল্লিশ', 'আটচল্লিশ', 'উনপঞ্চাশ',
+  'পঞ্চাশ', 'একান্ন', 'বাহান্ন', 'তেপ্পান্ন', 'চুয়ান্ন', 'পঞ্চান্ন', 'ছাপ্পান্ন', 'সাতান্ন', 'আটান্ন', 'উনষাট',
+  'ষাট', 'একষট্টি', 'বাষট্টি', 'তেষট্টি', 'চৌষট্টি', 'পঁয়ষট্টি', 'ছেষট্টি', 'সাতষট্টি', 'আটষট্টি', 'উনসত্তর',
+  'সত্তর', 'একাত্তর', 'বাহাত্তর', 'তিয়াত্তর', 'চুয়াত্তর', 'পঁচাত্তর', 'ছিয়াত্তর', 'সাতাত্তর', 'আটাত্তর', 'উনআশি',
+  'আশি', 'একাশি', 'বিরাশি', 'তিরাশি', 'চুরাশি', 'পঁচাশি', 'ছিয়াশি', 'সাতাশি', 'আটাশি', 'উননব্বই',
+  'নব্বই', 'একানব্বই', 'বিরানব্বই', 'তিরানব্বই', 'চুরানব্বই', 'পঁচানব্বই', 'ছিয়ানব্বই', 'সাতানব্বই', 'আটানব্বই', 'নিরানব্বই'
+];
+
+const numberToBengaliWords = (num) => {
+  if (num === 0) return 'শূন্য';
+  const convertBelow1000 = (n) => {
+    if (n === 0) return '';
+    if (n < 100) return bengaliNums[n];
+    const h = Math.floor(n / 100);
+    const r = n % 100;
+    return bengaliNums[h] + 'শত ' + (r > 0 ? bengaliNums[r] : '');
+  };
+  if (num < 1000) return convertBelow1000(num).trim();
+  let result = '';
+  const crore = Math.floor(num / 10000000);
+  if (crore > 0) { result += (crore > 1 ? convertBelow1000(crore) + ' কোটি ' : 'এক কোটি '); num %= 10000000; }
+  const lac = Math.floor(num / 100000);
+  if (lac > 0) { result += (lac > 1 ? convertBelow1000(lac) + ' লাখ ' : 'এক লাখ '); num %= 100000; }
+  const thousand = Math.floor(num / 1000);
+  if (thousand > 0) { result += (thousand > 1 ? convertBelow1000(thousand) + ' হাজার ' : 'এক হাজার '); num %= 1000; }
+  if (num > 0) result += convertBelow1000(num);
+  return result.trim();
+};
+
+const amountInBengaliWords = (amount) => {
+  const taka = Math.floor(amount);
+  const paisa = Math.round((amount - taka) * 100);
+  let result = '';
+  if (taka > 0) result += numberToBengaliWords(taka) + ' টাকা';
+  if (paisa > 0) result += (result ? ' ' : '') + numberToBengaliWords(paisa) + ' পয়সা';
+  result += ' মাত্র';
+  if (!taka && !paisa) result = 'শূন্য টাকা মাত্র';
+  return result;
+};
 
 export default function Payments() {
   const { t, language } = useLanguage();
   const [payments, setPayments] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
+  const [showViewModal, setShowViewModal] = useState(false);
+  const [viewPayment, setViewPayment] = useState(null);
   const [retailers, setRetailers] = useState([]);
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
@@ -49,10 +96,83 @@ export default function Payments() {
     }
   };
 
+  const handleView = async (id) => {
+    try {
+      const response = await paymentService.getById(id);
+      setViewPayment(response.data || response);
+      setShowViewModal(true);
+    } catch (error) {
+      console.error('Failed to fetch payment details:', error);
+    }
+  };
+
+  const handlePrint = (payment) => {
+    const isBn = language === 'bn';
+    const companyName = isBn ? 'রুহানা এন্টারপ্রাইজ' : 'Ruhana Enterprise';
+    const companyAddress = isBn ? 'বদরগঞ্জ, রংপুর' : 'Badarganj, Rangpur';
+    const methodLabels = {
+      cash: isBn ? 'নগদ' : 'Cash',
+      bank: isBn ? 'ব্যাংক' : 'Bank',
+      mobile_banking: isBn ? 'মোবাইল ব্যাংকিং' : 'Mobile Banking',
+      cheque: isBn ? 'চেক' : 'Cheque'
+    };
+
+    const printWindow = window.open('', '_blank');
+    printWindow.document.write(`
+      <!DOCTYPE html>
+      <html>
+      <head><meta charset="UTF-8"><title>${t('PaymentReceipt') || 'Payment Receipt'}</title>
+      <style>
+        body { font-family: 'Noto Sans Bengali', 'Arial Unicode MS', Arial, sans-serif; margin: 0; padding: 20px; color: #333; }
+        .header { text-align: center; margin-bottom: 25px; border-bottom: 3px solid #1a56db; padding-bottom: 15px; }
+        .header .company { font-size: 20px; font-weight: bold; color: #1a56db; }
+        .header .title { font-size: 16px; color: #333; margin: 8px 0 4px; }
+        .header .meta { font-size: 11px; color: #6b7280; }
+        .info { margin-bottom: 15px; font-size: 12px; }
+        .info table { width: 100%; border-collapse: collapse; }
+        .info td { padding: 4px 8px; border: none; }
+        .info td:first-child { font-weight: 600; color: #6b7280; width: 140px; }
+        .info td:last-child { color: #333; }
+        .highlight { background: #f0f4ff; padding: 12px; border-radius: 8px; margin: 15px 0; text-align: center; }
+        .highlight .amount { font-size: 28px; font-weight: bold; color: #1a56db; }
+        .highlight .label { font-size: 12px; color: #6b7280; }
+        .notes-box { background: #f9fafb; padding: 12px; border-radius: 8px; margin: 15px 0; border-left: 3px solid #1a56db; }
+        .footer { text-align: center; margin-top: 25px; padding-top: 12px; border-top: 1px solid #e5e7eb; font-size: 10px; color: #9ca3af; }
+        @media print { body { -webkit-print-color-adjust: exact; print-color-adjust: exact; } }
+      </style>
+      </head>
+      <body>
+        <div class="header">
+          <div class="company">${companyName}</div>
+          <div class="title">${isBn ? 'পেমেন্ট রসিদ' : 'Payment Receipt'}</div>
+          <div class="meta">${payment.payment_no} | ${formatDate(payment.payment_date, language)}</div>
+        </div>
+        <div class="highlight">
+          <div class="label">${isBn ? 'পেমেন্টের পরিমাণ' : 'Payment Amount'}</div>
+          <div class="amount">${formatCurrency(payment.amount, language)}</div>
+          ${isBn ? `<div style="font-size:13px;color:#6b7280;margin-top:6px;font-style:italic;">${amountInBengaliWords(payment.amount)}</div>` : ''}
+        </div>
+        <div class="info">
+          <table>
+            <tr><td>${isBn ? 'রিটেইলার' : 'Retailer'}</td><td>${payment.retailer_name}</td></tr>
+            <tr><td>${isBn ? 'পেমেন্ট মেথড' : 'Payment Method'}</td><td>${methodLabels[payment.payment_method] || payment.payment_method}</td></tr>
+            <tr><td>${isBn ? 'রেফারেন্স নম্বর' : 'Reference No'}</td><td>${payment.reference_no || '-'}</td></tr>
+            <tr><td>${isBn ? 'সংগ্রহ করেছেন' : 'Collected By'}</td><td>${payment.collected_by_name}</td></tr>
+          </table>
+        </div>
+        ${payment.notes ? `<div class="notes-box"><strong>${isBn ? 'নোট' : 'Notes'}:</strong> ${payment.notes}</div>` : ''}
+        <div class="footer">${isBn ? 'ডিস্ট্রিবিউশন ম্যানেজমেন্ট সিস্টেম দ্বারা জেনারেটেড' : 'Generated by Distribution Management System'}</div>
+        <script>window.print();window.close();</script>
+      </body>
+      </html>
+    `);
+    printWindow.document.close();
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setFieldErrors({});
-    
+
     const errors = {};
     if (!formData.retailer_id || formData.retailer_id === '') {
       errors.retailer_id = t('RetailerRequired');
@@ -60,12 +180,12 @@ export default function Payments() {
     if (!formData.amount || formData.amount <= 0) {
       errors.amount = t('AmountRequired');
     }
-    
+
     if (Object.keys(errors).length > 0) {
       setFieldErrors(errors);
       return;
     }
-    
+
     try {
       const paymentData = {
         retailer_id: parseInt(formData.retailer_id),
@@ -94,13 +214,33 @@ export default function Payments() {
     }
   };
 
+  const getMethodBadge = (method) => {
+    const map = {
+      cash: 'badge-success',
+      bank: 'badge-primary',
+      mobile_banking: 'badge-warning',
+      cheque: 'badge-info'
+    };
+    return map[method] || 'badge-secondary';
+  };
+
+  const getMethodLabel = (method) => {
+    const map = {
+      cash: t('Cash'),
+      bank: t('Bank'),
+      mobile_banking: t('MobileBanking'),
+      cheque: t('Cheque')
+    };
+    return map[method] || method;
+  };
+
   if (loading) return <div>{t('Loading')}</div>;
 
   return (
     <div>
       <div className="page-header">
         <h1 className="page-title">{t('Payments')}</h1>
-          <button className="btn btn-primary" onClick={() => { setShowModal(true); setFieldErrors({}); setFormData({ retailer_id: '', amount: 0, payment_method: 'cash', reference_no: '', payment_date: new Date().toISOString().split('T')[0], notes: '' }); }}>
+        <button className="btn btn-primary" onClick={() => { setShowModal(true); setFieldErrors({}); setFormData({ retailer_id: '', amount: 0, payment_method: 'cash', reference_no: '', payment_date: new Date().toISOString().split('T')[0], notes: '' }); }}>
           <Plus size={18} /> {t('RecordPayment')}
         </button>
       </div>
@@ -131,32 +271,44 @@ export default function Payments() {
               </tr>
             </thead>
             <tbody>
-              {payments.map(payment => (
-                <tr key={payment.id}>
-                  <td>{payment.payment_no}</td>
-                  <td>{formatDate(payment.payment_date)}</td>
-                  <td>{payment.retailer_name}</td>
-                  <td className="text-right text-success">{formatCurrency(payment.amount, language)}</td>
-                  <td>{payment.payment_method}</td>
-                  <td>{payment.collected_by_name}</td>
-                  <td>
-                    <div className="flex gap-2">
-                      <button className="btn btn-secondary btn-sm" title={t('View')}>
-                        <Eye size={14} />
-                      </button>
-                    </div>
+              {payments.length === 0 ? (
+                <tr>
+                  <td colSpan={7} style={{ textAlign: 'center', padding: '40px', color: 'var(--text-secondary)' }}>
+                    <FileText size={48} style={{ opacity: 0.3, marginBottom: '16px' }} />
+                    <h3>{t('NoPaymentsFound')}</h3>
                   </td>
                 </tr>
-              ))}
+              ) : (
+                payments.map(payment => (
+                  <tr key={payment.id}>
+                    <td>{payment.payment_no}</td>
+                    <td>{formatDate(payment.payment_date)}</td>
+                    <td>{payment.retailer_name}</td>
+                    <td className="text-right text-success">{formatCurrency(payment.amount, language)}</td>
+                    <td><span className={`badge ${getMethodBadge(payment.payment_method)}`}>{getMethodLabel(payment.payment_method)}</span></td>
+                    <td>{payment.collected_by_name}</td>
+                    <td>
+                      <div className="flex gap-2">
+                        <button className="btn btn-secondary btn-sm" title={t('View')} onClick={() => handleView(payment.id)}>
+                          <Eye size={14} />
+                        </button>
+                        <button className="btn btn-secondary btn-sm" title={t('Print')} onClick={() => handlePrint(payment)}>
+                          <Printer size={14} />
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))
+              )}
             </tbody>
           </table>
         </div>
-        
+
         <div className="pagination" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '15px', flexWrap: 'wrap', gap: '10px' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
             <span style={{ fontSize: '14px' }}>Show</span>
-            <select 
-              value={limit} 
+            <select
+              value={limit}
               onChange={(e) => { setLimit(Number(e.target.value)); setPage(1); }}
               style={{ padding: '6px 10px', borderRadius: '4px', border: '1px solid var(--border)' }}
             >
@@ -166,7 +318,7 @@ export default function Payments() {
               <option value={100}>100</option>
             </select>
             <span style={{ fontSize: '14px', marginLeft: 'auto' }}>
-              {Math.min((page - 1) * limit + limit, total)} of {total} entries
+              {Math.min((page - 1) * limit + limit, total)} of {total} {t('entries') || 'entries'}
             </span>
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
@@ -272,6 +424,85 @@ export default function Payments() {
                 <button type="submit" className="btn btn-primary">{t('RecordPayment')}</button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {showViewModal && viewPayment && (
+        <div className="modal-overlay" onClick={() => setShowViewModal(false)}>
+          <div className="modal" onClick={e => e.stopPropagation()}>
+            <div className="modal-header" style={{ background: 'linear-gradient(135deg, #1a56db, #1e40af)', color: '#fff' }}>
+              <h2 className="modal-title" style={{ color: '#fff' }}>{t('PaymentDetails') || 'Payment Details'}</h2>
+              <button className="modal-close" onClick={() => setShowViewModal(false)} style={{ color: '#fff' }}>×</button>
+            </div>
+            <div className="modal-body">
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px', background: '#f0f4ff', padding: '15px', borderRadius: '8px' }}>
+                <div>
+                  <div style={{ fontSize: '11px', color: '#6b7280' }}>{t('PaymentNo')}</div>
+                  <div style={{ fontSize: '16px', fontWeight: 'bold', color: '#1a56db' }}>{viewPayment.payment_no}</div>
+                </div>
+                <div style={{ textAlign: 'right' }}>
+                  <div style={{ fontSize: '11px', color: '#6b7280' }}>{t('Amount')}</div>
+                  <div style={{ fontSize: '22px', fontWeight: 'bold', color: '#16a34a' }}>{formatCurrency(viewPayment.amount, language)}</div>
+                  {language === 'bn' && (
+                    <div style={{ fontSize: '13px', color: '#6b7280', marginTop: '4px', fontStyle: 'italic' }}>
+                      {amountInBengaliWords(viewPayment.amount)}
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              <div className="form-group">
+                <label className="form-label" style={{ fontWeight: 600, color: '#374151' }}>{t('Retailer')}</label>
+                <div style={{ padding: '8px 0', fontSize: '14px' }}>{viewPayment.retailer_name}</div>
+              </div>
+
+              <div className="grid-2">
+                <div className="form-group">
+                  <label className="form-label" style={{ fontWeight: 600, color: '#374151' }}>{t('PaymentMethod')}</label>
+                  <div style={{ padding: '8px 0', fontSize: '14px' }}>
+                    <span className={`badge ${getMethodBadge(viewPayment.payment_method)}`} style={{ fontSize: '13px' }}>
+                      {getMethodLabel(viewPayment.payment_method)}
+                    </span>
+                  </div>
+                </div>
+                <div className="form-group">
+                  <label className="form-label" style={{ fontWeight: 600, color: '#374151' }}>{t('PaymentDate')}</label>
+                  <div style={{ padding: '8px 0', fontSize: '14px' }}>{formatDate(viewPayment.payment_date, language)}</div>
+                </div>
+              </div>
+
+              <div className="grid-2">
+                <div className="form-group">
+                  <label className="form-label" style={{ fontWeight: 600, color: '#374151' }}>{t('ReferenceNo')}</label>
+                  <div style={{ padding: '8px 0', fontSize: '14px' }}>{viewPayment.reference_no || '-'}</div>
+                </div>
+                <div className="form-group">
+                  <label className="form-label" style={{ fontWeight: 600, color: '#374151' }}>{t('CollectedBy')}</label>
+                  <div style={{ padding: '8px 0', fontSize: '14px' }}>{viewPayment.collected_by_name || '-'}</div>
+                </div>
+              </div>
+
+              {viewPayment.notes && (
+                <div className="form-group">
+                  <label className="form-label" style={{ fontWeight: 600, color: '#374151' }}>{t('Notes')}</label>
+                  <div style={{ padding: '10px', fontSize: '14px', background: '#f9fafb', borderRadius: '6px' }}>{viewPayment.notes}</div>
+                </div>
+              )}
+
+              <div className="form-group">
+                <label className="form-label" style={{ fontWeight: 600, color: '#374151' }}>{t('Date')}</label>
+                <div style={{ padding: '8px 0', fontSize: '14px', color: '#6b7280' }}>
+                  {t('Created')}: {formatDate(viewPayment.created_at, language)}
+                </div>
+              </div>
+            </div>
+            <div className="modal-footer">
+              <button className="btn btn-secondary" onClick={() => setShowViewModal(false)}>{t('Close')}</button>
+              <button className="btn btn-primary" onClick={() => { setShowViewModal(false); handlePrint(viewPayment); }}>
+                <Printer size={16} /> {t('Print')}
+              </button>
+            </div>
           </div>
         </div>
       )}
