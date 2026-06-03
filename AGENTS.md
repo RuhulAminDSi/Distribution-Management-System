@@ -8,7 +8,7 @@ npm run dev:backend      # backend only (auto-restart via node --watch)
 npm run dev:frontend     # frontend only (Vite, http://localhost:5173)
 ```
 
-Default login: `admin` / `admin123`
+Default login: `SystemAdmin` / `admin123`
 
 ## Database
 
