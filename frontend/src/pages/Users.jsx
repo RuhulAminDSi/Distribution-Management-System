@@ -148,8 +148,7 @@ export default function Users() {
 
 
   const handleDelete = async (id, role_id) => {
-    if (role_id === 1) return;
-    if (user?.role === 'admin' && role_id === 2) return;
+    if (role_id === 1 || role_id === 2) return;
     if (!confirm(t('ConfirmDelete'))) return;
     
     try {
@@ -162,7 +161,7 @@ export default function Users() {
 
   const handleToggleStatus = async (targetUser) => {
     if (targetUser.role_id === 1) return;
-    if (user?.role === 'admin' && targetUser.role_id === 2) return;
+    if (targetUser.role_id === 2 && user?.role === 'admin') return;
     
     const newStatus = user.is_active ? 0 : 1;
     const action = newStatus ? 'activate' : 'deactivate';
@@ -310,21 +309,20 @@ export default function Users() {
                         >
                           {u.is_active ? 'Deactivate' : 'Activate'}
                         </button>
-                        <button className="btn btn-secondary btn-sm" onClick={() => openModal(u)}>
-                          <Pencil size={14} />
-                        </button>
-                        <button 
-                          className="btn btn-danger btn-sm" 
-                          onClick={() => handleDelete(u.id, u.role_id)}
-                          disabled={u.role_id === 1 || (user?.role === 'admin' && u.role_id === 2)}
-                          title={
-                            u.role_id === 1 ? 'Cannot delete System Admin' :
-                            user?.role === 'admin' && u.role_id === 2 ? 'Cannot delete Admin' :
-                            t('Delete')
-                          }
-                        >
-                          <Trash2 size={14} />
-                        </button>
+                        {u.role_id !== 2 && (
+                          <button className="btn btn-secondary btn-sm" onClick={() => openModal(u)}>
+                            <Pencil size={14} />
+                          </button>
+                        )}
+                        {u.role_id !== 1 && u.role_id !== 2 && (
+                          <button 
+                            className="btn btn-danger btn-sm" 
+                            onClick={() => handleDelete(u.id, u.role_id)}
+                            title={t('Delete')}
+                          >
+                            <Trash2 size={14} />
+                          </button>
+                        )}
                       </div>
                     </td>
                   </tr>
