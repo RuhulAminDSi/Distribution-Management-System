@@ -186,8 +186,8 @@ export default function TopNav({ onSidebarToggle, sidebarOpen }) {
               </div>
               <div className="dropdown-divider"></div>
               <Link to="/settings" className="dropdown-item" onClick={() => setDropdownOpen(false)}>
-                <Settings size={16} />
-                <span>{t('Settings')}</span>
+                <User size={16} />
+                <span>{t('MyProfile')}</span>
               </Link>
               <button className="dropdown-item" onClick={() => { 
                 setDropdownOpen(false);
