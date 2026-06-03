@@ -9,6 +9,7 @@ export default function Users() {
   const { user } = useAuth();
   const [users, setUsers] = useState([]);
   const [roles, setRoles] = useState([]);
+  const [roleCounts, setRoleCounts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
   const [editItem, setEditItem] = useState(null);
@@ -46,6 +47,7 @@ export default function Users() {
       setUsers(data);
       setTotal(totalVal);
       setTotalPages(Math.ceil(totalVal / limit) || 1);
+      setRoleCounts(res.data?.roleCounts || []);
     } catch (error) {
       console.error('Failed to fetch:', error);
       setUsers([]);
@@ -240,7 +242,7 @@ export default function Users() {
           }}>
             <span className={`badge ${getRoleBadgeClass(r.name)}`}>{r.name.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase())}</span>
             <span style={{ fontSize: '13px', color: 'var(--text-muted, #888)' }}>
-              {users.filter(u => u.role === r.name).length} users
+              {(roleCounts.find(c => c.name === r.name)?.count || 0)} users
             </span>
           </div>
         ))}

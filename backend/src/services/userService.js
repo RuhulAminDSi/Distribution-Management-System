@@ -100,12 +100,17 @@ export const userService = {
 
     const result = await builder.paginate(page, limit);
 
+    const roleCounts = await query(
+      'SELECT r.name, COUNT(u.id)::int as count FROM users u JOIN roles r ON r.id = u.role_id GROUP BY r.name'
+    );
+
     return {
       ...result,
       data: result.data.map(user => ({
         ...user,
         role: user.role || 'unknown'
-      }))
+      })),
+      roleCounts
     };
   },
 
