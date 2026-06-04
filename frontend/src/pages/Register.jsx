@@ -469,7 +469,7 @@ export default function Register() {
 
         .register-bg-shapes .shape-3 {
           width: 300px; height: 300px;
-          background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+          background: linear-gradient(135deg, #e94560 0%, #ff6b6b 100%);
           top: 50%; left: 50%;
           transform: translate(-50%, -50%);
           animation: pulseShape 15s ease-in-out infinite;
@@ -477,7 +477,7 @@ export default function Register() {
 
         .register-bg-shapes .shape-4 {
           width: 250px; height: 250px;
-          background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+          background: linear-gradient(135deg, #ff6b6b 0%, #e94560 100%);
           bottom: 20%; right: 10%;
           animation: floatShape 18s ease-in-out infinite;
         }
@@ -539,8 +539,8 @@ export default function Register() {
         }
 
         .card-bottom-btn:hover {
-          background: rgba(99, 102, 241, 0.2);
-          border-color: rgba(99, 102, 241, 0.4);
+          background: rgba(233, 69, 96, 0.2);
+          border-color: rgba(233, 69, 96, 0.4);
           color: #fff;
         }
 
@@ -563,7 +563,7 @@ export default function Register() {
         .register-card {
           background: rgba(26, 26, 46, 0.9);
           backdrop-filter: blur(20px);
-          border: 1px solid rgba(99, 102, 241, 0.2);
+          border: 1px solid rgba(233, 69, 96, 0.2);
           border-radius: 24px;
           padding: 36px;
           box-shadow: 0 25px 50px rgba(0, 0, 0, 0.5);
@@ -585,7 +585,7 @@ export default function Register() {
         .logo-icon {
           width: 56px;
           height: 56px;
-          background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+          background: linear-gradient(135deg, #e94560 0%, #ff6b6b 100%);
           border-radius: 14px;
           display: flex;
           align-items: center;
@@ -648,8 +648,8 @@ export default function Register() {
 
         .form-input:focus {
           outline: none;
-          border-color: #6366f1;
-          box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.2);
+          border-color: #e94560;
+          box-shadow: 0 0 0 3px rgba(233, 69, 96, 0.2);
         }
 
         .password-toggle {
@@ -672,7 +672,7 @@ export default function Register() {
         .register-btn {
           width: 100%;
           padding: 14px;
-          background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+          background: linear-gradient(135deg, #e94560 0%, #ff6b6b 100%);
           border: none;
           border-radius: 12px;
           font-size: 1rem;
@@ -689,7 +689,7 @@ export default function Register() {
 
         .register-btn:hover:not(:disabled) {
           transform: translateY(-2px);
-          box-shadow: 0 10px 30px rgba(99, 102, 241, 0.4);
+          box-shadow: 0 10px 30px rgba(233, 69, 96, 0.4);
         }
 
         .register-btn:disabled {
@@ -715,7 +715,7 @@ export default function Register() {
         .link-btn {
           background: none;
           border: none;
-          color: #6366f1;
+          color: #e94560;
           font-weight: 600;
           cursor: pointer;
           font-size: 0.9rem;
@@ -725,7 +725,7 @@ export default function Register() {
         }
 
         .link-btn:hover {
-          color: #8b5cf6;
+          color: #ff6b6b;
           text-decoration: underline;
         }
 
@@ -737,7 +737,7 @@ export default function Register() {
         }
 
         .helpline b {
-          color: #6366f1;
+          color: #e94560;
         }
 
         .alert {
@@ -789,7 +789,7 @@ export default function Register() {
           width: 16px;
           height: 16px;
           border: 2px solid rgba(255,255,255,0.2);
-          border-top-color: #6366f1;
+          border-top-color: #e94560;
           border-radius: 50%;
           animation: spin 0.6s linear infinite;
         }
