@@ -1,118 +1,89 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useAuth } from '../context/AuthContext';
 import { authService } from '../services/api';
-import { 
-  Warehouse, Eye, EyeOff, ArrowLeft,
-  Package, TrendingUp, Users, CreditCard,
-  ShoppingCart, BarChart3, Building2, Truck,
-  Circle
+import {
+  Warehouse, Eye, EyeOff, ArrowLeft, UserPlus, Mail, Phone, User, Lock
 } from 'lucide-react';
 
 const translations = {
   en: {
-    Sales: 'Sales',
+    CreateAccount: 'Create Account',
+    Subtitle: 'Register as a shopkeeper to start your business journey',
+    FullName: 'Full Name',
     Username: 'Username',
     Email: 'Email',
     Phone: 'Phone',
     Password: 'Password',
-    Login: 'Sign In',
-    LoginFailed: 'Sign in failed. Please check your credentials.',
-    AccountDeactivated: 'Your account has been deactivated.',
-    ForgotPassword: 'Forgot Password?',
-    Back: 'Back',
+    ConfirmPassword: 'Confirm Password',
+    Register: 'Sign Up',
+    AlreadyHaveAccount: 'Already have an account?',
+    SignIn: 'Sign In',
     Error: 'Error',
     TryAgain: 'Please try again',
     Loading: 'Loading',
+    Success: 'Account created successfully!',
+    PasswordsDoNotMatch: 'Passwords do not match',
+    PasswordMinLength: 'Password must be at least 6 characters',
     Helpline: 'Helpline',
-    ResetPassword: 'Reset Password',
-    EnterAmount: 'Enter',
-    or: 'or',
-    Cancel: 'Cancel',
-    SendResetLink: 'Send Reset Link',
-    WelcomeBack: 'Welcome Back',
-    WelcomeSubtitle: 'Sign in to manage your distribution business',
-    NoAccount: "Don't have an account?",
-    CreateAccount: 'Sign Up',
+    Back: 'Back',
+    RegisterFailed: 'Registration failed. Please try again.',
   },
   bn: {
-    Sales: 'বিক্রয়',
+    CreateAccount: 'অ্যাকাউন্ট তৈরি করুন',
+    Subtitle: 'আপনার ব্যবসা শুরু করতে দোকানদার হিসেবে রেজিস্টার করুন',
+    FullName: 'পূর্ণ নাম',
     Username: 'ইউজারনেম',
     Email: 'ইমেইল',
     Phone: 'ফোন',
     Password: 'পাসওয়ার্ড',
-    Login: 'সাইন ইন',
-    LoginFailed: 'সাইন ইন ব্যর্থ। অনুগ্রহ করে আপনার তথ্য পরীক্ষা করুন।',
-    AccountDeactivated: 'আপনার অ্যাকাউন্ট নিষ্ক্রিয় করা হয়েছে।',
-    ForgotPassword: 'পাসওয়ার্ড ভুলে গেছেন?',
-    Back: 'ফিরুন',
+    ConfirmPassword: 'পাসওয়ার্ড নিশ্চিত করুন',
+    Register: 'সাইন আপ',
+    AlreadyHaveAccount: 'ইতিমধ্যে অ্যাকাউন্ট আছে?',
+    SignIn: 'সাইন ইন',
     Error: 'ত্রুটি',
     TryAgain: 'আবার চেষ্টা করুন',
     Loading: 'লোড হচ্ছে',
+    Success: 'অ্যাকাউন্ট সফলভাবে তৈরি হয়েছে!',
+    PasswordsDoNotMatch: 'পাসওয়ার্ড মেলেনি',
+    PasswordMinLength: 'পাসওয়ার্ড কমপক্ষে ৬ অক্ষরের হতে হবে',
     Helpline: 'হেল্প লাইন',
-    ResetPassword: 'পাসওয়ার্ড রিসেট',
-    EnterAmount: 'লিখুন',
-    or: 'অথবা',
-    Cancel: 'বাতিল',
-    SendResetLink: 'রিসেট লিংক পাঠান',
-    WelcomeBack: 'স্বাগতম',
-    WelcomeSubtitle: 'আপনার ডিস্ট্রিবিউশন ব্যবসা পরিচালনা করতে সাইন ইন করুন',
-    NoAccount: 'অ্যাকাউন্ট নেই?',
-    CreateAccount: 'সাইন আপ',
+    Back: 'ফিরুন',
+    RegisterFailed: 'রেজিস্ট্রেশন ব্যর্থ। আবার চেষ্টা করুন।',
   }
 };
 
 const floatingIcons = [
-  { icon: Package, delay: 0, x: '10%', y: '15%' },
-  { icon: TrendingUp, delay: 0.5, x: '85%', y: '20%' },
-  { icon: Users, delay: 1, x: '15%', y: '70%' },
-  { icon: CreditCard, delay: 1.5, x: '80%', y: '65%' },
-  { icon: ShoppingCart, delay: 2, x: '5%', y: '45%' },
-  { icon: BarChart3, delay: 2.5, x: '90%', y: '45%' },
-  { icon: Building2, delay: 3, x: '25%', y: '85%' },
-  { icon: Truck, delay: 3.5, x: '75%', y: '85%' },
+  { icon: UserPlus, delay: 0, x: '10%', y: '15%' },
+  { icon: Mail, delay: 0.5, x: '85%', y: '20%' },
+  { icon: Phone, delay: 1, x: '15%', y: '70%' },
+  { icon: User, delay: 1.5, x: '80%', y: '65%' },
+  { icon: Lock, delay: 2, x: '5%', y: '45%' },
+  { icon: Eye, delay: 2.5, x: '90%', y: '45%' },
 ];
 
-export default function Login() {
+export default function Register() {
   const [language, setLanguage] = useState(() => {
     return localStorage.getItem('dms_language') || 'bn';
   });
   const t = translations[language];
-  const [username, setUsername] = useState('');
-  const [password, setPassword] = useState('');
+  const [form, setForm] = useState({
+    full_name: '',
+    username: '',
+    email: '',
+    phone: '',
+    password: '',
+    confirmPassword: ''
+  });
   const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
-  const [showForgotModal, setShowForgotModal] = useState(false);
-  const [forgotEmail, setForgotEmail] = useState('');
-  const [forgotMessage, setForgotMessage] = useState('');
-  const [forgotLoading, setForgotLoading] = useState(false);
   const [isVisible, setIsVisible] = useState(false);
-  const { login, user } = useAuth();
   const navigate = useNavigate();
-
-  useEffect(() => {
-    // If user is already logged in, redirect to dashboard
-    if (user) {
-      navigate('/dashboard', { replace: true });
-    }
-  }, [user, navigate]);
 
   useEffect(() => {
     setIsVisible(true);
   }, []);
-
-  useEffect(() => {
-    // Only redirect if not already authenticated
-    if (user) return;
-    
-    const token = localStorage.getItem('token');
-    const tokenExpiry = localStorage.getItem('token_expiry');
-    if (token && tokenExpiry && new Date(tokenExpiry) > new Date()) {
-      sessionStorage.setItem('fromLanding', 'true');
-      navigate('/dashboard');
-    }
-  }, [navigate, user]);
 
   useEffect(() => {
     const handleStorageChange = () => {
@@ -142,66 +113,58 @@ export default function Login() {
     localStorage.setItem('dms_language', newLang);
   };
 
+  const updateField = (field) => (e) => {
+    setForm((prev) => ({ ...prev, [field]: e.target.value }));
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
+
+    if (form.password.length < 6) {
+      setError(t.PasswordMinLength);
+      return;
+    }
+
+    if (form.password !== form.confirmPassword) {
+      setError(t.PasswordsDoNotMatch);
+      return;
+    }
+
     setLoading(true);
 
     try {
-      const userData = await login(username, password);
-      
-      const token = localStorage.getItem('token') || 
-        document.cookie.split('token=')[1]?.split(';')[0];
-      if (token) {
-        localStorage.setItem('token', token);
+      const response = await authService.shopkeeperRegister({
+        username: form.username,
+        password: form.password,
+        full_name: form.full_name,
+        email: form.email || undefined,
+        phone: form.phone || undefined
+      });
+
+      if (response.data.token) {
+        localStorage.setItem('token', response.data.token);
       }
-      
+
       sessionStorage.setItem('fromLanding', 'true');
       navigate('/dashboard');
     } catch (err) {
-      const errorMsg = err.response?.data?.message || '';
-      if (errorMsg.includes('deactivated') || errorMsg.includes('নিষ্ক্রিয়')) {
-        setError(t.AccountDeactivated);
+      const msg = err.response?.data?.message || '';
+      const fieldErrors = err.response?.data?.errors;
+      if (fieldErrors) {
+        const messages = Object.values(fieldErrors).join('. ');
+        setError(messages || t.RegisterFailed);
       } else {
-        setError(t.LoginFailed);
+        setError(msg || t.RegisterFailed);
       }
     } finally {
       setLoading(false);
     }
   };
 
-  const handleForgotPassword = async (e) => {
-    e.preventDefault();
-    setForgotMessage('');
-    setForgotLoading(true);
-
-    try {
-      const response = await authService.forgotPassword({ email: forgotEmail });
-      const msg = response.data.message || '';
-      
-      if (response.data.resetLink) {
-        setForgotMessage(
-          <div>
-            <div>{msg}</div>
-            <div style={{ marginTop: '10px', fontSize: '12px', wordBreak: 'break-all' }}>
-              <strong>Reset Link:</strong><br/>
-              {response.data.resetLink}
-            </div>
-          </div>
-        );
-      } else {
-        setForgotMessage(msg);
-      }
-    } catch (error) {
-        setForgotMessage(error.response?.data?.message || t.Error + '. ' + t.TryAgain + '.');
-    } finally {
-      setForgotLoading(false);
-    }
-  };
-
   return (
-    <div className="login-page">
-      <div className="login-bg-shapes">
+    <div className="register-page">
+      <div className="register-bg-shapes">
         <div className="shape shape-1"></div>
         <div className="shape shape-2"></div>
         <div className="shape shape-3"></div>
@@ -210,7 +173,7 @@ export default function Login() {
       </div>
 
       {floatingIcons.map((item, index) => (
-        <div 
+        <div
           key={index}
           className="floating-icon"
           style={{
@@ -223,77 +186,133 @@ export default function Login() {
         </div>
       ))}
 
-      <div className={`login-container ${isVisible ? 'visible' : ''}`}>
-        <div className="login-card">
-          <div className="login-header">
-            <div className="login-logo">
+      <div className={`register-container ${isVisible ? 'visible' : ''}`}>
+        <div className="register-card">
+          <div className="register-header">
+            <div className="register-logo">
               <div className="logo-icon">
                 <Warehouse size={32} />
               </div>
               <h1>DMS</h1>
             </div>
-            <p className="login-subtitle">{t.WelcomeSubtitle}</p>
+            <p className="register-subtitle">{t.Subtitle}</p>
           </div>
 
           {error && <div className="alert alert-danger">{error}</div>}
 
-          <form onSubmit={handleSubmit}>
+          <form onSubmit={handleSubmit} autoComplete="off">
             <div className="form-group">
-              <label className="form-label">{t.Username}, {t.Email}, {t.Phone}</label>
+              <label className="form-label">{t.FullName}</label>
               <input
                 type="text"
                 className="form-input"
-                value={username}
-                onChange={(e) => setUsername(e.target.value)}
-                placeholder={t.Username + ', ' + t.Email + ', ' + t.Phone}
+                value={form.full_name}
+                onChange={updateField('full_name')}
+                placeholder={t.FullName}
                 required
+                autoComplete="off"
               />
             </div>
 
-            <div className="form-group">
-              <label className="form-label">{t.Password}</label>
-              <div style={{ position: 'relative' }}>
+            <div className="form-row">
+              <div className="form-group">
+                <label className="form-label">{t.Username}</label>
                 <input
-                  type={showPassword ? 'text' : 'password'}
+                  type="text"
                   className="form-input"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  placeholder={t.Password}
+                  value={form.username}
+                  onChange={updateField('username')}
+                  placeholder={t.Username}
                   required
-                  style={{ paddingRight: '40px' }}
+                  autoComplete="off"
                 />
-                <button
-                  type="button"
-                  onClick={() => setShowPassword(!showPassword)}
-                  className="password-toggle"
-                >
-                  {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
-                </button>
+              </div>
+              <div className="form-group">
+                <label className="form-label">{t.Email}</label>
+                <input
+                  type="email"
+                  className="form-input"
+                  value={form.email}
+                  onChange={updateField('email')}
+                  placeholder={t.Email}
+                  autoComplete="off"
+                />
               </div>
             </div>
 
-            <button type="submit" className="btn btn-primary login-btn" disabled={loading}>
-              {loading ? t.Loading + '...' : t.Login}
-              {!loading && <ArrowLeft size={18} className="btn-arrow" />}
-            </button>
+            <div className="form-group">
+              <label className="form-label">{t.Phone}</label>
+              <input
+                type="tel"
+                className="form-input"
+                value={form.phone}
+                onChange={updateField('phone')}
+                placeholder={t.Phone}
+                autoComplete="off"
+              />
+            </div>
 
-            <button
-              type="button"
-              className="btn btn-secondary forgot-btn"
-              onClick={() => setShowForgotModal(true)}
-            >
-              {t.ForgotPassword}
+            <div className="form-row">
+              <div className="form-group">
+                <label className="form-label">{t.Password}</label>
+                <div style={{ position: 'relative' }}>
+                  <input
+                    type={showPassword ? 'text' : 'password'}
+                    className="form-input"
+                    value={form.password}
+                    onChange={updateField('password')}
+                    placeholder={t.Password}
+                    required
+                    style={{ paddingRight: '40px' }}
+                    autoComplete="new-password"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="password-toggle"
+                  >
+                    {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                  </button>
+                </div>
+              </div>
+              <div className="form-group">
+                <label className="form-label">{t.ConfirmPassword}</label>
+                <div style={{ position: 'relative' }}>
+                  <input
+                    type={showConfirmPassword ? 'text' : 'password'}
+                    className="form-input"
+                    value={form.confirmPassword}
+                    onChange={updateField('confirmPassword')}
+                    placeholder={t.ConfirmPassword}
+                    required
+                    autoComplete="new-password"
+                    style={{ paddingRight: '40px' }}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                    className="password-toggle"
+                  >
+                    {showConfirmPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <button type="submit" className="btn btn-primary register-btn" disabled={loading}>
+              {loading ? t.Loading + '...' : t.Register}
+              {!loading && <UserPlus size={18} className="btn-arrow" />}
             </button>
           </form>
 
           <p className="login-link">
-            {t.NoAccount}{' '}
+            {t.AlreadyHaveAccount}{' '}
             <button
               type="button"
               className="link-btn"
-              onClick={() => navigate('/register')}
+              onClick={() => navigate('/login')}
             >
-              {t.CreateAccount}
+              {t.SignIn}
             </button>
           </p>
 
@@ -321,52 +340,10 @@ export default function Login() {
         </div>
       </div>
 
-      {showForgotModal && (
-        <div className="modal-overlay" onClick={() => setShowForgotModal(false)}>
-          <div className="modal" onClick={e => e.stopPropagation()}>
-            <div className="modal-header">
-              <h3>{t.ResetPassword}</h3>
-              <button type="button" className="modal-close" onClick={() => setShowForgotModal(false)}>×</button>
-            </div>
-            <form onSubmit={handleForgotPassword}>
-              <div className="modal-body">
-                <p style={{ marginBottom: '16px', color: 'var(--text-secondary)' }}>
-                  {t.EnterAmount} your {t.Email} or {t.Phone} and we'll send you a link to reset your {t.Password}.
-                </p>
-                {forgotMessage && (
-                  <div className={`alert ${typeof forgotMessage === 'string' && (forgotMessage.includes('sent') || forgotMessage.includes('success') || forgotMessage.includes('link')) ? 'alert-success' : 'alert-danger'}`}>
-                    {forgotMessage}
-                  </div>
-                )}
-                <div className="form-group">
-                  <label className="form-label">{t.Email} {t.or} {t.Phone}</label>
-                  <input
-                    type="text"
-                    className="form-input"
-                    value={forgotEmail}
-                    onChange={(e) => setForgotEmail(e.target.value)}
-                    placeholder={t.Email + ' ' + t.or + ' ' + t.Phone}
-                    required
-                  />
-                </div>
-              </div>
-              <div className="modal-footer">
-                <button type="button" className="btn btn-secondary" onClick={() => setShowForgotModal(false)}>
-                  {t.Cancel}
-                </button>
-                <button type="submit" className="btn btn-primary" disabled={forgotLoading}>
-                  {forgotLoading ? t.Loading + '...' : t.SendResetLink}
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
-
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@300;400;500;600;700&family=Noto+Sans+Bengali:wght@400;500;600;700&display=swap');
 
-        .login-page {
+        .register-page {
           min-height: 100vh;
           display: flex;
           align-items: center;
@@ -377,7 +354,7 @@ export default function Login() {
           font-family: 'IBM Plex Sans', 'Noto Sans Bengali', sans-serif;
         }
 
-        .login-bg-shapes {
+        .register-bg-shapes {
           position: fixed;
           top: 0;
           left: 0;
@@ -387,56 +364,46 @@ export default function Login() {
           z-index: 0;
         }
 
-        .login-bg-shapes .shape {
+        .register-bg-shapes .shape {
           position: absolute;
           border-radius: 50%;
           filter: blur(80px);
           opacity: 0.4;
         }
 
-        .login-bg-shapes .shape-1 {
-          width: 500px;
-          height: 500px;
+        .register-bg-shapes .shape-1 {
+          width: 500px; height: 500px;
           background: linear-gradient(135deg, #e94560 0%, #ff6b6b 100%);
-          top: -150px;
-          right: -100px;
+          top: -150px; right: -100px;
           animation: floatShape 20s ease-in-out infinite;
         }
 
-        .login-bg-shapes .shape-2 {
-          width: 400px;
-          height: 400px;
+        .register-bg-shapes .shape-2 {
+          width: 400px; height: 400px;
           background: linear-gradient(135deg, #0f3460 0%, #1e5f8a 100%);
-          bottom: -100px;
-          left: -100px;
+          bottom: -100px; left: -100px;
           animation: floatShape 25s ease-in-out infinite reverse;
         }
 
-        .login-bg-shapes .shape-3 {
-          width: 300px;
-          height: 300px;
+        .register-bg-shapes .shape-3 {
+          width: 300px; height: 300px;
           background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-          top: 50%;
-          left: 50%;
+          top: 50%; left: 50%;
           transform: translate(-50%, -50%);
           animation: pulseShape 15s ease-in-out infinite;
         }
 
-        .login-bg-shapes .shape-4 {
-          width: 250px;
-          height: 250px;
+        .register-bg-shapes .shape-4 {
+          width: 250px; height: 250px;
           background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
-          bottom: 20%;
-          right: 10%;
+          bottom: 20%; right: 10%;
           animation: floatShape 18s ease-in-out infinite;
         }
 
-        .login-bg-shapes .shape-5 {
-          width: 200px;
-          height: 200px;
+        .register-bg-shapes .shape-5 {
+          width: 200px; height: 200px;
           background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
-          top: 20%;
-          left: 15%;
+          top: 20%; left: 15%;
           animation: floatShape 22s ease-in-out infinite reverse;
         }
 
@@ -490,42 +457,42 @@ export default function Login() {
         }
 
         .card-bottom-btn:hover {
-          background: rgba(233, 69, 96, 0.2);
-          border-color: rgba(233, 69, 96, 0.4);
+          background: rgba(99, 102, 241, 0.2);
+          border-color: rgba(99, 102, 241, 0.4);
           color: #fff;
         }
 
-        .login-container {
+        .register-container {
           position: relative;
           z-index: 10;
           width: 100%;
-          max-width: 420px;
+          max-width: 520px;
           padding: 20px;
           opacity: 0;
           transform: translateY(20px);
           transition: all 0.6s cubic-bezier(0.4, 0, 0.2, 1);
         }
 
-        .login-container.visible {
+        .register-container.visible {
           opacity: 1;
           transform: translateY(0);
         }
 
-        .login-card {
+        .register-card {
           background: rgba(26, 26, 46, 0.9);
           backdrop-filter: blur(20px);
-          border: 1px solid rgba(233, 69, 96, 0.2);
+          border: 1px solid rgba(99, 102, 241, 0.2);
           border-radius: 24px;
-          padding: 40px;
+          padding: 36px;
           box-shadow: 0 25px 50px rgba(0, 0, 0, 0.5);
         }
 
-        .login-header {
+        .register-header {
           text-align: center;
-          margin-bottom: 32px;
+          margin-bottom: 28px;
         }
 
-        .login-logo {
+        .register-logo {
           display: flex;
           align-items: center;
           justify-content: center;
@@ -536,7 +503,7 @@ export default function Login() {
         .logo-icon {
           width: 56px;
           height: 56px;
-          background: linear-gradient(135deg, #e94560 0%, #ff6b6b 100%);
+          background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
           border-radius: 14px;
           display: flex;
           align-items: center;
@@ -550,21 +517,27 @@ export default function Login() {
           50% { transform: translateY(-5px); }
         }
 
-        .login-logo h1 {
+        .register-logo h1 {
           font-size: 2.5rem;
           font-weight: 700;
           color: #fff;
           margin: 0;
         }
 
-        .login-subtitle {
+        .register-subtitle {
           color: rgba(255, 255, 255, 0.6);
           font-size: 0.95rem;
           margin: 0;
         }
 
+        .form-row {
+          display: grid;
+          grid-template-columns: 1fr 1fr;
+          gap: 14px;
+        }
+
         .form-group {
-          margin-bottom: 20px;
+          margin-bottom: 16px;
         }
 
         .form-label {
@@ -572,18 +545,19 @@ export default function Login() {
           color: rgba(255, 255, 255, 0.8);
           font-size: 0.875rem;
           font-weight: 500;
-          margin-bottom: 8px;
+          margin-bottom: 6px;
         }
 
         .form-input {
           width: 100%;
-          padding: 14px 16px;
+          padding: 12px 14px;
           background: rgba(255, 255, 255, 0.05);
           border: 1px solid rgba(255, 255, 255, 0.1);
-          border-radius: 12px;
+          border-radius: 10px;
           color: #fff;
           font-size: 0.95rem;
           transition: all 0.3s ease;
+          box-sizing: border-box;
         }
 
         .form-input::placeholder {
@@ -592,8 +566,8 @@ export default function Login() {
 
         .form-input:focus {
           outline: none;
-          border-color: #e94560;
-          box-shadow: 0 0 0 3px rgba(233, 69, 96, 0.2);
+          border-color: #6366f1;
+          box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.2);
         }
 
         .password-toggle {
@@ -613,10 +587,10 @@ export default function Login() {
           color: #fff;
         }
 
-        .login-btn {
+        .register-btn {
           width: 100%;
-          padding: 16px;
-          background: linear-gradient(135deg, #e94560 0%, #ff6b6b 100%);
+          padding: 14px;
+          background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
           border: none;
           border-radius: 12px;
           font-size: 1rem;
@@ -628,15 +602,15 @@ export default function Login() {
           justify-content: center;
           gap: 10px;
           transition: all 0.3s ease;
-          margin-bottom: 12px;
+          margin-top: 4px;
         }
 
-        .login-btn:hover:not(:disabled) {
+        .register-btn:hover:not(:disabled) {
           transform: translateY(-2px);
-          box-shadow: 0 10px 30px rgba(233, 69, 96, 0.4);
+          box-shadow: 0 10px 30px rgba(99, 102, 241, 0.4);
         }
 
-        .login-btn:disabled {
+        .register-btn:disabled {
           opacity: 0.7;
           cursor: not-allowed;
         }
@@ -645,27 +619,8 @@ export default function Login() {
           transition: transform 0.3s ease;
         }
 
-        .login-btn:hover .btn-arrow {
+        .register-btn:hover .btn-arrow {
           transform: translateX(-4px);
-        }
-
-        .forgot-btn {
-          width: 100%;
-          padding: 12px;
-          background: transparent;
-          border: 1px solid rgba(255, 255, 255, 0.2);
-          border-radius: 12px;
-          font-size: 0.9rem;
-          font-weight: 500;
-          color: rgba(255, 255, 255, 0.7);
-          cursor: pointer;
-          transition: all 0.3s ease;
-        }
-
-        .forgot-btn:hover {
-          background: rgba(255, 255, 255, 0.05);
-          border-color: rgba(255, 255, 255, 0.4);
-          color: #fff;
         }
 
         .login-link {
@@ -678,7 +633,7 @@ export default function Login() {
         .link-btn {
           background: none;
           border: none;
-          color: #e94560;
+          color: #6366f1;
           font-weight: 600;
           cursor: pointer;
           font-size: 0.9rem;
@@ -688,19 +643,19 @@ export default function Login() {
         }
 
         .link-btn:hover {
-          color: #ff6b6b;
+          color: #8b5cf6;
           text-decoration: underline;
         }
 
         .helpline {
-          margin-top: 24px;
+          margin-top: 20px;
           text-align: center;
           font-size: 0.85rem;
           color: rgba(255, 255, 255, 0.5);
         }
 
         .helpline b {
-          color: #e94560;
+          color: #6366f1;
         }
 
         .alert {
@@ -716,19 +671,16 @@ export default function Login() {
           color: #ef4444;
         }
 
-        .alert-success {
-          background: rgba(16, 185, 129, 0.15);
-          border: 1px solid rgba(16, 185, 129, 0.3);
-          color: #10b981;
-        }
-
         @media (max-width: 480px) {
-          .login-card {
-            padding: 30px 24px;
+          .register-card {
+            padding: 24px 20px;
           }
-          
-          .login-logo h1 {
+          .register-logo h1 {
             font-size: 2rem;
+          }
+          .form-row {
+            grid-template-columns: 1fr;
+            gap: 0;
           }
         }
       `}</style>

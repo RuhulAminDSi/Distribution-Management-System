@@ -201,5 +201,54 @@ export const authController = {
     } catch (error) {
       next(error);
     }
+  },
+
+  async shopkeeperRegister(req, res, next) {
+    try {
+      const { username, password, full_name, email, phone } = req.body;
+
+      if (!username || !password || !full_name) {
+        throw new ApiError(400, 'Username, password, and full name are required');
+      }
+
+      const user = await userService.createShopkeeper({
+        username,
+        password,
+        full_name,
+        email,
+        phone
+      });
+
+      const roleName = user.role || 'shopkeeper';
+
+      const token = jwt.sign(
+        { userId: user.id, role: roleName },
+        process.env.JWT_SECRET,
+        { expiresIn: process.env.JWT_EXPIRES_IN || '24h' }
+      );
+
+      res.cookie('token', token, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: 'lax',
+        maxAge: 8 * 60 * 60 * 1000
+      });
+
+      res.status(201).json({
+        user: {
+          id: user.id,
+          username: user.username,
+          full_name: user.full_name,
+          email: user.email,
+          role_id: user.role_id,
+          role: roleName,
+          phone: user.phone,
+          profile_picture: user.profile_picture || null
+        },
+        token
+      });
+    } catch (error) {
+      next(error);
+    }
   }
 };

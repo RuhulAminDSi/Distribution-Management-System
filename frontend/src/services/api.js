@@ -36,6 +36,7 @@ export const authService = {
   logout: () => api.post('/auth/logout'),
   me: () => api.get('/auth/me'),
   register: (data) => api.post('/auth/register', data),
+  shopkeeperRegister: (data) => api.post('/auth/shopkeeper-register', data),
   getUsers: (params) => api.get('/auth/users', { params }),
   updateUser: (id, data) => api.put(`/auth/users/${id}`, data),
   deleteUser: (id) => api.delete(`/auth/users/${id}`),

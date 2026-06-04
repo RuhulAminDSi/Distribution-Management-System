@@ -6,6 +6,7 @@ import MainLayout from './components/layout/MainLayout';
 import Landing from './pages/Landing';
 import Demo from './pages/Demo';
 import Login from './pages/Login';
+import Register from './pages/Register';
 import ResetPassword from './pages/ResetPassword';
 import Dashboard from './pages/Dashboard';
 import Companies from './pages/Companies';
@@ -83,6 +84,7 @@ export default function App() {
         <Route path="/" element={<Landing />} />
         <Route path="/demo" element={<Demo />} />
         <Route path="/login" element={<LoginWithAnimation />} />
+        <Route path="/register" element={<RegisterWithAnimation />} />
         <Route path="/reset-password" element={<ResetPassword />} />
         
         <Route path="/dashboard" element={
@@ -172,5 +174,26 @@ function LoginWithAnimation() {
     );
   }
   
-  return <Login />;
+  return <Login />
+}
+
+function RegisterWithAnimation() {
+  const fromLanding = sessionStorage.getItem('fromLanding') === 'true';
+  
+  if (fromLanding) {
+    sessionStorage.removeItem('fromLanding');
+    return (
+      <div className="page-transition">
+        <Register />
+        <style>{`
+          @keyframes pageIn {
+            from { opacity: 0; transform: translateY(15px); }
+            to { opacity: 1; transform: translateY(0); }
+          }
+        `}</style>
+      </div>
+    );
+  }
+  
+  return <Register />
 }

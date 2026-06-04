@@ -1,706 +1,443 @@
-import { useState, useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { 
-  Package, 
-  TrendingUp, 
-  Users, 
-  CreditCard, 
-  ShoppingCart, 
+import {
+  ArrowRight,
+  BarChart3,
   Bell,
   Building2,
+  CheckCircle2,
+  ChevronRight,
+  Circle,
+  CreditCard,
   FileText,
-  Warehouse,
-  UserCircle,
-  Settings,
-  BarChart3,
-  ArrowRight,
-  Phone,
+  Globe2,
+  Layers3,
+  LockKeyhole,
   Mail,
   MapPin,
-  Clock,
   Menu,
+  Package,
+  Phone,
+  Route,
+  Settings,
+  ShieldCheck,
+  ShoppingCart,
+  Sparkles,
+  Truck,
+  Users,
+  Warehouse,
   X,
-  ChevronRight,
-  Circle
+  Zap
 } from 'lucide-react';
 import './Landing.css';
 
-const translations = {
+const copy = {
   bn: {
-    topBarPhone: '+৮৮০ ১২৩৪-৫৬৭৮৯০',
-    topBarEmail: 'support@dms.com',
-    topBarHours: '২৪/৭ সাপোর্ট',
-    navHome: 'হোম',
-    navFeatures: 'ফিচার',
-    navServices: 'সার্ভিস',
-    navAbout: 'আমাদের সম্পর্কে',
-    navContact: 'যোগাযোগ',
-    signIn: 'সাইন ইন',
-    getStarted: 'লগ ইন',
+    nav: ['হোম', 'সুবিধা', 'কীভাবে কাজ করে', 'কেন ব্যবহার করবেন', 'যোগাযোগ'],
+    login: 'সাইন ইন',
+    signUp: 'সাইন আপ',
+    register: 'সাইন আপ',
     demo: 'ডেমো',
-    heroTitle: 'ডিস্ট্রিবিউশন ম্যানেজমেন্ট',
-    heroTitleSpan: 'সিস্টেম',
-    heroSubtitle: 'শক্তিশালী ইনভেন্টরি ম্যানেজমেন্ট, রিয়েল-টাইম ট্র্যাকিং এবং অটোমেটেড অর্ডারিং দিয়ে আপনার ডিস্ট্রিবিউশন নেটওয়ার্ক স্ট্রিমলাইন করুন। আত্মবিশ্বাসের সাথে আপনার ব্যবসা বৃদ্ধি করুন।',
-    startFree: 'ফ্রি ট্রায়াল শুরু করুন',
-    learnMore: 'আরও জানুন',
-    learnMoreDesc: 'বিস্তারিত জানতে ক্লিক করুন',
-    companies: 'কোম্পানি',
-    retailers: 'রিটেইলার',
-    uptime: 'আপটাইম',
-    featuresTitle: 'আপনার যা দরকার',
-    featuresSubtitle: 'ইনভেন্টরি পরিচালনা, বিক্রয় ট্র্যাকিং এবং আপনার ব্যবসা বৃদ্ধির জন্য শক্তিশালী টুলস',
-    featuresTag: 'ফিচার',
-    analytics: 'রিয়েল-টাইম অ্যানালিটিক্স',
-    analyticsDesc: 'ব্যাপক ড্যাশবোর্ড দিয়ে আপনার বিক্রয়, ইনভেন্টরি এবং পারফরম্যান্সে তাৎক্ষণিক অন্তর্দৃষ্টি পান। প্রতিদিনের বিক্রয় ট্রেন্ড, শীর্ষ পণ্য এবং গ্রাহক আচরণ বিশ্লেষণ করুন।',
-    inventory: 'ইনভেন্টরি ম্যানেজমেন্ট',
-    inventoryDesc: 'স্বয়ংক্রিয় পুনরায় অর্ডার অ্যালার্ট সহ সমস্ত গুদাম এবং রিটেইল পয়েন্টে স্টক লেভেল ট্র্যাক করুন। একাধিক গুদাম থেকে স্টক ট্রান্সফার এবং ইনভেন্টরি অপ্টিমাইজেশন করুন।',
-    retailer: 'রিটেইলার নেটওয়ার্ক',
-    retailerDesc: 'উৎসর্গীকৃত প্রোফাইল এবং অর্ডার ইতিহাস দিয়ে আপনার সম্পূর্ণ রিটেইলার নেটওয়ার্ক দক্ষতার সাথে পরিচালনা করুন। প্রতিটি রিটেইলারের ক্রেডিট লিমিট এবং পেমেন্ট স্ট্যাটাস ম্যানেজ করুন।',
-    payment: 'পেমেন্ট ট্র্যাকিং',
-    paymentDesc: 'সমস্ত পেমেন্ট ট্র্যাক করুন, ক্রেডিট লিমিট পরিচালনা করুন এবং সেটেলমেন্ট সহজে হ্যান্ডেল করুন। বকেয়া পেমেন্ট রিমাইন্ডার এবং অটোমেটেড সেটেলমেন্ট সিস্টেম।',
-    sales: 'বিক্রয় ম্যানেজমেন্ট',
-    salesDesc: 'অর্ডার প্রসেস করুন, ডিসকাউন্ট পরিচালনা করুন এবং অঞ্চল জুড়ে বিক্রয় পারফরম্যান্স ট্র্যাক করুন। অফলাইন এবং অনলাইন উভয় বিক্রয় চ্যানেল সাপোর্ট।',
-    notification: 'স্মার্ট নোটিফিকেশন',
-    notificationDesc: 'লো স্টক, পেন্ডিং অর্ডার এবং পেমেন্টের তারিখের জন্য অ্যালার্ট দিয়ে অবগত থাকুন। ইমেইল এবং SMS দিয়ে তাৎক্ষণিক নোটিফিকেশন পান।',
-    servicesTag: 'সার্ভিস',
-    servicesTitle: 'ব্যাপক ডিস্ট্রিবিউশন সলিউশন',
-    servicesSubtitle: 'আধুনিক ডিস্ট্রিবিউশন ব্যবসার জন্য এন্ড-টু-এন্ড সলিউশন',
-    companyMgmt: 'কোম্পানি ম্যানেজমেন্ট',
-    companyMgmtDesc: 'রোল-ভিত্তিক অ্যাক্সেস সহ একটি প্ল্যাটফর্ম থেকে একাধিক কোম্পানি এবং শাখা পরিচালনা করুন। প্রতিটি কোম্পানির জন্য আলাদা সেটিংস এবং ড্যাশবোর্ড।',
-    productCat: 'প্রোডাক্ট ক্যাটালগ',
-    productCatDesc: 'ক্যাটাগরি, ইউনিট এবং ভেরিয়েন্ট দিয়ে প্রোডাক্ট সংগঠিত করুন। এমআরপি এবং হোলসেল প্রাইস ট্র্যাক করুন। প্রতিযোগী বিশ্লেষণ এবং মার্জিন ক্যালকুলেশন।',
-    financial: 'ফাইন্যানশিয়াল ম্যানেজমেন্ট',
-    financialDesc: 'পেমেন্ট হ্যান্ডেল করুন, ক্রেডিট ট্র্যাক করুন, খরচ পরিচালনা করুন এবং আর্থিক রিপোর্ট তৈরি করুন। প্রফিট মার্জিন, লস অ্যানালাইসিস এবং ক্যাশফ্লো ট্র্যাকিং।',
-    stockMgmt: 'স্টক ম্যানেজমেন্ট',
-    stockMgmtDesc: 'স্টক ট্রান্সফার ট্র্যাক করুন, গুদাম পরিচালনা করুন এবং অপ্টিমাল ইনভেন্টরি লেভেল বজায় রাখুন। স্বয়ংক্রিয় স্টক অ্যালার্ট এবং ফাস্ট মুভিং আইটেম ট্র্যাকিং।',
-    reports: 'বিস্তারিত রিপোর্ট',
-    reportsDesc: 'বিক্রয়, স্টক, পেমেন্ট এবং ব্যবসার পারফরম্যান্সের উপর ব্যাপক রিপোর্ট তৈরি করুন। কাস্টম রিপোর্ট, এক্সপোর্ট ফিচার এবং অটোমেটেড শিডিউলড রিপোর্ট।',
-    userMgmt: 'ইউজার ম্যানেজমেন্ট',
-    userMgmtDesc: 'নিরাপদ অ্যাক্সেসের জন্য বিভিন্ন রোল এবং পারমিশন সহ টিম সদস্য পরিচালনা করুন। অ্যাক্টিভিটি লগ এবং লগিন ট্র্যাকিং সহ।',
-    learnMoreLink: 'আরও জানুন',
-    aboutTag: 'আমাদের সম্পর্কে',
-    aboutTitle: 'ডিস্ট্রিবিউশন ম্যানেজমেন্টে বিপ্লব',
-    aboutDesc1: 'ডিএমএস (ডিস্ট্রিবিশন ম্যানেজমেন্ট সিস্টেম) একটি ব্যাপক সফটওয়্যার সলিউশন যা আপনার সম্পূর্ণ ডিস্ট্রিবিউশন প্রক্রিয়া স্ট্রিমলাইন এবং অটোমেট করতে ডিজাইন করা হয়েছে।',
-    aboutDesc2: 'আমাদের প্ল্যাটফর্ম সব আকারের ব্যবসাকে তাদের সাপ্লাই চেইন অপ্টিমাইজ করতে, অপারেশনাল খরচ কমাতে এবং দক্ষতা উন্নত করতে সাহায্য করে।',
-    cloud: 'ক্লাউড-ভিত্তিক প্ল্যাটফর্ম',
-    realtime: 'রিয়েল-টাইম সিঙ্ক্রোনাইজেশন',
-    support: '২৪/৭ গ্রাহক সাপোর্ট',
-    security: 'নিরাপদ ডেটা এনক্রিপশন',
-    ctaTitle: 'আপনার ব্যবসা রূপান্তর করতে প্রস্তুত?',
-    ctaSubtitle: 'আপনার ব্যবসা বৃদ্ধি করতে ইতিমধ্যে ডিএমএস ব্যবহার করে শত শত কোম্পানিতে যোগ দিন।',
-    ctaButton: 'ফ্রি শুরু করুন',
-    ctaContact: 'সেলসে যোগাযোগ করুন',
-    contactTag: 'যোগাযোগ',
-    contactTitle: 'যোগাযোগ করুন',
-    contactSubtitle: 'প্রশ্ন আছে? আমরা আপনার কাছ থেকে শুনতে ভালোবাসব।',
-    address: 'ঠিকানা',
-    phone: 'ফোন',
-    email: 'ইমেইল',
-    hours: 'সময়',
-    addressLine: '১২৩ বিজনেস অ্যাভিনিউ',
-    city: 'ঢাকা, বাংলাদেশ',
-    phone2: '+৮৮০ ৯৮৭৬-৫৪৩২১০',
-    email2: 'info@dms.com',
-    hoursLine: 'সবসময় উপলব্ধ',
-    footerDesc: 'ডিস্ট্রিবিউশন ম্যানেজমেন্ট সিস্টেম - শক্তিশালী টুলস এবং অ্যানালিটিক্স দিয়ে আপনার ব্যবসা স্ট্রিমলাইন করুন।',
-    quickLinks: 'কুইক লিংক',
-    services: 'সার্ভিস',
-    contactInfo: 'যোগাযোগ',
-    footerCompany: 'কোম্পানি ম্যানেজমেন্ট',
-    footerProduct: 'প্রোডাক্ট ক্যাটালগ',
-    footerSales: 'বিক্রয় ট্র্যাকিং',
-    footerPayment: 'পেমেন্ট ম্যানেজমেন্ট',
-    footerReports: 'রিপোর্ট এবং অ্যানালিটিক্স',
-    copyright: '© ২০২৬ ডিএমএস। সর্বস্বত্ব সংরক্ষিত।',
-    privacy: 'গোপনীয়তা নীতি',
-    terms: 'সেবার শর্তাবলী',
-    yearsExp: 'বছরের অভিজ্ঞতা',
+    brandSubtitle: 'ডিস্ট্রিবিউশন স্যুইট',
+    eyebrow: 'ডিস্ট্রিবিউশন ব্যবসা সহজে পরিচালনার স্মার্ট সফটওয়্যার',
+    title: 'আপনার বিক্রয়, স্টক ও পেমেন্ট এক জায়গায় সহজ নিয়ন্ত্রণ',
+    subtitle: 'ডিএমএস দিয়ে প্রতিদিনের অর্ডার, বিক্রয়, রিটেইলার, পণ্য, স্টক ও বকেয়া পেমেন্ট সহজে দেখা এবং পরিচালনা করা যায়। খাতায় হিসাব রাখা, স্টক ভুল হওয়া বা পেমেন্ট মিস করার ঝামেলা কমিয়ে ব্যবসাকে আরও গুছিয়ে চালান।',
+    primaryCta: 'সিস্টেমে প্রবেশ করুন',
+    secondaryCta: 'ফিচার দেখুন',
+    trusted: 'ডিস্ট্রিবিউটর, পাইকারি ব্যবসা, দোকান ও সেলস টিমের জন্য উপযোগী',
+    liveOperations: 'আজকের ব্যবসার চিত্র',
+    liveSales: 'আজকের বিক্রয়',
+    pendingOrders: 'পেন্ডিং অর্ডার',
+    lowStock: 'লো স্টক অ্যালার্ট',
+    collection: 'কালেকশন',
+    dispatchReady: 'ডিসপ্যাচ প্রস্তুত',
+    permissionSecure: 'নিরাপদ ব্যবহার',
+    scannerActive: 'স্মার্ট অ্যালার্ট চালু',
+    metricTables: 'ধরনের তথ্য একসাথে',
+    metricModules: 'প্রয়োজনীয় কাজের টুল',
+    metricSession: 'সহজ অ্যাক্সেস',
+    moduleKicker: 'মূল সুবিধা',
+    modulesTitle: 'ব্যবসার প্রতিটি গুরুত্বপূর্ণ কাজ সহজ করুন',
+    modulesSubtitle: 'কোন পণ্য কত আছে, কোন রিটেইলার কত বাকি, আজ কত বিক্রয় হলো, কোন অর্ডার পেন্ডিং - সব তথ্য পরিষ্কারভাবে এক জায়গায় দেখুন।',
+    openModule: 'দেখুন',
+    closeModule: 'কম দেখুন',
+    workflowKicker: 'কীভাবে কাজ করে',
+    workflowTitle: 'প্রতিদিনের কাজ আরও সহজ ও দ্রুত',
+    workflowSubtitle: 'পণ্য যোগ করুন, অর্ডার নিন, বিক্রয় করুন, পেমেন্ট রেকর্ড করুন এবং রিপোর্ট দেখে সিদ্ধান্ত নিন - সবকিছু একই সিস্টেমে।',
+    securityTitle: 'কেন এই সিস্টেম আপনার ব্যবসার জন্য দরকার',
+    securitySubtitle: 'ডিএমএস আপনার ব্যবসার হিসাব গুছিয়ে রাখে, ভুল কমায়, সময় বাঁচায় এবং মালিক/ম্যানেজারকে দ্রুত সিদ্ধান্ত নিতে সাহায্য করে।',
+    ctaKicker: 'শুরু করুন',
+    ctaTitle: 'আপনার ব্যবসা আরও গুছিয়ে চালাতে প্রস্তুত?',
+    ctaSubtitle: 'লগ ইন করে আজকের বিক্রয়, স্টক, পেমেন্ট, অর্ডার এবং রিপোর্ট এক জায়গায় দেখুন।',
+    contactKicker: 'যোগাযোগ',
+    contactTitle: 'সাপোর্ট বা ডেমোর জন্য যোগাযোগ করুন',
+    contactSubtitle: 'আপনার ব্যবসার জন্য কীভাবে ব্যবহার করবেন, সেটআপ বা ট্রেনিং দরকার হলে আমাদের সাথে কথা বলুন।',
+    location: 'ঢাকা, বাংলাদেশ',
+    footer: 'ডিএমএস আপনার ব্যবসার হিসাব সহজ, পরিষ্কার এবং দ্রুত বোঝার মতো করে।',
+    rights: '© ২০২৬ ডিএমএস। সর্বস্বত্ব সংরক্ষিত।'
   },
   en: {
-    topBarPhone: '+880 1234-567890',
-    topBarEmail: 'support@dms.com',
-    topBarHours: '24/7 Support',
-    navHome: 'Home',
-    navFeatures: 'Features',
-    navServices: 'Services',
-    navAbout: 'About',
-    navContact: 'Contact',
-    signIn: 'Sign In',
-    getStarted: 'Login',
+    nav: ['Home', 'Benefits', 'How It Works', 'Why DMS', 'Contact'],
+    login: 'Sign In',
+    signUp: 'Sign Up',
+    register: 'Sign Up',
     demo: 'Demo',
-    heroTitle: 'Distribution Management',
-    heroTitleSpan: 'System',
-    heroSubtitle: 'Streamline your distribution network with powerful inventory management, real-time tracking, and automated ordering. Grow your business with confidence.',
-    startFree: 'Start Free Trial',
-    learnMore: 'Learn More',
-    learnMoreDesc: 'Click to learn more details',
-    companies: 'Companies',
-    retailers: 'Retailers',
-    uptime: 'Uptime',
-    featuresTitle: 'Everything You Need',
-    featuresSubtitle: 'Powerful tools to manage inventory, track sales, and grow your business',
-    featuresTag: 'Features',
-    analytics: 'Real-time Analytics',
-    analyticsDesc: 'Get instant insights into your sales, inventory, and performance with comprehensive dashboards. Analyze daily sales trends, top products, and customer behavior with advanced reporting tools.',
-    inventory: 'Inventory Management',
-    inventoryDesc: 'Track stock levels across all warehouses and retail points with automated reorder alerts. Manage multi-warehouse inventory, stock transfers, and optimize inventory levels with smart forecasting.',
-    retailer: 'Retailer Network',
-    retailerDesc: 'Manage your entire retailer network efficiently with dedicated profiles and order history. Track credit limits, payment status, and performance metrics for each retailer in your distribution network.',
-    payment: 'Payment Tracking',
-    paymentDesc: 'Track all payments, manage credit limits, and handle settlements with ease. Automated payment reminders and settlement system for seamless financial operations.',
-    sales: 'Sales Management',
-    salesDesc: 'Process orders, manage discounts, and track sales performance across regions. Support for both offline and online sales channels with real-time order processing.',
-    notification: 'Smart Notifications',
-    notificationDesc: 'Stay informed with alerts for low stock, pending orders, and payment due dates. Receive instant notifications via email and SMS for critical business updates.',
-    servicesTag: 'Services',
-    servicesTitle: 'Comprehensive Distribution Solutions',
-    servicesSubtitle: 'End-to-end solutions for modern distribution businesses',
-    companyMgmt: 'Company Management',
-    companyMgmtDesc: 'Manage multiple companies and branches from a single platform with role-based access. Separate settings and dashboards for each company with complete data isolation.',
-    productCat: 'Product Catalog',
-    productCatDesc: 'Organize products with categories, units, and variants. Track MRP and wholesale prices. Competitive analysis and margin calculation tools included.',
-    financial: 'Financial Management',
-    financialDesc: 'Handle payments, track credits, manage expenses, and generate financial reports. Profit margin analysis, loss tracking, and comprehensive cashflow management.',
-    stockMgmt: 'Stock Management',
-    stockMgmtDesc: 'Track stock transfers, manage warehouses, and maintain optimal inventory levels. Automated stock alerts and fast-moving item tracking for better inventory control.',
-    reports: 'Detailed Reports',
-    reportsDesc: 'Generate comprehensive reports on sales, stock, payments, and business performance. Custom report builder, export features, and automated scheduled report delivery.',
-    userMgmt: 'User Management',
-    userMgmtDesc: 'Manage team members with different roles and permissions for secure access. Activity logging and login tracking for complete security and accountability.',
-    learnMoreLink: 'Learn More',
-    aboutTag: 'About Us',
-    aboutTitle: 'Revolutionizing Distribution Management',
-    aboutDesc1: 'DMS (Distribution Management System) is a comprehensive software solution designed to streamline and automate your entire distribution process. From managing inventory to tracking payments, we\'ve got you covered.',
-    aboutDesc2: 'Our platform helps businesses of all sizes optimize their supply chain, reduce operational costs, and improve efficiency. With real-time analytics and intuitive dashboards, you can make data-driven decisions instantly.',
-    cloud: 'Cloud-based platform',
-    realtime: 'Real-time synchronization',
-    support: '24/7 customer support',
-    security: 'Secure data encryption',
-    ctaTitle: 'Ready to Transform Your Business?',
-    ctaSubtitle: 'Join hundreds of companies already using DMS to grow their business.',
-    ctaButton: 'Get Started Free',
-    ctaContact: 'Contact Sales',
-    contactTag: 'Contact',
-    contactTitle: 'Get In Touch',
-    contactSubtitle: 'Have questions? We\'d love to hear from you.',
-    address: 'Address',
-    phone: 'Phone',
-    email: 'Email',
-    hours: 'Hours',
-    addressLine: '123 Business Avenue',
-    city: 'Dhaka, Bangladesh',
-    phone2: '+880 9876-543210',
-    email2: 'info@dms.com',
-    hoursLine: 'Always Available',
-    footerDesc: 'Distribution Management System - Streamline your business with powerful tools and analytics.',
-    quickLinks: 'Quick Links',
-    services: 'Services',
-    contactInfo: 'Contact',
-    footerCompany: 'Company Management',
-    footerProduct: 'Product Catalog',
-    footerSales: 'Sales Tracking',
-    footerPayment: 'Payment Management',
-    footerReports: 'Reports & Analytics',
-    copyright: '© 2026 DMS. All rights reserved.',
-    privacy: 'Privacy Policy',
-    terms: 'Terms of Service',
-    yearsExp: 'Years of Experience',
+    brandSubtitle: 'Distribution Suite',
+    eyebrow: 'Smart software for easier distribution business management',
+    title: 'Manage sales, stock and payments from one simple place',
+    subtitle: 'DMS helps you handle daily orders, sales, retailers, products, stock and due payments without messy notebooks or scattered files. See what is happening in your business, reduce mistakes and make faster decisions.',
+    primaryCta: 'Enter System',
+    secondaryCta: 'Explore Features',
+    trusted: 'Made for distributors, wholesalers, shops and field sales teams',
+    liveOperations: 'Today’s Business Snapshot',
+    liveSales: 'Today Sales',
+    pendingOrders: 'Pending Orders',
+    lowStock: 'Low Stock Alerts',
+    collection: 'Collection',
+    dispatchReady: 'Dispatch ready',
+    permissionSecure: 'Safe access',
+    scannerActive: 'Smart alerts on',
+    metricTables: 'types of business data',
+    metricModules: 'daily work tools',
+    metricSession: 'easy access',
+    moduleKicker: 'Key Benefits',
+    modulesTitle: 'Make every important business task easier',
+    modulesSubtitle: 'Know what products are available, who owes money, how much you sold today and which orders need attention - all from one clean screen.',
+    openModule: 'View details',
+    closeModule: 'Show less',
+    workflowKicker: 'How It Works',
+    workflowTitle: 'A simpler way to run daily distribution work',
+    workflowSubtitle: 'Add products, take orders, make sales, record payments and check reports in the same system.',
+    securityTitle: 'Why your business needs DMS',
+    securitySubtitle: 'DMS keeps your business organized, reduces mistakes, saves time and helps owners or managers make better decisions quickly.',
+    ctaKicker: 'Get Started',
+    ctaTitle: 'Ready to run your business in a more organized way?',
+    ctaSubtitle: 'Login to see sales, stock, payments, orders and reports in one place.',
+    contactKicker: 'Contact',
+    contactTitle: 'Contact us for support or demo',
+    contactSubtitle: 'Talk to us if you need setup help, training or guidance for using DMS in your business.',
+    location: 'Dhaka, Bangladesh',
+    footer: 'DMS makes your business records simple, clear and easy to understand.',
+    rights: '© 2026 DMS. All rights reserved.'
   }
 };
 
+const moduleContent = {
+  bn: [
+    { icon: Building2, title: 'কোম্পানি ও শাখা', text: 'আপনার কোম্পানি, শাখা এবং ব্যবসার প্রয়োজনীয় তথ্য সুন্দরভাবে সংরক্ষণ করুন।', metric: 'সব ব্যবসা একসাথে', details: ['একাধিক কোম্পানি বা শাখার তথ্য আলাদা করে রাখা যায়।', 'ঠিকানা, যোগাযোগ ও ব্যবসার পরিচয় সহজে আপডেট করা যায়।', 'মালিক বা ম্যানেজার এক জায়গা থেকেই সবকিছু দেখতে পারে।'] },
+    { icon: Package, title: 'পণ্য তালিকা', text: 'কোন পণ্য কত দামে কিনেছেন, কত দামে বিক্রি করবেন এবং কত স্টক আছে সহজে দেখুন।', metric: 'পণ্য সহজে খুঁজুন', details: ['পণ্যের নাম, ক্যাটাগরি, ইউনিট ও দাম একসাথে থাকে।', 'স্টক কমে গেলে আগে থেকেই বোঝা যায়।', 'বিক্রির সময় পণ্য খুঁজতে সময় কম লাগে।'] },
+    { icon: Users, title: 'রিটেইলার/গ্রাহক', text: 'প্রতিটি রিটেইলারের তথ্য, অর্ডার, বকেয়া এবং লেনদেনের ইতিহাস এক জায়গায় রাখুন।', metric: 'গ্রাহক হিসাব', details: ['কোন রিটেইলার কত অর্ডার করেছে তা দেখা যায়।', 'কার কত টাকা বাকি আছে পরিষ্কার বোঝা যায়।', 'ফোন, ঠিকানা ও ব্যবসার তথ্য দ্রুত খুঁজে পাওয়া যায়।'] },
+    { icon: ShoppingCart, title: 'অর্ডার ও বিক্রয়', text: 'নতুন অর্ডার নিন, বিক্রয় রেকর্ড করুন এবং প্রয়োজনে দ্রুত ইনভয়েস তৈরি করুন।', metric: 'দ্রুত বিক্রয়', details: ['অর্ডার থেকে বিক্রয় পর্যন্ত কাজ সহজ হয়।', 'ডিসকাউন্ট ও মোট বিল দ্রুত হিসাব করা যায়।', 'প্রতিদিন কত বিক্রয় হলো সাথে সাথে দেখা যায়।'] },
+    { icon: CreditCard, title: 'পেমেন্ট ও বকেয়া', text: 'কে কত টাকা দিয়েছে, কার কত বাকি আছে এবং আজ কত কালেকশন হলো পরিষ্কারভাবে দেখুন।', metric: 'বকেয়া নিয়ন্ত্রণ', details: ['ক্যাশ, বকেয়া ও কালেকশন আলাদা করে বোঝা যায়।', 'রিটেইলারভিত্তিক পেমেন্ট ইতিহাস থাকে।', 'বকেয়া আদায়ের সময় ভুলে যাওয়ার ঝুঁকি কমে।'] },
+    { icon: Warehouse, title: 'স্টক হিসাব', text: 'কোন পণ্য শেষ হয়ে যাচ্ছে, কোন পণ্য বেশি আছে এবং স্টক কোথায় কম - সহজে বুঝুন।', metric: 'স্টক সতর্কতা', details: ['নতুন স্টক যোগ বা বিক্রির পর স্টক আপডেট থাকে।', 'লো স্টক পণ্য দ্রুত নজরে আসে।', 'স্টক ভুল হওয়া বা পণ্য শেষ হয়ে যাওয়ার সমস্যা কমে।'] },
+    { icon: FileText, title: 'সহজ রিপোর্ট', text: 'দিন, মাস বা সময় অনুযায়ী বিক্রয়, পেমেন্ট ও স্টকের সারাংশ দেখে সিদ্ধান্ত নিন।', metric: 'ব্যবসার সারাংশ', details: ['আজ, এই মাস বা নির্দিষ্ট সময়ের রিপোর্ট দেখা যায়।', 'কোন পণ্য বেশি বিক্রি হচ্ছে বোঝা যায়।', 'ব্যবসার লাভ-ক্ষতি বুঝতে হিসাব সহজ হয়।'] },
+    { icon: Bell, title: 'স্মার্ট অ্যালার্ট', text: 'লো স্টক, পেন্ডিং অর্ডার বা গুরুত্বপূর্ণ কাজ যেন চোখ এড়িয়ে না যায়।', metric: 'সময়মতো মনে করানো', details: ['পেন্ডিং অর্ডার চোখে পড়ে।', 'লো স্টক হলে দ্রুত ব্যবস্থা নেওয়া যায়।', 'গুরুত্বপূর্ণ কাজ সময়মতো মনে করিয়ে দেয়।'] },
+    { icon: Settings, title: 'টিম নিয়ন্ত্রণ', text: 'কর্মচারী বা টিম মেম্বার কে কোন কাজ দেখতে বা করতে পারবে সহজে নিয়ন্ত্রণ করুন।', metric: 'নিরাপদ ব্যবহার', details: ['সবাইকে সব তথ্য দেখানোর দরকার হয় না।', 'সেলস, ম্যানেজার ও অ্যাডমিনের কাজ আলাদা করা যায়।', 'ব্যবসার গুরুত্বপূর্ণ তথ্য নিরাপদ থাকে।'] }
+  ],
+  en: [
+    { icon: Building2, title: 'Company & Branches', text: 'Keep your company, branches and basic business information organized in one place.', metric: 'All business in one', details: ['Keep multiple companies or branches separated clearly.', 'Update address, contact and business identity whenever needed.', 'Owners or managers can see everything from one place.'] },
+    { icon: Package, title: 'Product List', text: 'See purchase price, selling price and available stock for every product without confusion.', metric: 'Find products fast', details: ['Store product name, category, unit and price together.', 'Understand low stock before it becomes a problem.', 'Find products quickly while making sales.'] },
+    { icon: Users, title: 'Retailers & Customers', text: 'Store retailer details, order history, dues and transactions in a clean customer record.', metric: 'Customer account', details: ['See how much each retailer ordered.', 'Know clearly who still owes money.', 'Find phone, address and business details quickly.'] },
+    { icon: ShoppingCart, title: 'Orders & Sales', text: 'Take new orders, record sales and create invoices quickly when needed.', metric: 'Faster selling', details: ['Move from order to sale more easily.', 'Calculate discounts and total bills faster.', 'See daily sales immediately.'] },
+    { icon: CreditCard, title: 'Payments & Dues', text: 'Know who paid, who still owes money and how much you collected today.', metric: 'Due control', details: ['Understand cash, dues and collections separately.', 'Keep payment history for each retailer.', 'Reduce the risk of forgetting due collection.'] },
+    { icon: Warehouse, title: 'Stock Tracking', text: 'Understand which products are running low, which products are available and where stock needs attention.', metric: 'Stock alerts', details: ['Stock stays updated after purchase or sale.', 'Low-stock products become easier to notice.', 'Reduce mistakes and avoid suddenly running out of products.'] },
+    { icon: FileText, title: 'Simple Reports', text: 'Check daily or monthly sales, payment and stock summaries to make better decisions.', metric: 'Business summary', details: ['View today, monthly or custom-period reports.', 'Understand which products are selling more.', 'Make profit and loss tracking easier.'] },
+    { icon: Bell, title: 'Smart Alerts', text: 'Never miss low stock, pending orders or important business tasks that need action.', metric: 'Timely reminders', details: ['Pending orders stay visible.', 'Take action quickly when stock is low.', 'Get reminded about important business tasks.'] },
+    { icon: Settings, title: 'Team Control', text: 'Decide what each staff member can see or do, so your business data stays safe.', metric: 'Safe use', details: ['Not everyone needs to see every business record.', 'Separate work for sales staff, managers and admins.', 'Keep important business information safer.'] }
+  ]
+};
+
+const workflowContent = {
+  bn: [
+    { icon: Layers3, title: 'তথ্য যোগ করুন', text: 'পণ্য, রিটেইলার, কোম্পানি এবং টিমের তথ্য একবার গুছিয়ে যোগ করুন।' },
+    { icon: Route, title: 'প্রতিদিন কাজ করুন', text: 'অর্ডার নিন, বিক্রয় করুন, স্টক দেখুন এবং পেমেন্ট লিখে রাখুন।' },
+    { icon: FileText, title: 'হিসাব পরিষ্কার রাখুন', text: 'প্রতিটি বিক্রয়, কালেকশন ও বকেয়া সহজে খুঁজে পাওয়ার মতো করে জমা থাকে।' },
+    { icon: BarChart3, title: 'সিদ্ধান্ত নিন', text: 'রিপোর্ট দেখে বুঝুন কোন পণ্য চলছে, কোথায় বকেয়া বেশি এবং কী করতে হবে।' }
+  ],
+  en: [
+    { icon: Layers3, title: 'Add Your Data', text: 'Add products, retailers, company details and team information once.' },
+    { icon: Route, title: 'Work Daily', text: 'Take orders, make sales, check stock and record payments every day.' },
+    { icon: FileText, title: 'Keep Accounts Clear', text: 'Every sale, collection and due amount stays easy to find whenever you need it.' },
+    { icon: BarChart3, title: 'Make Decisions', text: 'Use reports to see what is selling, where money is due and what needs action.' }
+  ]
+};
+
+const securityContent = {
+  bn: [
+    'খাতার হিসাব বা Excel ফাইলের ঝামেলা কমে যায়',
+    'স্টক কমে গেলে বা অর্ডার পেন্ডিং থাকলে দ্রুত বোঝা যায়',
+    'রিটেইলারের বকেয়া এবং পেমেন্ট পরিষ্কারভাবে দেখা যায়',
+    'মালিক, ম্যানেজার ও সেলস টিম একই তথ্য দেখে কাজ করতে পারে',
+    'প্রতিদিনের বিক্রয় ও কালেকশন বুঝতে আলাদা হিসাব করতে হয় না',
+    'ব্যবসা বড় হলে তথ্য হারানো বা ভুল হওয়ার ঝুঁকি কমে'
+  ],
+  en: [
+    'Reduce notebook or spreadsheet confusion',
+    'Notice low stock and pending orders faster',
+    'See retailer dues and payment status clearly',
+    'Owners, managers and sales teams can work from the same information',
+    'Understand daily sales and collections without extra manual work',
+    'Lower the chance of missing or incorrect business records as you grow'
+  ]
+};
+
 export default function Landing() {
-  const [language, setLanguage] = useState(() => {
-    return localStorage.getItem('dms_language') || 'bn';
-  });
+  const [language, setLanguage] = useState(() => localStorage.getItem('dms_language') || 'bn');
   const [scrolled, setScrolled] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-
-  const t = translations[language];
+  const [expandedModule, setExpandedModule] = useState(null);
+  const [activeSection, setActiveSection] = useState('home');
+  const t = copy[language];
+  const modules = moduleContent[language];
+  const workflow = workflowContent[language];
+  const security = securityContent[language];
 
   useEffect(() => {
     localStorage.setItem('dms_language', language);
+    setExpandedModule(null);
   }, [language]);
 
   useEffect(() => {
-    const handleScroll = () => {
-      setScrolled(window.scrollY > 50);
-    };
+    const handleScroll = () => setScrolled(window.scrollY > 32);
 
-    const observerOptions = {
-      root: null,
-      rootMargin: '0px',
-      threshold: 0.1
+    const sectionIds = ['home', 'modules', 'workflow', 'security', 'contact'];
+    const trackActiveSection = () => {
+      const viewportCenter = window.scrollY + window.innerHeight / 2;
+      let current = 'home';
+      for (const id of sectionIds) {
+        const el = document.getElementById(id);
+        if (el && el.offsetTop <= viewportCenter) current = id;
+      }
+      setActiveSection(current);
     };
 
     const observer = new IntersectionObserver((entries) => {
-      entries.forEach(entry => {
+      entries.forEach((entry) => {
         if (entry.isIntersecting) {
-          entry.target.classList.add('visible');
+          entry.target.style.opacity = '1';
+          entry.target.style.transform = 'translateY(0)';
         }
       });
-    }, observerOptions);
+    }, { threshold: 0.16 });
 
-    const animatedElements = document.querySelectorAll('.animate-on-scroll');
-    animatedElements.forEach(el => observer.observe(el));
-
+    document.querySelectorAll('.reveal').forEach((element) => observer.observe(element));
     window.addEventListener('scroll', handleScroll);
+    window.addEventListener('scroll', trackActiveSection);
     handleScroll();
-    
+    trackActiveSection();
+
     return () => {
       window.removeEventListener('scroll', handleScroll);
-      animatedElements.forEach(el => observer.unobserve(el));
+      window.removeEventListener('scroll', trackActiveSection);
+      observer.disconnect();
     };
   }, []);
 
-  const toggleLanguage = () => {
-    setLanguage(prev => prev === 'en' ? 'bn' : 'en');
-  };
+  const navTargets = ['home', 'modules', 'workflow', 'security', 'contact'];
 
   return (
-    <div className="landing-page">
-      <div className="bg-shapes">
-        <div className="shape shape-1"></div>
-        <div className="shape shape-2"></div>
-        <div className="shape shape-3"></div>
-        <div className="shape shape-4"></div>
-        <div className="shape shape-5"></div>
-      </div>
+    <main className="landing-page">
+      <div className="ambient ambient-one"></div>
+      <div className="ambient ambient-two"></div>
+      <div className="ambient ambient-three"></div>
+      <div className="grid-glow"></div>
 
-      <header className={`navbar ${scrolled ? 'scrolled' : ''}`}>
-        <div className="container">
-          <div className="navbar-content">
-            <Link to="/" className="navbar-brand">
-              <span className="brand-icon">
-                <Package size={24} />
-              </span>
-              <span className="brand-text">
-                <span className="live-indicator"><Circle size={10} fill="#fff" /></span>
-                DMS
-              </span>
-            </Link>
-            
-            <nav className={`navbar-nav ${mobileMenuOpen ? 'mobile-open' : ''}`}>
-              <a href="#home" className="nav-link" onClick={() => setMobileMenuOpen(false)}>{t.navHome}</a>
-              <a href="#features" className="nav-link" onClick={() => setMobileMenuOpen(false)}>{t.navFeatures}</a>
-              <a href="#services" className="nav-link" onClick={() => setMobileMenuOpen(false)}>{t.navServices}</a>
-              <a href="#about" className="nav-link" onClick={() => setMobileMenuOpen(false)}>{t.navAbout}</a>
-              <a href="#contact" className="nav-link" onClick={() => setMobileMenuOpen(false)}>{t.navContact}</a>
-            </nav>
+      <header className={`site-nav ${scrolled ? 'is-scrolled' : ''}`}>
+        <div className="landing-container nav-inner">
+          <Link to="/" className="brand" onClick={() => setMobileMenuOpen(false)}>
+            <span className="brand-mark"><Package size={24} /></span>
+            <span><strong>DMS</strong><small>{t.brandSubtitle}</small></span>
+          </Link>
 
-            <div className="navbar-actions">
-              <button className="lang-toggle-nav" onClick={toggleLanguage}>
-                {language === 'en' ? 'বাংলা' : 'English'}
-              </button>
-              <Link to="/demo" className="btn btn-outline">{t.demo}</Link>
-              <Link to="/login" className="btn btn-primary">{t.getStarted}</Link>
-            </div>
+          <nav className={`nav-links ${mobileMenuOpen ? 'is-open' : ''}`}>
+            {t.nav.map((item, index) => (
+              <a key={item} href={`#${navTargets[index]}`} className={activeSection === navTargets[index] ? 'active' : ''} onClick={() => setMobileMenuOpen(false)}>{item}</a>
+            ))}
+          </nav>
 
-            <button className="mobile-menu-btn" onClick={() => setMobileMenuOpen(!mobileMenuOpen)}>
-              {mobileMenuOpen ? <X size={24} /> : <Menu size={24} />}
+          <div className="nav-actions">
+            <button className="language-pill" onClick={() => setLanguage(language === 'en' ? 'bn' : 'en')}>
+              <Globe2 size={15} /> {language === 'en' ? 'বাংলা' : 'EN'}
             </button>
+            <Link to="/register" className="ghost-link">{t.signUp}</Link>
+            <Link to="/demo" className="ghost-link">{t.demo}</Link>
+            <Link to="/login" className="nav-cta">{t.login}</Link>
           </div>
+
+          <button className="menu-button" onClick={() => setMobileMenuOpen((open) => !open)} aria-label="Toggle menu">
+            {mobileMenuOpen ? <X size={24} /> : <Menu size={24} />}
+          </button>
         </div>
       </header>
 
-      <section id="home" className="hero">
-        <div className="container">
-          <div className="hero-content">
-            <div className="hero-text">
-              <h1 className="hero-title">
-                {t.heroTitle}<br />
-                <span className="highlight">{t.heroTitleSpan}</span>
-              </h1>
-              <p className="hero-subtitle">
-                {t.heroSubtitle}
-              </p>
-              <div className="hero-actions">
-                <Link to="/login" className="btn btn-primary btn-lg">
-                  <span>{t.startFree}</span>
-                  <ArrowRight size={18} className="btn-arrow" />
-                </Link>
-                <a href="#features" className="btn btn-outline btn-lg">{t.learnMore}</a>
-              </div>
-              <div className="hero-stats">
-                <div className="stat">
-                  <span className="stat-number" data-count="500">500+</span>
-                  <span className="stat-label">{t.companies}</span>
-                </div>
-                <div className="stat">
-                  <span className="stat-number" data-count="50">50K+</span>
-                  <span className="stat-label">{t.retailers}</span>
-                </div>
-                <div className="stat">
-                  <span className="stat-number">99.9%</span>
-                  <span className="stat-label">{t.uptime}</span>
-                </div>
-              </div>
+      <section id="home" className="hero-section">
+        <div className="landing-container hero-grid">
+          <div className="hero-copy reveal" style={{ opacity: 1, transform: 'translateY(0)' }}>
+            <div className="eyebrow"><Sparkles size={16} /> {t.eyebrow}</div>
+            <h1>{t.title}</h1>
+            <p className="hero-subtitle">{t.subtitle}</p>
+            <div className="hero-actions">
+              <Link to="/register" className="register-button" onClick={() => sessionStorage.setItem('fromLanding', 'true')}>
+                {t.register} <ArrowRight size={18} />
+              </Link>
+              <Link to="/login" className="primary-button" onClick={() => sessionStorage.setItem('fromLanding', 'true')}>
+                {t.primaryCta} <ArrowRight size={18} />
+              </Link>
+              <a href="#modules" className="secondary-button">{t.secondaryCta}</a>
             </div>
-            <div className="hero-image">
-              <div className="hero-card">
-                <div className="card-header">
-                  <span className="dot red"></span>
-                  <span className="dot yellow"></span>
-                  <span className="dot green"></span>
-                </div>
-                <div className="card-body">
-                  <div className="mock-dashboard">
-                    <div className="mock-sidebar"></div>
-                    <div className="mock-content">
-                      <div className="mock-chart">
-                        <div className="chart-bar" style={{height: '60%'}}></div>
-                        <div className="chart-bar" style={{height: '80%'}}></div>
-                        <div className="chart-bar" style={{height: '45%'}}></div>
-                        <div className="chart-bar" style={{height: '90%'}}></div>
-                        <div className="chart-bar" style={{height: '70%'}}></div>
-                        <div className="chart-bar" style={{height: '85%'}}></div>
-                      </div>
-                      <div className="mock-stats-row">
-                        <div className="mock-stat"></div>
-                        <div className="mock-stat"></div>
-                        <div className="mock-stat"></div>
-                      </div>
-                    </div>
+            <p className="trusted-line"><CheckCircle2 size={18} /> {t.trusted}</p>
+            <div className="metric-strip">
+              <span><strong>{language === 'bn' ? 'সব' : 'All'}</strong> {t.metricTables}</span>
+              <span><strong>9</strong> {t.metricModules}</span>
+              <span><strong>24/7</strong> {t.metricSession}</span>
+            </div>
+          </div>
+
+          <div className="hero-visual reveal" style={{ opacity: 1, transform: 'translateY(0)' }}>
+            <div className="orbit orbit-a"></div>
+            <div className="orbit orbit-b"></div>
+            <div className="dashboard-shell">
+              <div className="dashboard-topbar">
+                <span></span><span></span><span></span>
+                <b>{t.liveOperations}</b>
+              </div>
+              <div className="dashboard-body">
+                <aside className="dash-sidebar">
+                  {[Package, Users, ShoppingCart, CreditCard, Warehouse].map((Icon, index) => <Icon key={index} size={18} />)}
+                </aside>
+                <div className="dash-main">
+                  <div className="dash-kpis">
+                    <div><small>{t.liveSales}</small><strong>৳ 8.42L</strong></div>
+                    <div><small>{t.collection}</small><strong>৳ 4.18L</strong></div>
+                  </div>
+                  <div className="chart-card">
+                    {[58, 82, 46, 92, 68, 76, 54, 88].map((height, index) => (
+                      <span key={index} style={{ height: `${height}%`, animationDelay: `${index * 0.14}s` }}></span>
+                    ))}
+                  </div>
+                  <div className="signal-list">
+                    <div><Bell size={17} /><span>{t.pendingOrders}</span><strong>37</strong></div>
+                    <div><Zap size={17} /><span>{t.lowStock}</span><strong>12</strong></div>
+                    <div><Truck size={17} /><span>{t.dispatchReady}</span><strong>64%</strong></div>
                   </div>
                 </div>
               </div>
             </div>
+            <div className="floating-card card-one"><ShieldCheck size={18} /> {t.permissionSecure}</div>
+            <div className="floating-card card-two"><Circle size={10} fill="currentColor" /> {t.scannerActive}</div>
           </div>
         </div>
       </section>
 
-      <section id="features" className="features">
-        <div className="features-bg-shapes">
-          <div className="feature-shape feature-shape-1"></div>
-          <div className="feature-shape feature-shape-2"></div>
-          <div className="feature-shape feature-shape-3"></div>
-        </div>
-        <div className="container">
-          <div className="section-header animate-on-scroll" id="features">
-            <span className="section-tag"><Circle size={10} fill="#fff" className="section-tag-dot" /> {t.featuresTag}</span>
-            <h2 className="section-title">{t.featuresTitle}</h2>
-            <p className="section-subtitle">{t.featuresSubtitle}</p>
+      <section id="modules" className="section-block">
+        <div className="landing-container">
+          <div className="section-heading reveal">
+            <span className="section-kicker">{t.moduleKicker}</span>
+            <h2>{t.modulesTitle}</h2>
+            <p>{t.modulesSubtitle}</p>
           </div>
-          
-          <div className="features-grid">
-            <div className="feature-card animate-on-scroll" id="feature-1">
-              <div className="feature-icon"><BarChart3 size={48} /></div>
-              <h3>{t.analytics}</h3>
-              <p>{t.analyticsDesc}</p>
-              <a href="#services" className="feature-learn-more">
-                {t.learnMoreLink} <ArrowRight size={14} />
-              </a>
-              <div className="feature-card-hover">
-                <BarChart3 size={120} />
-              </div>
-            </div>
-            
-            <div className="feature-card animate-on-scroll" id="feature-2">
-              <div className="feature-icon"><Warehouse size={48} /></div>
-              <h3>{t.inventory}</h3>
-              <p>{t.inventoryDesc}</p>
-              <a href="#services" className="feature-learn-more">
-                {t.learnMoreLink} <ArrowRight size={14} />
-              </a>
-              <div className="feature-card-hover">
-                <Warehouse size={120} />
-              </div>
-            </div>
-            
-            <div className="feature-card animate-on-scroll" id="feature-3">
-              <div className="feature-icon"><Users size={48} /></div>
-              <h3>{t.retailer}</h3>
-              <p>{t.retailerDesc}</p>
-              <a href="#services" className="feature-learn-more">
-                {t.learnMoreLink} <ArrowRight size={14} />
-              </a>
-              <div className="feature-card-hover">
-                <Users size={120} />
-              </div>
-            </div>
-            
-            <div className="feature-card animate-on-scroll" id="feature-4">
-              <div className="feature-icon"><CreditCard size={48} /></div>
-              <h3>{t.payment}</h3>
-              <p>{t.paymentDesc}</p>
-              <a href="#services" className="feature-learn-more">
-                {t.learnMoreLink} <ArrowRight size={14} />
-              </a>
-              <div className="feature-card-hover">
-                <CreditCard size={120} />
-              </div>
-            </div>
-            
-            <div className="feature-card animate-on-scroll" id="feature-5">
-              <div className="feature-icon"><ShoppingCart size={48} /></div>
-              <h3>{t.sales}</h3>
-              <p>{t.salesDesc}</p>
-              <a href="#services" className="feature-learn-more">
-                {t.learnMoreLink} <ArrowRight size={14} />
-              </a>
-              <div className="feature-card-hover">
-                <ShoppingCart size={120} />
-              </div>
-            </div>
-            
-            <div className="feature-card animate-on-scroll" id="feature-6">
-              <div className="feature-icon"><Bell size={48} /></div>
-              <h3>{t.notification}</h3>
-              <p>{t.notificationDesc}</p>
-              <a href="#services" className="feature-learn-more">
-                {t.learnMoreLink} <ArrowRight size={14} />
-              </a>
-              <div className="feature-card-hover">
-                <Bell size={120} />
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
+          <div className="module-grid">
+            {modules.map(({ icon: Icon, title, text, metric, details }, index) => {
+              const isExpanded = expandedModule === index;
 
-      <section id="services" className="services">
-        <div className="container">
-          <div className="section-header animate-on-scroll" id="services">
-            <span className="section-tag">{t.servicesTag}</span>
-            <h2 className="section-title">{t.servicesTitle}</h2>
-            <p className="section-subtitle">{t.servicesSubtitle}</p>
-          </div>
-          
-          <div className="services-grid">
-            <div className="service-card">
-              <div className="service-image">
-                <Building2 size={70} className="service-icon-lucide" />
-                <div className="service-shine"></div>
-              </div>
-              <div className="service-content">
-                <h3>{t.companyMgmt}</h3>
-                <p>{t.companyMgmtDesc}</p>
-                <Link to="/login" className="service-link">
-                  {t.learnMoreLink} <ChevronRight size={16} />
-                </Link>
-              </div>
-            </div>
-            
-            <div className="service-card">
-              <div className="service-image">
-                <Package size={70} className="service-icon-lucide" />
-                <div className="service-shine"></div>
-              </div>
-              <div className="service-content">
-                <h3>{t.productCat}</h3>
-                <p>{t.productCatDesc}</p>
-                <Link to="/login" className="service-link">
-                  {t.learnMoreLink} <ChevronRight size={16} />
-                </Link>
-              </div>
-            </div>
-            
-            <div className="service-card">
-              <div className="service-image">
-                <CreditCard size={70} className="service-icon-lucide" />
-                <div className="service-shine"></div>
-              </div>
-              <div className="service-content">
-                <h3>{t.financial}</h3>
-                <p>{t.financialDesc}</p>
-                <Link to="/login" className="service-link">
-                  {t.learnMoreLink} <ChevronRight size={16} />
-                </Link>
-              </div>
-            </div>
-            
-            <div className="service-card">
-              <div className="service-image">
-                <Warehouse size={70} className="service-icon-lucide" />
-                <div className="service-shine"></div>
-              </div>
-              <div className="service-content">
-                <h3>{t.stockMgmt}</h3>
-                <p>{t.stockMgmtDesc}</p>
-                <Link to="/login" className="service-link">
-                  {t.learnMoreLink} <ChevronRight size={16} />
-                </Link>
-              </div>
-            </div>
-            
-            <div className="service-card">
-              <div className="service-image">
-                <FileText size={70} className="service-icon-lucide" />
-                <div className="service-shine"></div>
-              </div>
-              <div className="service-content">
-                <h3>{t.reports}</h3>
-                <p>{t.reportsDesc}</p>
-                <Link to="/login" className="service-link">
-                  {t.learnMoreLink} <ChevronRight size={16} />
-                </Link>
-              </div>
-            </div>
-            
-            <div className="service-card">
-              <div className="service-image">
-                <UserCircle size={70} className="service-icon-lucide" />
-                <div className="service-shine"></div>
-              </div>
-              <div className="service-content">
-                <h3>{t.userMgmt}</h3>
-                <p>{t.userMgmtDesc}</p>
-                <Link to="/login" className="service-link">
-                  {t.learnMoreLink} <ChevronRight size={16} />
-                </Link>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      <section id="about" className="about">
-        <div className="container">
-          <div className="about-content">
-            <div className="about-image">
-              <div className="about-card">
-                <div className="about-card-inner">
-                  <span className="about-number">10+</span>
-                  <span className="about-label">{t.yearsExp}</span>
+              return (
+              <article className={`module-card reveal ${isExpanded ? 'is-expanded' : ''}`} style={{ transitionDelay: `${index * 45}ms` }} key={title}>
+                <div className="module-card-top">
+                  <span className="module-icon"><Icon size={25} /></span>
+                  <small>{metric}</small>
                 </div>
-                <div className="about-orb"></div>
-              </div>
-            </div>
-            <div className="about-text">
-              <span className="section-tag">{t.aboutTag}</span>
-              <h2>{t.aboutTitle}</h2>
-              <p>{t.aboutDesc1}</p>
-              <p>{t.aboutDesc2}</p>
-              <ul className="about-features">
-                <li><TrendingUp size={18} /> {t.cloud}</li>
-                <li><TrendingUp size={18} /> {t.realtime}</li>
-                <li><TrendingUp size={18} /> {t.support}</li>
-                <li><TrendingUp size={18} /> {t.security}</li>
-              </ul>
-            </div>
+                <h3>{title}</h3>
+                <p>{text}</p>
+                {isExpanded && (
+                  <ul className="module-details">
+                    {details.map((detail) => <li key={detail}>{detail}</li>)}
+                  </ul>
+                )}
+                <button
+                  type="button"
+                  className="module-expand-btn"
+                  onClick={() => setExpandedModule(isExpanded ? null : index)}
+                  aria-expanded={isExpanded}
+                >
+                  {isExpanded ? t.closeModule : t.openModule} <ChevronRight size={15} />
+                </button>
+              </article>
+              );
+            })}
           </div>
         </div>
       </section>
 
-      <section className="cta">
-        <div className="cta-glow"></div>
-        <div className="container">
-          <div className="cta-content">
+      <section id="workflow" className="workflow-section">
+        <div className="landing-container workflow-grid">
+          <div className="section-heading left reveal">
+            <span className="section-kicker">{t.workflowKicker}</span>
+            <h2>{t.workflowTitle}</h2>
+            <p>{t.workflowSubtitle}</p>
+          </div>
+          <div className="workflow-lane">
+            {workflow.map(({ icon: Icon, title, text }, index) => (
+              <article className="workflow-step reveal" key={title} style={{ transitionDelay: `${index * 80}ms` }}>
+                <span>{String(index + 1).padStart(2, '0')}</span>
+                <Icon size={26} />
+                <h3>{title}</h3>
+                <p>{text}</p>
+              </article>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      <section id="security" className="security-section">
+        <div className="landing-container security-grid">
+          <div className="security-panel reveal">
+            <div className="lock-badge"><LockKeyhole size={34} /></div>
+            <h2>{t.securityTitle}</h2>
+            <p>{t.securitySubtitle}</p>
+          </div>
+          <div className="security-list">
+            {security.map((item, index) => (
+              <div className="security-item reveal" key={item} style={{ transitionDelay: `${index * 55}ms` }}>
+                <CheckCircle2 size={20} />
+                <span>{item}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      <section className="cta-section">
+        <div className="landing-container cta-card reveal">
+          <div>
+            <span className="section-kicker">{t.ctaKicker}</span>
             <h2>{t.ctaTitle}</h2>
             <p>{t.ctaSubtitle}</p>
-            <div className="cta-actions">
-              <Link to="/login" className="btn btn-primary btn-lg">{t.ctaButton}</Link>
-              <a href="#contact" className="btn btn-outline btn-lg">{t.ctaContact}</a>
-            </div>
+          </div>
+          <Link to="/login" className="primary-button">{t.primaryCta} <ArrowRight size={18} /></Link>
+        </div>
+      </section>
+
+      <section id="contact" className="contact-section">
+        <div className="landing-container contact-grid">
+          <div className="section-heading left reveal">
+            <span className="section-kicker">{t.contactKicker}</span>
+            <h2>{t.contactTitle}</h2>
+            <p>{t.contactSubtitle}</p>
+          </div>
+          <div className="contact-cards">
+            <a href="tel:+8801234567890" className="contact-card reveal"><Phone size={22} /><span>+880 1234-567890</span></a>
+            <a href="mailto:support@dms.com" className="contact-card reveal"><Mail size={22} /><span>support@dms.com</span></a>
+            <div className="contact-card reveal"><MapPin size={22} /><span>{t.location}</span></div>
           </div>
         </div>
       </section>
 
-      <section id="contact" className="contact">
-        <div className="container">
-          <div className="section-header animate-on-scroll" id="contact">
-            <span className="section-tag">{t.contactTag}</span>
-            <h2 className="section-title">{t.contactTitle}</h2>
-            <p className="section-subtitle">{t.contactSubtitle}</p>
-          </div>
-          
-          <div className="contact-grid">
-            <div className="contact-card">
-              <div className="contact-icon live-icon"><MapPin size={40} /></div>
-              <h3>{t.address}</h3>
-              <p>{t.addressLine}<br />{t.city}</p>
-              <div className="contact-map">
-                <iframe 
-                  src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3652.677586195429!2d90.4077273154312!3d23.75042138459745!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x375421b4d7947153%3A0x7603dd42c82730!2s Dhaka%2C%20Bangladesh!5e0!3m2!1sen!2s!4v1645456789012!5m2!1sen!2s" 
-                  width="100%" 
-                  height="120" 
-                  style={{ border: 0, borderRadius: '8px' }} 
-                  allowFullScreen="" 
-                  loading="lazy"
-                  title="Map"
-                ></iframe>
-              </div>
-            </div>
-            
-            <div className="contact-card">
-              <div className="contact-icon live-icon"><Phone size={40} /></div>
-              <h3>{t.phone}</h3>
-              <p>
-                <a href={`tel:${t.topBarPhone.replace(/\s/g, '')}`} className="contact-link">{t.topBarPhone}</a><br />
-                <a href={`tel:${t.phone2.replace(/\s/g, '')}`} className="contact-link">{t.phone2}</a>
-              </p>
-            </div>
-            
-            <div className="contact-card">
-              <div className="contact-icon live-icon"><Mail size={40} /></div>
-              <h3>{t.email}</h3>
-              <p>
-                <a href={`mailto:${t.topBarEmail}`} className="contact-link">{t.topBarEmail}</a><br />
-                <a href={`mailto:${t.email2}`} className="contact-link">{t.email2}</a>
-              </p>
-            </div>
-            
-            <div className="contact-card">
-              <div className="contact-icon live-icon"><Clock size={40} /></div>
-              <h3>{t.hours}</h3>
-              <p>{t.topBarHours}<br />{t.hoursLine}</p>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      <footer className="footer">
-        <div className="container">
-          <div className="footer-content">
-            <div className="footer-brand">
-              <Link to="/" className="footer-logo">
-                <span className="brand-icon">
-                  <Package size={20} />
-                </span>
-                <span className="brand-text">DMS</span>
-              </Link>
-              <p>{t.footerDesc}</p>
-              <div className="footer-social">
-                <a href="#">𝕏</a>
-                <a href="#">in</a>
-                <a href="#">📘</a>
-              </div>
-            </div>
-            
-            <div className="footer-links">
-              <h4>{t.quickLinks}</h4>
-              <a href="#home">{t.navHome}</a>
-              <a href="#features">{t.navFeatures}</a>
-              <a href="#services">{t.navServices}</a>
-              <a href="#about">{t.navAbout}</a>
-              <a href="#contact">{t.navContact}</a>
-            </div>
-            
-            <div className="footer-links">
-              <h4>{t.services}</h4>
-              <a href="#">{t.footerCompany}</a>
-              <a href="#">{t.footerProduct}</a>
-              <a href="#">{t.footerSales}</a>
-              <a href="#">{t.footerPayment}</a>
-              <a href="#">{t.footerReports}</a>
-            </div>
-            
-            <div className="footer-links">
-              <h4>{t.contactInfo}</h4>
-              <p><MapPin size={14} /> {t.addressLine}<br />{t.city}</p>
-              <p><Phone size={14} /> {t.topBarPhone}</p>
-              <p><Mail size={14} /> {t.topBarEmail}</p>
-            </div>
-          </div>
-          
-          <div className="footer-bottom">
-            <p>{t.copyright}</p>
-            <div className="footer-legal">
-              <a href="#">{t.privacy}</a>
-              <a href="#">{t.terms}</a>
-            </div>
-          </div>
+      <footer className="landing-footer">
+        <div className="landing-container footer-inner">
+          <Link to="/" className="brand"><span className="brand-mark"><Package size={22} /></span><span><strong>DMS</strong><small>{t.footer}</small></span></Link>
+          <p>{t.rights}</p>
         </div>
       </footer>
-    </div>
+    </main>
   );
 }

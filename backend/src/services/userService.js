@@ -339,5 +339,44 @@ export const userService = {
     );
 
     return result[0]?.name || 'unknown';
+  },
+
+  /**
+   * Public registration for shopkeeper role
+   */
+  async createShopkeeper(userData) {
+    const { username, password, full_name, email, phone } = userData;
+
+    if (email) {
+      const existingEmail = await query('SELECT id FROM users WHERE email = ?', [email]);
+      if (existingEmail.length > 0) {
+        throw new ApiError(400, 'Email already exists');
+      }
+    }
+
+    if (phone) {
+      const existingPhone = await query('SELECT id FROM users WHERE phone = ?', [phone]);
+      if (existingPhone.length > 0) {
+        throw new ApiError(400, 'Phone number already exists');
+      }
+    }
+
+    const [roleResult] = await query("SELECT id FROM roles WHERE name = 'shopkeeper'");
+    if (!roleResult) {
+      throw new ApiError(500, 'Shopkeeper role not found');
+    }
+
+    const password_hash = await bcrypt.hash(password, 10);
+
+    const result = await query(
+      'INSERT INTO users (username, password_hash, full_name, email, role_id, phone) VALUES (?, ?, ?, ?, ?, ?) RETURNING id',
+      [username, password_hash, full_name, email || null, roleResult.id, phone || null]
+    );
+
+    if (!result[0]?.id) {
+      throw new ApiError(500, 'Failed to create user');
+    }
+
+    return this.getUserById(result[0].id);
   }
 };

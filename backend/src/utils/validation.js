@@ -60,7 +60,16 @@ export const validateChangePassword = [
 
 export const validateResetPassword = [
   body('token').notEmpty().withMessage('Reset token is required'),
-  body('newPassword').isLength({ min: 6 }).withMessage('New password must be at least 6 characters'),
+  body('newPassword').isLength({ min: 6 }).withMessage('Password must be at least 6 characters'),
+  handleValidationErrors
+];
+
+export const validateShopkeeperRegister = [
+  body('username').trim().notEmpty().withMessage('Username is required'),
+  body('password').isLength({ min: 6 }).withMessage('Password must be at least 6 characters'),
+  body('full_name').trim().notEmpty().withMessage('Full name is required'),
+  body('email').optional({ values: 'falsy' }).isEmail().withMessage('Invalid email address'),
+  body('phone').optional({ values: 'falsy' }),
   handleValidationErrors
 ];
 

@@ -15,6 +15,8 @@ export function AuthProvider({ children }) {
 
     // Listen for auth:logout event from axios interceptor
     const handleLogoutEvent = () => {
+      localStorage.removeItem('token');
+      localStorage.removeItem('token_expiry');
       setUser(null);
       setUserPermissions([]);
       setLoading(false);
@@ -91,6 +93,8 @@ export function AuthProvider({ children }) {
     } catch (error) {
       console.error('Logout error:', error);
     }
+    localStorage.removeItem('token');
+    localStorage.removeItem('token_expiry');
     setUser(null);
     setUserPermissions([]);
     setLoading(false);
