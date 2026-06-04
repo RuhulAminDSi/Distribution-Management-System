@@ -5,6 +5,7 @@ import { validateLogin, validateRegister, validateUpdateUser, validateChangePass
 
 const router = express.Router();
 
+router.get('/check-unique', authController.checkUnique);
 router.post('/login', validateLogin, authController.login);
 router.post('/logout', authController.logout);
 router.get('/me', authenticate, authController.me);

@@ -2,7 +2,7 @@
 import { authService, roleService } from '../services/api';
 import { useLanguage } from '../context/LanguageContext';
 import { useAuth } from '../context/AuthContext';
-import { X, Plus, Pencil, Trash2, ChevronLeft, ChevronRight, User, Mail, Phone, Lock, Shield, Search, Camera } from 'lucide-react';
+import { X, Plus, Pencil, Trash2, ChevronLeft, ChevronRight, User, Mail, Phone, Lock, Shield, Search, Camera, AlertCircle, CheckCircle } from 'lucide-react';
 
 export default function Users() {
   const { t } = useLanguage();
@@ -22,7 +22,46 @@ export default function Users() {
   const [profilePreview, setProfilePreview] = useState(null);
   const [profileFile, setProfileFile] = useState(null);
   const [uploading, setUploading] = useState(false);
+  const [errors, setErrors] = useState({});
+  const [validating, setValidating] = useState({});
+  const [showInactive, setShowInactive] = useState(false);
   const fileInputRef = useRef(null);
+  const checkTimers = useRef({});
+
+  const checkField = async (field, value) => {
+    if (!value) {
+      setErrors(prev => ({ ...prev, [field]: '' }));
+      return;
+    }
+    setValidating(prev => ({ ...prev, [field]: true }));
+    try {
+      const excludeId = editItem?.id || undefined;
+      const res = await authService.checkUnique(field, value, excludeId);
+      if (!res.data.unique) {
+        const labels = { username: 'Username', email: 'Email', phone: 'Phone' };
+        setErrors(prev => ({ ...prev, [field]: `${labels[field]} already exists` }));
+      } else {
+        setErrors(prev => ({ ...prev, [field]: '' }));
+      }
+    } catch {
+      setErrors(prev => ({ ...prev, [field]: '' }));
+    } finally {
+      setValidating(prev => ({ ...prev, [field]: false }));
+    }
+  };
+
+  const debouncedCheck = (field, value) => {
+    if (checkTimers.current[field]) {
+      clearTimeout(checkTimers.current[field]);
+    }
+    checkTimers.current[field] = setTimeout(() => {
+      checkField(field, value);
+    }, 500);
+  };
+
+  const handleBlur = (field) => (e) => {
+    debouncedCheck(field, e.target.value);
+  };
 
   useEffect(() => {
     fetchUsers();
@@ -57,6 +96,13 @@ export default function Users() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+
+    const hasFieldErrors = Object.values(errors).some(msg => msg);
+    if (hasFieldErrors) {
+      alert('Please fix the highlighted errors before submitting');
+      return;
+    }
+
     try {
       let userId;
       if (editItem) {
@@ -87,11 +133,7 @@ export default function Users() {
         setUploading(false);
       }
 
-      setShowModal(false);
-      setEditItem(null);
-      setFormData({});
-      setProfilePreview(null);
-      setProfileFile(null);
+      closeModal();
       fetchUsers();
     } catch (error) {
       setUploading(false);
@@ -159,7 +201,9 @@ export default function Users() {
       await authService.deleteUser(id);
       fetchUsers();
     } catch (error) {
-      alert(t('DeleteError'));
+      console.error('Delete error:', error);
+      const msg = error.response?.data?.message || error.message || t('DeleteError');
+      alert(msg);
     }
   };
 
@@ -180,32 +224,27 @@ export default function Users() {
     }
   };
 
+  const closeModal = () => {
+    setShowModal(false);
+    setEditItem(null);
+    setFormData({});
+    setErrors({});
+    setProfilePreview(null);
+    setProfileFile(null);
+  };
+
   const openModal = (item = null) => {
-    if (item) {
-      setEditItem(item);
-      setFormData({
-        username: item.username || '',
-        password: '',
-        full_name: item.full_name || '',
-        email: item.email || '',
-        role_id: item.role_id || '',
-        phone: item.phone || ''
-      });
-      setProfilePreview(item.profile_picture ? item.profile_picture : null);
-      setProfileFile(null);
-    } else {
-      setEditItem(null);
-      setFormData({
-        username: '',
-        password: '',
-        full_name: '',
-        email: '',
-        role_id: '',
-        phone: ''
-      });
-      setProfilePreview(null);
-      setProfileFile(null);
-    }
+    setEditItem(item);
+    setFormData({
+      username: item?.username || '',
+      password: '',
+      full_name: item?.full_name || '',
+      email: item?.email || '',
+      role_id: item?.role_id || '',
+      phone: item?.phone || ''
+    });
+    setProfilePreview(item?.profile_picture || null);
+    setProfileFile(null);
     setShowModal(true);
   };
 
@@ -222,6 +261,11 @@ export default function Users() {
   const formatRole = (role) => {
     return role.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase());
   };
+
+  const displayUsers = users.filter(u => showInactive || u.is_active);
+  const displayTotal = showInactive ? total : displayUsers.length;
+  const displayTotalPages = Math.ceil(displayTotal / limit) || 1;
+  const displayPage = Math.min(page, displayTotalPages);
 
   return (
     <div>
@@ -240,7 +284,7 @@ export default function Users() {
             background: 'var(--card-bg, #fff)', border: '1px solid var(--border, #e0e0e0)',
             boxShadow: '0 1px 3px rgba(0,0,0,0.06)'
           }}>
-            <span className={`badge ${getRoleBadgeClass(r.name)}`}>{r.name.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase())}</span>
+            <span className={`badge ${getRoleBadgeClass(r.name)}`}>{formatRole(r.name)}</span>
             <span style={{ fontSize: '13px', color: 'var(--text-muted, #888)' }}>
               {(roleCounts.find(c => c.name === r.name)?.count || 0)} users
             </span>
@@ -248,39 +292,43 @@ export default function Users() {
         ))}
       </div>
 
-      <div className="card">
-        <div className="card-header">
-          <div className="search-bar" style={{ flex: 1, maxWidth: '500px' }}>
-            <Search size={18} />
-            <input
-              type="text"
-              placeholder={t('SearchUsers')}
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-            />
+        <div className="card">
+          <div className="card-header">
+            <div className="search-bar" style={{ flex: 1, maxWidth: '500px' }}>
+              <Search size={18} />
+              <input
+                type="text"
+                placeholder={t('SearchUsers')}
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+              />
+            </div>
+            <label style={{ display: 'flex', alignItems: 'center', gap: '6px', cursor: 'pointer', fontSize: '0.85rem', whiteSpace: 'nowrap' }}>
+              <input type="checkbox" checked={showInactive} onChange={e => { setShowInactive(e.target.checked); setPage(1); }} />
+              Show inactive
+            </label>
           </div>
-        </div>
-        <div className="table-container">
-          <table className="table">
-              <thead>
-                <tr>
-                  <th style={{ width: '50px' }}></th>
-                  <th>{t('Username')}</th>
-                <th>{t('FullName')}</th>
-                <th>{t('Email')}</th>
-                <th>{t('Role')}</th>
-                <th>{t('Phone')}</th>
-                <th>{t('Status')}</th>
-                <th>{t('Actions')}</th>
-              </tr>
-            </thead>
-            <tbody>
-              {loading ? (
-                <tr><td colSpan="8">{t('Loading')}</td></tr>
-              ) : !users || users.length === 0 ? (
-                <tr><td colSpan="8">{t('NoUsersFound')}</td></tr>
-              ) : (
-                users.map(u => (
+          <div className="table-container">
+            <table className="table">
+                <thead>
+                  <tr>
+                    <th style={{ width: '50px' }}></th>
+                    <th>{t('Username')}</th>
+                  <th>{t('FullName')}</th>
+                  <th>{t('Email')}</th>
+                  <th>{t('Role')}</th>
+                  <th>{t('Phone')}</th>
+                  <th>{t('Status')}</th>
+                  <th>{t('Actions')}</th>
+                </tr>
+              </thead>
+              <tbody>
+                {loading ? (
+                  <tr><td colSpan="8">{t('Loading')}</td></tr>
+                ) : !users || displayUsers.length === 0 ? (
+                  <tr><td colSpan="8">{t('NoUsersFound')}</td></tr>
+                ) : (
+                  displayUsers.map(u => (
                   <tr key={u.id}>
                     <td>
                       <div className="user-avatar-cell">
@@ -351,22 +399,23 @@ export default function Users() {
             <option value={100}>100</option>
           </select>
           <span style={{ fontSize: '14px', marginLeft: 'auto' }}>
-            {Math.min((page - 1) * limit + limit, total)} of {total} entries
+            {Math.min((displayPage - 1) * limit + limit, displayTotal)} of {displayTotal} entries
+            {!showInactive && <span style={{ color: 'var(--text-muted, #888)', fontSize: '0.8rem' }}> ({users.filter(u => !u.is_active).length} inactive hidden)</span>}
           </span>
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-          <button className="btn btn-secondary btn-sm" onClick={() => setPage(p => Math.max(1, p - 1))} disabled={page === 1}>
+          <button className="btn btn-secondary btn-sm" onClick={() => setPage(p => Math.max(1, p - 1))} disabled={displayPage === 1}>
             <ChevronLeft size={16} />
           </button>
-          <span style={{ fontSize: '14px' }}>{t('Page')} {page} / {totalPages}</span>
-          <button className="btn btn-secondary btn-sm" onClick={() => setPage(p => Math.min(totalPages, p + 1))} disabled={page === totalPages}>
+          <span style={{ fontSize: '14px' }}>{t('Page')} {displayPage} / {displayTotalPages}</span>
+          <button className="btn btn-secondary btn-sm" onClick={() => setPage(p => Math.min(displayTotalPages, p + 1))} disabled={displayPage === displayTotalPages}>
             <ChevronRight size={16} />
           </button>
         </div>
       </div>
 
       {showModal && (
-        <div className="modal-overlay" onClick={() => { setShowModal(false); setEditItem(null); setFormData({}); }}>
+        <div className="modal-overlay" onClick={closeModal}>
           <div className="user-modal" onClick={e => e.stopPropagation()}>
             <div className="modal-header">
               <div className="modal-title-wrapper">
@@ -378,7 +427,7 @@ export default function Users() {
                   <p>{editItem ? 'Update user information' : 'Create a new user account'}</p>
                 </div>
               </div>
-              <button className="modal-close" onClick={() => { setShowModal(false); setEditItem(null); setFormData({}); }}>
+              <button className="modal-close" onClick={closeModal}>
                 <X size={20} />
               </button>
             </div>
@@ -387,15 +436,22 @@ export default function Users() {
               <div className="form-grid">
                 <div className="form-group">
                   <label><User size={14} /> {t('Username')} *</label>
-                  <input 
-                    type="text" 
-                    value={formData.username || ''}
-                    onChange={e => setFormData({...formData, username: e.target.value})}
-                    required 
-                    placeholder="Enter username"
-                    className="form-input"
-                    autoComplete="off"
-                  />
+                  <div style={{ position: 'relative' }}>
+                    <input 
+                      type="text" 
+                      value={formData.username || ''}
+                      onChange={e => { setFormData({...formData, username: e.target.value}); setErrors(prev => ({ ...prev, username: '' })); }}
+                      onBlur={handleBlur('username')}
+                      required 
+                      placeholder="Enter username"
+                      className={`form-input ${errors.username ? 'form-input-error' : ''}`}
+                      autoComplete="off"
+                    />
+                    {validating.username && <div className="field-spinner" />}
+                    {errors.username && <AlertCircle size={16} className="field-error-icon" />}
+                    {!errors.username && formData.username && !validating.username && <CheckCircle size={16} className="field-success-icon" />}
+                  </div>
+                  {errors.username && <span className="field-error-text">{errors.username}</span>}
                 </div>
                 
                 <div className="form-group">
@@ -448,26 +504,40 @@ export default function Users() {
                 
                 <div className="form-group">
                   <label><Mail size={14} /> {t('Email')}</label>
-                  <input 
-                    type="email" 
-                    value={formData.email || ''}
-                    onChange={e => setFormData({...formData, email: e.target.value})}
-                    placeholder="Enter email address"
-                    className="form-input"
-                    autoComplete="off"
-                  />
+                  <div style={{ position: 'relative' }}>
+                    <input 
+                      type="email" 
+                      value={formData.email || ''}
+                      onChange={e => { setFormData({...formData, email: e.target.value}); setErrors(prev => ({ ...prev, email: '' })); }}
+                      onBlur={handleBlur('email')}
+                      placeholder="Enter email address"
+                      className={`form-input ${errors.email ? 'form-input-error' : ''}`}
+                      autoComplete="off"
+                    />
+                    {validating.email && <div className="field-spinner" />}
+                    {errors.email && <AlertCircle size={16} className="field-error-icon" />}
+                    {!errors.email && formData.email && !validating.email && <CheckCircle size={16} className="field-success-icon" />}
+                  </div>
+                  {errors.email && <span className="field-error-text">{errors.email}</span>}
                 </div>
                 
                 <div className="form-group">
                   <label><Phone size={14} /> {t('Phone')}</label>
-                  <input 
-                    type="text" 
-                    value={formData.phone || ''}
-                    onChange={e => setFormData({...formData, phone: e.target.value})}
-                    placeholder="Enter phone number"
-                    className="form-input"
-                    autoComplete="off"
-                  />
+                  <div style={{ position: 'relative' }}>
+                    <input 
+                      type="text" 
+                      value={formData.phone || ''}
+                      onChange={e => { setFormData({...formData, phone: e.target.value}); setErrors(prev => ({ ...prev, phone: '' })); }}
+                      onBlur={handleBlur('phone')}
+                      placeholder="Enter phone number"
+                      className={`form-input ${errors.phone ? 'form-input-error' : ''}`}
+                      autoComplete="off"
+                    />
+                    {validating.phone && <div className="field-spinner" />}
+                    {errors.phone && <AlertCircle size={16} className="field-error-icon" />}
+                    {!errors.phone && formData.phone && !validating.phone && <CheckCircle size={16} className="field-success-icon" />}
+                  </div>
+                  {errors.phone && <span className="field-error-text">{errors.phone}</span>}
                 </div>
                 
                 <div className="form-group full-width">
@@ -483,14 +553,14 @@ export default function Users() {
                     {roles
                       .filter(r => user?.role !== 'admin' || (r.id !== 1 && r.id !== 2))
                       .map(r => (
-                      <option key={r.id} value={r.id}>{r.name.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase())}</option>
+                      <option key={r.id} value={r.id}>{formatRole(r.name)}</option>
                     ))}
                   </select>
                 </div>
               </div>
               
               <div className="modal-footer">
-                <button type="button" className="btn-cancel" onClick={() => { setShowModal(false); setEditItem(null); setFormData({}); }}>
+                <button type="button" className="btn-cancel" onClick={closeModal}>
                   {t('Cancel')}
                 </button>
                 <button type="submit" className="btn btn-primary">
@@ -507,6 +577,9 @@ export default function Users() {
               border-radius: 16px;
               width: 100%;
               max-width: 520px;
+              max-height: 90vh;
+              display: flex;
+              flex-direction: column;
               border: 1px solid rgba(233, 69, 96, 0.2);
               box-shadow: 0 25px 50px rgba(0, 0, 0, 0.5);
               animation: modalSlide 0.3s ease;
@@ -640,6 +713,9 @@ export default function Users() {
             .user-modal .modal-body {
               padding: 24px;
               background: #1a1a2e !important;
+              overflow-y: auto;
+              flex: 1;
+              min-height: 0;
             }
             
             .form-grid {
@@ -686,6 +762,51 @@ export default function Users() {
             .form-input:disabled {
               background: rgba(255, 255, 255, 0.02);
               cursor: not-allowed;
+            }
+
+            .form-input-error {
+              border-color: #ef4444 !important;
+              box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.15) !important;
+            }
+
+            .field-error-text {
+              display: block;
+              color: #ef4444;
+              font-size: 0.78rem;
+              margin-top: 4px;
+            }
+
+            .field-error-icon {
+              position: absolute;
+              right: 12px;
+              top: 50%;
+              transform: translateY(-50%);
+              color: #ef4444;
+            }
+
+            .field-success-icon {
+              position: absolute;
+              right: 12px;
+              top: 50%;
+              transform: translateY(-50%);
+              color: #22c55e;
+            }
+
+            .field-spinner {
+              position: absolute;
+              right: 12px;
+              top: 50%;
+              transform: translateY(-50%);
+              width: 16px;
+              height: 16px;
+              border: 2px solid rgba(255,255,255,0.2);
+              border-top-color: #6366f1;
+              border-radius: 50%;
+              animation: spin 0.6s linear infinite;
+            }
+
+            @keyframes spin {
+              to { transform: translateY(-50%) rotate(360deg); }
             }
             
             select.form-input {

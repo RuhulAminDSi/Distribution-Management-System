@@ -1,8 +1,8 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { authService } from '../services/api';
 import {
-  Warehouse, Eye, EyeOff, ArrowLeft, UserPlus, Mail, Phone, User, Lock
+  Warehouse, Eye, EyeOff, ArrowLeft, UserPlus, Mail, Phone, User, Lock, AlertCircle, CheckCircle
 } from 'lucide-react';
 
 const translations = {
@@ -74,12 +74,49 @@ export default function Register() {
     password: '',
     confirmPassword: ''
   });
+  const [errors, setErrors] = useState({});
+  const [validating, setValidating] = useState({});
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const [isVisible, setIsVisible] = useState(false);
   const navigate = useNavigate();
+  const checkTimers = useRef({});
+
+  const checkField = async (field, value) => {
+    if (!value) {
+      setErrors(prev => ({ ...prev, [field]: '' }));
+      return;
+    }
+    setValidating(prev => ({ ...prev, [field]: true }));
+    try {
+      const res = await authService.checkUnique(field, value);
+      if (!res.data.unique) {
+        const labels = { username: 'Username', email: 'Email', phone: 'Phone' };
+        setErrors(prev => ({ ...prev, [field]: `${labels[field]} already exists` }));
+      } else {
+        setErrors(prev => ({ ...prev, [field]: '' }));
+      }
+    } catch {
+      setErrors(prev => ({ ...prev, [field]: '' }));
+    } finally {
+      setValidating(prev => ({ ...prev, [field]: false }));
+    }
+  };
+
+  const debouncedCheck = (field, value) => {
+    if (checkTimers.current[field]) {
+      clearTimeout(checkTimers.current[field]);
+    }
+    checkTimers.current[field] = setTimeout(() => {
+      checkField(field, value);
+    }, 500);
+  };
+
+  const handleBlur = (field) => (e) => {
+    debouncedCheck(field, e.target.value);
+  };
 
   useEffect(() => {
     setIsVisible(true);
@@ -121,6 +158,12 @@ export default function Register() {
     e.preventDefault();
     setError('');
 
+    const hasFieldErrors = Object.values(errors).some(msg => msg);
+    if (hasFieldErrors) {
+      setError('Please fix the highlighted errors before submitting');
+      return;
+    }
+
     if (form.password.length < 6) {
       setError(t.PasswordMinLength);
       return;
@@ -129,6 +172,24 @@ export default function Register() {
     if (form.password !== form.confirmPassword) {
       setError(t.PasswordsDoNotMatch);
       return;
+    }
+
+    // Check uniqueness for all fields before submit
+    const fieldsToCheck = ['username', 'email', 'phone'];
+    for (const field of fieldsToCheck) {
+      const val = form[field];
+      if (val) {
+        try {
+          const res = await authService.checkUnique(field, val);
+          if (!res.data.unique) {
+            const labels = { username: 'Username', email: 'Email', phone: 'Phone' };
+            setError(`${labels[field]} already exists`);
+            return;
+          }
+        } catch {
+          // ignore
+        }
+      }
     }
 
     setLoading(true);
@@ -217,39 +278,60 @@ export default function Register() {
             <div className="form-row">
               <div className="form-group">
                 <label className="form-label">{t.Username}</label>
-                <input
-                  type="text"
-                  className="form-input"
-                  value={form.username}
-                  onChange={updateField('username')}
-                  placeholder={t.Username}
-                  required
-                  autoComplete="off"
-                />
+                <div style={{ position: 'relative' }}>
+                  <input
+                    type="text"
+                    className={`form-input ${errors.username ? 'form-input-error' : ''}`}
+                    value={form.username}
+                    onChange={updateField('username')}
+                    onBlur={handleBlur('username')}
+                    placeholder={t.Username}
+                    required
+                    autoComplete="off"
+                  />
+                  {validating.username && <div className="field-spinner" />}
+                  {errors.username && <AlertCircle size={16} className="field-error-icon" />}
+                  {!errors.username && form.username && !validating.username && <CheckCircle size={16} className="field-success-icon" />}
+                </div>
+                {errors.username && <span className="field-error-text">{errors.username}</span>}
               </div>
               <div className="form-group">
                 <label className="form-label">{t.Email}</label>
-                <input
-                  type="email"
-                  className="form-input"
-                  value={form.email}
-                  onChange={updateField('email')}
-                  placeholder={t.Email}
-                  autoComplete="off"
-                />
+                <div style={{ position: 'relative' }}>
+                  <input
+                    type="email"
+                    className={`form-input ${errors.email ? 'form-input-error' : ''}`}
+                    value={form.email}
+                    onChange={updateField('email')}
+                    onBlur={handleBlur('email')}
+                    placeholder={t.Email}
+                    autoComplete="off"
+                  />
+                  {validating.email && <div className="field-spinner" />}
+                  {errors.email && <AlertCircle size={16} className="field-error-icon" />}
+                  {!errors.email && form.email && !validating.email && <CheckCircle size={16} className="field-success-icon" />}
+                </div>
+                {errors.email && <span className="field-error-text">{errors.email}</span>}
               </div>
             </div>
 
             <div className="form-group">
               <label className="form-label">{t.Phone}</label>
-              <input
-                type="tel"
-                className="form-input"
-                value={form.phone}
-                onChange={updateField('phone')}
-                placeholder={t.Phone}
-                autoComplete="off"
-              />
+              <div style={{ position: 'relative' }}>
+                <input
+                  type="tel"
+                  className={`form-input ${errors.phone ? 'form-input-error' : ''}`}
+                  value={form.phone}
+                  onChange={updateField('phone')}
+                  onBlur={handleBlur('phone')}
+                  placeholder={t.Phone}
+                  autoComplete="off"
+                />
+                {validating.phone && <div className="field-spinner" />}
+                {errors.phone && <AlertCircle size={16} className="field-error-icon" />}
+                {!errors.phone && form.phone && !validating.phone && <CheckCircle size={16} className="field-success-icon" />}
+              </div>
+              {errors.phone && <span className="field-error-text">{errors.phone}</span>}
             </div>
 
             <div className="form-row">
@@ -669,6 +751,51 @@ export default function Register() {
           background: rgba(239, 68, 68, 0.15);
           border: 1px solid rgba(239, 68, 68, 0.3);
           color: #ef4444;
+        }
+
+        .form-input-error {
+          border-color: #ef4444 !important;
+          box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.15) !important;
+        }
+
+        .field-error-text {
+          display: block;
+          color: #ef4444;
+          font-size: 0.78rem;
+          margin-top: 4px;
+        }
+
+        .field-error-icon {
+          position: absolute;
+          right: 12px;
+          top: 50%;
+          transform: translateY(-50%);
+          color: #ef4444;
+        }
+
+        .field-success-icon {
+          position: absolute;
+          right: 12px;
+          top: 50%;
+          transform: translateY(-50%);
+          color: #22c55e;
+        }
+
+        .field-spinner {
+          position: absolute;
+          right: 12px;
+          top: 50%;
+          transform: translateY(-50%);
+          width: 16px;
+          height: 16px;
+          border: 2px solid rgba(255,255,255,0.2);
+          border-top-color: #6366f1;
+          border-radius: 50%;
+          animation: spin 0.6s linear infinite;
+        }
+
+        @keyframes spin {
+          to { transform: translateY(-50%) rotate(360deg); }
         }
 
         @media (max-width: 480px) {

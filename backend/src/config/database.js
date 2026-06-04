@@ -81,7 +81,7 @@ export const initializeDatabase = async () => {
       await client.query(`
         CREATE TABLE IF NOT EXISTS users (
           id SERIAL PRIMARY KEY,
-          username VARCHAR(255) NOT NULL,
+          username VARCHAR(255) UNIQUE NOT NULL,
           password_hash VARCHAR(255) NOT NULL,
           full_name VARCHAR(255) NOT NULL,
           email VARCHAR(255) UNIQUE,
@@ -514,6 +514,17 @@ export const initializeDatabase = async () => {
           WHERE table_name = 'users' AND constraint_type = 'UNIQUE' AND constraint_name = 'users_phone_key'
         ) THEN
           ALTER TABLE users ADD CONSTRAINT users_phone_key UNIQUE (phone);
+        END IF;
+      END $$;
+    `);
+
+    await client.query(`
+      DO $$ BEGIN
+        IF NOT EXISTS (
+          SELECT 1 FROM information_schema.table_constraints
+          WHERE table_name = 'users' AND constraint_type = 'UNIQUE' AND constraint_name = 'users_username_key'
+        ) THEN
+          ALTER TABLE users ADD CONSTRAINT users_username_key UNIQUE (username);
         END IF;
       END $$;
     `);

@@ -203,6 +203,19 @@ export const authController = {
     }
   },
 
+  async checkUnique(req, res, next) {
+    try {
+      const { field, value, excludeId } = req.query;
+      if (!field || !value) {
+        throw new ApiError(400, 'Field and value are required');
+      }
+      const result = await userService.checkUnique(field, value, excludeId || null);
+      res.json(result);
+    } catch (error) {
+      next(error);
+    }
+  },
+
   async shopkeeperRegister(req, res, next) {
     try {
       const { username, password, full_name, email, phone } = req.body;

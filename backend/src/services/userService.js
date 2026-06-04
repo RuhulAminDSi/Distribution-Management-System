@@ -36,6 +36,11 @@ export const userService = {
       }
     }
 
+    const existingUsername = await query('SELECT id FROM users WHERE username = ?', [username]);
+    if (existingUsername.length > 0) {
+      throw new ApiError(400, 'Username already exists');
+    }
+
     if (email) {
       const existingEmail = await query('SELECT id FROM users WHERE email = ?', [email]);
       if (existingEmail.length > 0) {
@@ -95,7 +100,11 @@ export const userService = {
       .leftJoin('roles r', 'r.id = u.role_id');
 
     if (search) {
-      builder = builder.whereLike('u.full_name', search);
+      const term = `%${search}%`;
+      builder = builder.whereRaw(
+        '(LOWER(u.username) LIKE LOWER(?) OR LOWER(u.full_name) LIKE LOWER(?) OR LOWER(u.email) LIKE LOWER(?) OR LOWER(u.phone) LIKE LOWER(?))',
+        [term, term, term, term]
+      );
     }
 
     const result = await builder.paginate(page, limit);
@@ -142,6 +151,13 @@ export const userService = {
     // Admin cannot edit System Admin or Admin users
     if (isAdmin && (targetRoleName === 'system_admin' || targetRoleName === 'admin')) {
       throw new ApiError(403, 'Cannot edit System Admin or Admin users');
+    }
+
+    if (updates.username) {
+      const existingUsername = await query('SELECT id FROM users WHERE username = ? AND id != ?', [updates.username, userId]);
+      if (existingUsername.length > 0) {
+        throw new ApiError(400, 'Username already exists');
+      }
     }
 
     if (updates.email) {
@@ -342,10 +358,36 @@ export const userService = {
   },
 
   /**
+   * Check if a field value is unique
+   */
+  async checkUnique(field, value, excludeId) {
+    const allowedFields = ['username', 'email', 'phone'];
+    if (!allowedFields.includes(field)) {
+      throw new ApiError(400, 'Invalid field');
+    }
+
+    let sql = `SELECT id FROM users WHERE ${field} = ?`;
+    const params = [value];
+
+    if (excludeId) {
+      sql += ' AND id != ?';
+      params.push(excludeId);
+    }
+
+    const existing = await query(sql, params);
+    return { unique: existing.length === 0 };
+  },
+
+  /**
    * Public registration for shopkeeper role
    */
   async createShopkeeper(userData) {
     const { username, password, full_name, email, phone } = userData;
+
+    const existingUsername = await query('SELECT id FROM users WHERE username = ?', [username]);
+    if (existingUsername.length > 0) {
+      throw new ApiError(400, 'Username already exists');
+    }
 
     if (email) {
       const existingEmail = await query('SELECT id FROM users WHERE email = ?', [email]);

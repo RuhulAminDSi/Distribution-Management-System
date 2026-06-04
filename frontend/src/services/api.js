@@ -44,7 +44,8 @@ export const authService = {
   forgotPassword: (data) => api.post('/auth/forgot-password', data),
   resetPassword: (data) => api.post('/auth/reset-password', data),
   uploadProfilePicture: (id, formData) => api.post(`/users/${id}/upload-photo`, formData),
-  deleteProfilePicture: (id) => api.delete(`/users/${id}/upload-photo`)
+  deleteProfilePicture: (id) => api.delete(`/users/${id}/upload-photo`),
+  checkUnique: (field, value, excludeId) => api.get('/auth/check-unique', { params: { field, value, excludeId } })
 };
 
 export const productService = {
