@@ -341,7 +341,7 @@ export default function Landing() {
               const isExpanded = expandedModule === index;
 
               return (
-              <article className={`module-card reveal ${isExpanded ? 'is-expanded' : ''}`} style={{ transitionDelay: `${index * 45}ms` }} key={title}>
+              <article className={`module-card reveal ${isExpanded ? 'is-expanded' : ''}`} style={{ transitionDelay: `${index * 45}ms` }} key={index}>
                 <div className="module-card-top">
                   <span className="module-icon"><Icon size={25} /></span>
                   <small>{metric}</small>
@@ -377,7 +377,7 @@ export default function Landing() {
           </div>
           <div className="workflow-lane">
             {workflow.map(({ icon: Icon, title, text }, index) => (
-              <article className="workflow-step reveal" key={title} style={{ transitionDelay: `${index * 80}ms` }}>
+              <article className="workflow-step reveal" key={index} style={{ transitionDelay: `${index * 80}ms` }}>
                 <span>{String(index + 1).padStart(2, '0')}</span>
                 <Icon size={26} />
                 <h3>{title}</h3>
@@ -397,7 +397,7 @@ export default function Landing() {
           </div>
           <div className="security-list">
             {security.map((item, index) => (
-              <div className="security-item reveal" key={item} style={{ transitionDelay: `${index * 55}ms` }}>
+              <div className="security-item reveal" key={index} style={{ transitionDelay: `${index * 55}ms` }}>
                 <CheckCircle2 size={20} />
                 <span>{item}</span>
               </div>
