@@ -12,12 +12,17 @@ export default function PublicMessages() {
   const [showScrollBtn, setShowScrollBtn] = useState(false);
   const bottomRef = useRef(null);
   const activePhoneRef = useRef(null);
+  const messagesLenRef = useRef(0);
   const typingTimerRef = useRef(null);
   const isNearBottom = useRef(true);
 
   useEffect(() => {
     activePhoneRef.current = activePhone;
   }, [activePhone]);
+
+  useEffect(() => {
+    messagesLenRef.current = messages.length;
+  }, [messages]);
 
   useEffect(() => {
     loadConversations();
@@ -69,7 +74,7 @@ export default function PublicMessages() {
   }
 
   async function loadMessagesSilent(phone) {
-    const oldLen = messages.length;
+    const oldLen = messagesLenRef.current;
     try {
       const res = await api.get(`/public-messages/${encodeURIComponent(phone)}`);
       setMessages(res.data);
@@ -151,6 +156,7 @@ export default function PublicMessages() {
             >
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
                 <strong>{c.name}</strong>
+                {c.token && <span style={{ fontSize: '0.7rem', color: 'rgba(233,69,96,0.6)', background: 'rgba(233,69,96,0.08)', padding: '1px 6px', borderRadius: 4 }}>{c.token}</span>}
                 <span style={{ fontSize: '0.75rem', color: 'rgba(160,188,225,0.5)' }}>
                   {new Date(c.last_message_at).toLocaleDateString()}
                 </span>
@@ -174,6 +180,19 @@ export default function PublicMessages() {
         </div>
       </div>
 
+      <style>{`
+        .typing-dot {
+          width: 8px; height: 8px; border-radius: 50%;
+          background: rgba(160,188,225,0.4);
+          animation: msgTypingBounce 1.2s ease-in-out infinite;
+        }
+        .typing-dot:nth-child(2) { animation-delay: 0.2s; }
+        .typing-dot:nth-child(3) { animation-delay: 0.4s; }
+        @keyframes msgTypingBounce {
+          0%, 60%, 100% { transform: translateY(0); }
+          30% { transform: translateY(-6px); }
+        }
+      `}</style>
       {/* Chat area */}
       <div style={{ flex: 1, display: 'flex', flexDirection: 'column', position: 'relative' }}>
         {!activePhone ? (
@@ -188,7 +207,10 @@ export default function PublicMessages() {
                 <User size={18} />
               </div>
               <div>
-                <div style={{ fontWeight: 600 }}>{activeConv?.name || 'Unknown'}</div>
+                <div style={{ fontWeight: 600, display: 'flex', alignItems: 'center', gap: 8 }}>
+                  {activeConv?.name || 'Unknown'}
+                  {activeConv?.token && <span style={{ fontSize: '0.7rem', color: 'rgba(233,69,96,0.7)', background: 'rgba(233,69,96,0.08)', padding: '1px 6px', borderRadius: 4 }}>{activeConv.token}</span>}
+                </div>
                 <div style={{ fontSize: '0.8rem', color: 'rgba(160,188,225,0.5)', display: 'flex', alignItems: 'center', gap: 4 }}>
                   <Phone size={11} /> {activePhone}
                   {publicTyping && <span style={{ color: '#28e7c5', marginLeft: 8 }}>typing...</span>}
