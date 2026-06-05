@@ -275,6 +275,104 @@ export const initializeDatabase = async () => {
       )
     `);
 
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS public_sessions (
+        id SERIAL PRIMARY KEY,
+        name VARCHAR(255) NOT NULL,
+        phone VARCHAR(50) NOT NULL UNIQUE,
+        token VARCHAR(20) NOT NULL UNIQUE,
+        is_active SMALLINT DEFAULT 1,
+        last_public_typing_at TIMESTAMP,
+        last_admin_typing_at TIMESTAMP,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      )
+    `);
+
+    await client.query(`
+      DO $$ BEGIN
+        IF NOT EXISTS (
+          SELECT 1 FROM information_schema.columns
+          WHERE table_name = 'public_sessions' AND column_name = 'last_public_typing_at'
+        ) THEN
+          ALTER TABLE public_sessions ADD COLUMN last_public_typing_at TIMESTAMP;
+        END IF;
+        IF NOT EXISTS (
+          SELECT 1 FROM information_schema.columns
+          WHERE table_name = 'public_sessions' AND column_name = 'last_admin_typing_at'
+        ) THEN
+          ALTER TABLE public_sessions ADD COLUMN last_admin_typing_at TIMESTAMP;
+        END IF;
+      END $$;
+    `);
+
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS public_messages (
+        id SERIAL PRIMARY KEY,
+        session_id INT NOT NULL REFERENCES public_sessions(id) ON DELETE CASCADE,
+        message TEXT NOT NULL,
+        is_from_public SMALLINT DEFAULT 1,
+        is_read SMALLINT DEFAULT 0,
+        admin_id INT REFERENCES users(id),
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      )
+    `);
+
+    await client.query(`
+      DO $$ BEGIN
+        IF NOT EXISTS (
+          SELECT 1 FROM information_schema.columns
+          WHERE table_name = 'public_messages' AND column_name = 'session_id'
+        ) THEN
+          ALTER TABLE public_messages RENAME TO public_messages_old;
+          CREATE TABLE public_messages (
+            id SERIAL PRIMARY KEY,
+            session_id INT NOT NULL REFERENCES public_sessions(id) ON DELETE CASCADE,
+            message TEXT NOT NULL,
+            is_from_public SMALLINT DEFAULT 1,
+            is_read SMALLINT DEFAULT 0,
+            admin_id INT REFERENCES users(id),
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+          );
+        END IF;
+      END $$;
+    `);
+
+    // Migrate old public_messages data if old table exists
+    const oldTable = await client.query(`
+      SELECT EXISTS (SELECT FROM information_schema.tables WHERE table_name = 'public_messages_old')
+    `);
+    if (oldTable.rows[0].exists) {
+      // Create sessions from distinct phone numbers
+      await client.query(`
+        INSERT INTO public_sessions (name, phone, token)
+        SELECT
+          name,
+          phone,
+          UPPER(SUBSTRING(MD5(RANDOM()::TEXT) FROM 1 FOR 8))
+        FROM public_messages_old
+        GROUP BY phone, name
+        ON CONFLICT (phone) DO NOTHING
+      `);
+
+      // Link old messages to sessions
+      await client.query(`
+        INSERT INTO public_messages (session_id, message, is_from_public, is_read, admin_id, created_at)
+        SELECT
+          ps.id,
+          pm.message,
+          pm.is_from_public,
+          pm.is_read,
+          pm.admin_id,
+          pm.created_at
+        FROM public_messages_old pm
+        JOIN public_sessions ps ON ps.phone = pm.phone
+      `);
+
+      await client.query(`DROP TABLE public_messages_old`);
+      console.log('Migrated public_messages_old to new session-based schema');
+    }
+
     const existingPerms = await client.query('SELECT id FROM permissions LIMIT 1');
     if (existingPerms.rows.length === 0) {
       const defaultPermissions = [
@@ -309,7 +407,8 @@ export const initializeDatabase = async () => {
         { name: 'settings_edit', description: 'Edit settings', module: 'settings' },
         { name: 'view_deliveries', description: 'View deliveries', module: 'deliveries' },
         { name: 'orders_view', description: 'View orders', module: 'orders' },
-        { name: 'orders_create', description: 'Create orders', module: 'orders' }
+        { name: 'orders_create', description: 'Create orders', module: 'orders' },
+        { name: 'messages_view', description: 'View public messages', module: 'messages' }
       ];
 
       for (const perm of defaultPermissions) {

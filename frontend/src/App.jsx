@@ -20,6 +20,8 @@ import Reports from './pages/Reports';
 import Users from './pages/Users';
 import Settings from './pages/Settings';
 import Notifications from './pages/Notifications';
+import PublicMessages from './pages/PublicMessages';
+import PublicChat from './pages/PublicChat';
 import NotFound from './pages/NotFound';
 
 function PrivateRoute({ children }) {
@@ -86,6 +88,7 @@ export default function App() {
         <Route path="/login" element={<LoginWithAnimation />} />
         <Route path="/register" element={<RegisterWithAnimation />} />
         <Route path="/reset-password" element={<ResetPassword />} />
+        <Route path="/public-chat" element={<PublicChat />} />
         
         <Route path="/dashboard" element={
           <PrivateRoute>
@@ -144,6 +147,11 @@ export default function App() {
         <Route path="/settings" element={
           <PermissionRoute permission="settings_view">
             <MainLayout><Settings /></MainLayout>
+          </PermissionRoute>
+        } />
+        <Route path="/messages" element={
+          <PermissionRoute permission="messages_view">
+            <MainLayout><PublicMessages /></MainLayout>
           </PermissionRoute>
         } />
         <Route path="/unauthorized" element={<NotFound type="unauthorized" />} />

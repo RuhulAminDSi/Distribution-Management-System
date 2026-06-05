@@ -16,6 +16,7 @@ import {
   Mail,
   MapPin,
   Menu,
+  MessageSquare,
   Package,
   Phone,
   Route,
@@ -29,6 +30,7 @@ import {
   X,
   Zap
 } from 'lucide-react';
+import ChatBot from '../components/ChatBot';
 import './Landing.css';
 
 const copy = {
@@ -438,6 +440,12 @@ export default function Landing() {
           <p>{t.rights}</p>
         </div>
       </footer>
+
+      <Link to="/public-chat" className="chat-fab" aria-label="Message with Dealer">
+        <MessageSquare size={24} />
+        <span className="fab-tooltip">{language === 'bn' ? 'ডিলারকে মেসেজ দিন' : 'Message the dealer'}</span>
+      </Link>
+      <ChatBot />
     </main>
   );
 }

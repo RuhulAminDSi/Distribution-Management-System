@@ -16,7 +16,8 @@ import {
   Building2,
   UserCircle,
   Key,
-  Bell
+  Bell,
+  MessageSquare
 } from 'lucide-react';
 
 const navItems = [
@@ -31,6 +32,7 @@ const navItems = [
   { path: '/stock', icon: Warehouse, labelKey: 'StockNav', permission: 'stock_view' },
   { path: '/reports', icon: FileText, labelKey: 'Reports', permission: 'reports_view' },
   { path: '/users', icon: UserCircle, labelKey: 'Users', permission: 'users_view' },
+  { path: '/messages', icon: MessageSquare, labelKey: 'PublicMessages', permission: 'messages_view' },
   { path: '/settings', icon: Settings, labelKey: 'Settings', permission: 'settings_view' },
 ];
 
