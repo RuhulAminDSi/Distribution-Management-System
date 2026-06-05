@@ -810,7 +810,7 @@ textarea.form-input {
 @media (max-width: 768px) {
   .sidebar {
     transform: translateX(-100%);
-    top: 94px;
+    top: var(--header-h, 94px);
   }
   
   .sidebar.show {
@@ -874,7 +874,7 @@ textarea.form-input {
   /* Page Content */
   .page-content {
     padding: 15px;
-    padding-top: 95px;
+    padding-top: calc(var(--header-h, 95px) + 2px);
   }
 
   .page-header {
@@ -1171,7 +1171,7 @@ textarea.form-input {
   }
   .page-content {
     padding: 15px;
-    padding-top: 95px;
+    padding-top: calc(var(--header-h, 95px) + 2px);
   }
 
   .page-header h1 {

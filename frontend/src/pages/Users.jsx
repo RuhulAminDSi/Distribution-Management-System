@@ -391,21 +391,21 @@ export default function Users() {
                         <button 
                           className={`btn btn-sm ${u.is_active ? 'btn-warning' : 'btn-success'}`}
                           onClick={() => handleToggleStatus(u)}
-                          disabled={u.role_id === 1 || (user?.role === 'admin' && u.role_id === 2)}
+                          disabled={(u.role_id === 1 && user?.id !== u.id) || (user?.role === 'admin' && u.role_id === 2 && user?.id !== u.id)}
                           title={
-                            u.role_id === 1 ? 'Cannot change System Admin status' :
-                            user?.role === 'admin' && u.role_id === 2 ? 'Cannot change Admin status' :
+                            (u.role_id === 1 && user?.id !== u.id) ? 'Cannot change System Admin status' :
+                            (user?.role === 'admin' && u.role_id === 2 && user?.id !== u.id) ? 'Cannot change Admin status' :
                             u.is_active ? 'Deactivate' : 'Activate'
                           }
                         >
                           {u.is_active ? 'Deactivate' : 'Activate'}
                         </button>
-                        {!(user?.role === 'admin' && (u.role_id === 1 || u.role_id === 2)) && (
+                        {(!(user?.role === 'admin' && (u.role_id === 1 || u.role_id === 2)) || user?.id === u.id) && (
                           <button className="btn btn-secondary btn-sm" onClick={() => openModal(u)}>
                             <Pencil size={14} />
                           </button>
                         )}
-                        {u.role_id !== 1 && !(user?.role === 'admin' && u.role_id === 2) && (
+                        {(u.role_id !== 1 || user?.id === u.id) && !(user?.role === 'admin' && u.role_id === 2 && user?.id !== u.id) && (
                           <button 
                             className="btn btn-danger btn-sm" 
                             onClick={() => handleDelete(u.id, u.role_id)}

@@ -84,6 +84,19 @@ export default function TopNav({ onSidebarToggle, sidebarOpen }) {
     };
   }, []);
 
+  useEffect(() => {
+    const el = document.querySelector('.topnav-header');
+    if (!el) return;
+    const ro = new ResizeObserver(entries => {
+      for (const entry of entries) {
+        const h = entry.borderBoxSize?.[0]?.blockSize || entry.contentRect.height;
+        document.documentElement.style.setProperty('--header-h', `${h}px`);
+      }
+    });
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, []);
+
   return (
     <header className="topnav-header">
       <div className="topnav-left">
