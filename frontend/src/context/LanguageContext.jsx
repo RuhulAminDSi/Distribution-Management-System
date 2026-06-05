@@ -40,7 +40,13 @@ export function LanguageProvider({ children }) {
     };
   }, [language]);
 
-  const t = (key) => translations[language][key] || key;
+  const t = (key, params) => {
+    let msg = translations[language][key] || key;
+    if (params) {
+      Object.keys(params).forEach(p => { msg = msg.replace(`{${p}}`, params[p]); });
+    }
+    return msg;
+  };
 
   return (
     <LanguageContext.Provider value={{ language, setLanguage, t, formatNumber, toBanglaNumber }}>

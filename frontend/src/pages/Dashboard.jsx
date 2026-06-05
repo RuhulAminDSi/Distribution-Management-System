@@ -95,6 +95,7 @@ export default function Dashboard() {
           </div>
           <div className="card-body" style={{ padding: 0 }}>
             {data?.recentInvoices?.length > 0 ? (
+              <div className="table-container">
               <table className="table">
                 <thead>
                   <tr>
@@ -119,6 +120,7 @@ export default function Dashboard() {
                   ))}
                 </tbody>
               </table>
+              </div>
             ) : (
               <div className="empty-state">
                 <p>{t('NoSalesToday')}</p>
@@ -133,6 +135,7 @@ export default function Dashboard() {
           </div>
           <div className="card-body" style={{ padding: 0 }}>
             {data?.lowStockProducts?.length > 0 ? (
+              <div className="table-container">
               <table className="table">
                 <thead>
                   <tr>
@@ -155,6 +158,7 @@ export default function Dashboard() {
                   ))}
                 </tbody>
               </table>
+              </div>
             ) : (
               <div className="empty-state">
                 <p>{t('AllProductsWellStocked')}</p>

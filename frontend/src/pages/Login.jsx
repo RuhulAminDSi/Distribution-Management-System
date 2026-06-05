@@ -4,7 +4,7 @@ import { useAuth } from '../context/AuthContext';
 import { useLanguage } from '../context/LanguageContext';
 import { authService } from '../services/api';
 import { 
-  Warehouse, Eye, EyeOff, ArrowLeft,
+  X, Warehouse, Eye, EyeOff, ArrowLeft,
   Package, TrendingUp, Users, CreditCard,
   ShoppingCart, BarChart3, Building2, Truck,
   Circle
@@ -247,7 +247,7 @@ export default function Login() {
           <div className="modal" onClick={e => e.stopPropagation()}>
             <div className="modal-header">
               <h3>{t('ResetPassword')}</h3>
-              <button type="button" className="modal-close" onClick={() => setShowForgotModal(false)}>×</button>
+              <button type="button" className="modal-close" onClick={() => setShowForgotModal(false)}><X size={18} /></button>
             </div>
             <form onSubmit={handleForgotPassword}>
               <div className="modal-body">
@@ -644,12 +644,54 @@ export default function Login() {
         }
 
         @media (max-width: 480px) {
+          .login-container {
+            padding: 12px;
+          }
+
           .login-card {
-            padding: 30px 24px;
+            padding: 24px 18px;
+            border-radius: 18px;
           }
           
           .login-logo h1 {
             font-size: 2rem;
+          }
+
+          .login-header {
+            margin-bottom: 24px;
+          }
+
+          .form-group {
+            margin-bottom: 16px;
+          }
+
+          .form-input {
+            padding: 12px 14px;
+            font-size: 0.9rem;
+          }
+
+          .login-btn {
+            padding: 14px;
+            font-size: 0.95rem;
+          }
+
+          .forgot-btn {
+            padding: 10px;
+            font-size: 0.85rem;
+          }
+
+          .floating-icon {
+            display: none;
+          }
+
+          .card-bottom-bar {
+            flex-direction: column;
+            gap: 8px;
+          }
+
+          .card-bottom-btn {
+            width: 100%;
+            justify-content: center;
           }
         }
       `}</style>

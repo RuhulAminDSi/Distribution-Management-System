@@ -33,12 +33,12 @@ export const reportService = {
       .where('is_active', 1)
       .first();
 
-    // Due summary
-    const dueSummary = await new QueryBuilder('retailers r')
-      .select('COUNT(DISTINCT r.id) as total_retailers, COALESCE(SUM(i.due_amount), 0) as total_due')
-      .join('invoices i', `r.id = i.retailer_id AND i.status IN ('due', 'partial')`)
+    // Due summary — uses invoice due_amounts (not cached column)
+    const dueSummary = await new QueryBuilder('invoices i')
+      .select('COUNT(DISTINCT i.retailer_id) as total_retailers, COALESCE(SUM(i.due_amount), 0) as total_due')
+      .join('retailers r', 'i.retailer_id = r.id')
       .where('r.is_active', 1)
-      .whereRaw('r.outstanding_balance > 0', [])
+      .whereRaw("i.status IN ('due', 'partial')", [])
       .first();
 
     // Expiry summary
@@ -182,16 +182,40 @@ export const reportService = {
   },
 
   async dueReport(page = 1, limit = 20) {
-    const result = await new QueryBuilder('retailers r')
-      .select('r.id as retailer_id, r.name as retailer_name, r.phone, r.address, r.area, r.credit_limit, r.due_limit, r.outstanding_balance, COUNT(i.id) as total_invoices, COALESCE(SUM(i.due_amount), 0) as total_due')
-      .join('invoices i', `r.id = i.retailer_id AND i.status IN ('due', 'partial')`)
-      .where('r.is_active', 1)
-      .whereRaw('r.outstanding_balance > 0', [])
-      .groupBy('r.id')
-      .orderBy('r.outstanding_balance', 'DESC')
-      .paginate(page, limit);
+    const pageNum = Math.max(1, parseInt(page));
+    const limitNum = Math.max(1, parseInt(limit));
+    const offset = (pageNum - 1) * limitNum;
 
-    return result;
+    const countResult = await QueryBuilder.raw(`
+      SELECT COUNT(*) as total FROM (
+        SELECT r.id
+        FROM retailers r
+        LEFT JOIN invoices i ON r.id = i.retailer_id AND i.status IN ('due', 'partial')
+        WHERE r.is_active = 1
+        GROUP BY r.id
+        HAVING COALESCE(SUM(i.due_amount), 0) > 0
+      ) sub
+    `);
+    const total = countResult[0]?.total || 0;
+
+    const data = await QueryBuilder.raw(`
+      SELECT r.id as retailer_id, r.name as retailer_name, r.phone, r.address, r.area,
+        r.credit_limit, r.due_limit,
+        COALESCE(SUM(i.due_amount), 0) as outstanding_balance,
+        COUNT(i.id) as total_invoices,
+        COALESCE(SUM(i.due_amount), 0) as total_due
+      FROM retailers r
+      LEFT JOIN invoices i ON r.id = i.retailer_id AND i.status IN ('due', 'partial')
+      WHERE r.is_active = 1
+      GROUP BY r.id
+      HAVING COALESCE(SUM(i.due_amount), 0) > 0
+      ORDER BY outstanding_balance DESC
+      LIMIT ? OFFSET ?
+    `, [limitNum, offset]);
+
+    const pages = Math.ceil(total / limitNum);
+
+    return { data, total, page: pageNum, limit: limitNum, pages, hasMore: pageNum < pages };
   },
 
   async expiryReport() {

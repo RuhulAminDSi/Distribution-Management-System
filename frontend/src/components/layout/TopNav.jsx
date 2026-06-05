@@ -670,10 +670,6 @@ export default function TopNav({ onSidebarToggle, sidebarOpen }) {
         }
 
         @media (max-width: 768px) {
-          .page-title-wrapper {
-            display: none;
-          }
-
           .user-info {
             display: none;
           }
@@ -682,8 +678,50 @@ export default function TopNav({ onSidebarToggle, sidebarOpen }) {
             display: none;
           }
 
-          .brand-text {
+          .topnav-actions {
+            gap: 4px;
+          }
+
+          .nav-icon-btn {
+            width: 36px;
+            height: 36px;
+          }
+        }
+
+        @media (max-width: 480px) {
+          .topnav-header {
+            padding: 0 12px;
+          }
+
+          .topnav-right {
+            gap: 8px;
+          }
+
+          .home-btn {
             display: none;
+          }
+
+          .brand-text {
+            font-size: 1rem;
+          }
+
+          .user-section .user-trigger {
+            padding: 4px 6px 4px 4px;
+          }
+
+          .user-section .user-avatar {
+            width: 30px;
+            height: 30px;
+            font-size: 0.8rem;
+          }
+
+          .notif-dropdown {
+            width: 290px;
+            right: -60px;
+          }
+
+          .user-dropdown {
+            width: 220px;
           }
         }
       `}</style>

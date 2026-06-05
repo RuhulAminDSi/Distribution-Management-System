@@ -628,6 +628,16 @@ export const initializeDatabase = async () => {
       END $$;
     `);
 
+    // Recalculate retailers.outstanding_balance from actual invoice due_amounts
+    await client.query(`
+      UPDATE retailers r
+      SET outstanding_balance = (
+        SELECT COALESCE(SUM(due_amount), 0)
+        FROM invoices
+        WHERE retailer_id = r.id
+      )
+    `);
+
     await client.query('COMMIT');
     console.log('Database initialized successfully');
   } catch (error) {

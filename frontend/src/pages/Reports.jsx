@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { reportService } from '../services/api';
 import { useLanguage, formatCurrency, formatNumber, formatDate, formatDateTime } from '../context/LanguageContext';
+import DatePicker from '../components/common/DatePicker';
 import { FileText, FileSpreadsheet, Printer, ChevronLeft, ChevronRight, DollarSign, Package, Building2, TrendingUp, CreditCard, AlertTriangle } from 'lucide-react';
 import { jsPDF } from 'jspdf';
 import autoTable from 'jspdf-autotable';
@@ -161,7 +162,7 @@ export default function Reports() {
     const exportData = data.length > 0 ? await fetchAllExportData() : data;
     const title = getReportTitle();
     const isLandscape = activeTab === 'stock' || activeTab === 'due' || activeTab === 'expiry';
-    const doc = new jsPDF({ orientation: isLandscape ? 'landscape' : 'portrait' });
+    const doc = new jsPDF({ orientation: 'portrait' });
 
     doc.setFontSize(18);
     doc.setTextColor(26, 86, 219);
@@ -224,7 +225,7 @@ export default function Reports() {
         columns = [['Invoice No', 'Date', 'Retailer', 'Sales', 'Cost', 'Profit']];
         tableData = exportData.map(item => [
           item.invoice_no,
-          formatDate(item.invoice_date),
+          formatDate(item.invoice_date, language),
           item.retailer_name,
           formatCurrency(item.sales_amount, language),
           formatCurrency(item.cost_amount, language),
@@ -289,7 +290,20 @@ export default function Reports() {
       headStyles: { fillColor: [26, 86, 219], textColor: 255, fontStyle: 'bold' },
       footStyles: { fillColor: [232, 240, 254], fontStyle: 'bold', textColor: [26, 86, 219] },
       alternateRowStyles: { fillColor: [249, 250, 251] },
-      margin: { top: 10 }
+      margin: { top: 10 },
+      didDrawPage: (data) => {
+        const pw = doc.internal.pageSize;
+        doc.saveGraphicsState();
+        doc.setGState(new doc.GState({ opacity: 0.1 }));
+        doc.setTextColor(180, 180, 180);
+        doc.setFontSize(isLandscape ? 30 : 22);
+        doc.setFontSize(isLandscape ? 30 : 20);
+        const wm2 = ['Ruhana Enterprise', 'DMS'];
+        wm2.forEach((l, i) => {
+          doc.text(l, pw.width / 2, pw.height * 0.5 + (i - 0.5) * 12, { align: 'center', angle: -30 });
+        });
+        doc.restoreGraphicsState();
+      }
     });
 
     doc.save(`${companyName.replace(/\s+/g, '_')}_${title.replace(/\s+/g, '_')}_${new Date().toISOString().split('T')[0]}.pdf`);
@@ -454,7 +468,8 @@ export default function Reports() {
 
     const element = document.createElement('div');
     element.innerHTML = `
-      <div style="font-family: 'Noto Sans Bengali', sans-serif; padding: 30px; background: white;">
+      <div style="font-family: 'Noto Sans Bengali', sans-serif; padding: 30px; background: white; position: relative;">
+        <div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%) rotate(-30deg); font-size: 26px; font-weight: bold; color: rgba(180,180,180,0.4); z-index: 9999; pointer-events: none; text-align: center; line-height: 1.4; font-family: Arial, sans-serif;">রুহানা এন্টারপ্রাইজ<br>ডি এম এস</div>
         <div style="text-align: center; margin-bottom: 25px; border-bottom: 3px solid #1a56db; padding-bottom: 15px;">
           <h1 style="font-size: 28px; margin-bottom: 5px; color: #1a56db; font-weight: bold;">${banglaCompanyName}</h1>
           <p style="font-size: 14px; color: #6b7280;">${banglaCompanyAddress}</p>
@@ -478,7 +493,7 @@ export default function Reports() {
       filename: `${banglaCompanyName.replace(/\s+/g, '_')}_${title.replace(/\s+/g, '_')}_${new Date().toISOString().split('T')[0]}.pdf`,
       image: { type: 'jpeg', quality: 0.98 },
       html2canvas: { scale: 3, useCORS: true, logging: false },
-      jsPDF: { unit: 'mm', format: 'a4', orientation: isLandscape ? 'landscape' : 'portrait' }
+      jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
     };
 
     html2pdf().set(opt).from(element).save();
@@ -493,7 +508,7 @@ export default function Reports() {
       case 'daily':
         sheetData = exportData.map(item => ({
           'Invoice No': item.invoice_no,
-          'Date': formatDate(item.invoice_date),
+          'Date': formatDate(item.invoice_date, language),
           'Retailer': item.retailer_name,
           'Total': item.total_amount,
           'Paid': item.paid_amount,
@@ -525,7 +540,7 @@ export default function Reports() {
       case 'profit':
         sheetData = exportData.map(item => ({
           'Invoice No': item.invoice_no,
-          'Date': formatDate(item.invoice_date),
+          'Date': formatDate(item.invoice_date, language),
           'Retailer': item.retailer_name,
           'Sales Amount': item.sales_amount,
           'Cost Amount': item.cost_amount,
@@ -672,25 +687,36 @@ export default function Reports() {
     }
     const totalRow = `<tfoot><tr style="font-weight: bold; background: #e8f0fe;">${totalCells.map((c, i) => `<td${i > 1 && totalCells[i] !== '' ? ' class="text-right"' : ''}>${c}</td>`).join('')}</tr></tfoot>`;
 
-    const printWindow = window.open('', '_blank');
-    printWindow.document.write(`
+    const html = `
       <!DOCTYPE html>
       <html>
       <head><meta charset="UTF-8"><title>${reportTitle}</title>
       <style>
-        body { font-family: 'Noto Sans Bengali', 'Arial Unicode MS', Arial, sans-serif; margin: 0; padding: 20px; color: #333; }
-        .header { text-align: center; margin-bottom: 25px; border-bottom: 3px solid #1a56db; padding-bottom: 15px; }
-        .header .company { font-size: 20px; font-weight: bold; color: #1a56db; }
-        .header .title { font-size: 16px; color: #333; margin: 8px 0 4px; }
-        .header .meta { font-size: 11px; color: #6b7280; }
-        .info { display: flex; justify-content: space-between; margin-bottom: 15px; font-size: 11px; color: #6b7280; }
-        table { width: 100%; border-collapse: collapse; font-size: 10px; }
-        th { background: #1a56db; color: #fff; padding: 8px 6px; border: 1px solid #1a56db; text-align: center; font-weight: 600; white-space: nowrap; }
-        td { padding: 6px; border: 1px solid #d1d5db; color: #333; }
+        @page { size: 210mm 297mm; margin: 10mm; }
+        body { font-family: 'Noto Sans Bengali', 'Arial Unicode MS', Arial, sans-serif; margin: 0; padding: 12px; color: #333; position: relative; }
+        body::before {
+          content: '${isBn ? 'রুহানা এন্টারপ্রাইজ\\aডি এম এস' : 'Ruhana Enterprise\\aDMS'}';
+          position: fixed; top: 50%; left: 50%;
+          transform: translate(-50%, -50%) rotate(-30deg);
+          font-size: ${isLandscape ? '55px' : '36px'};
+          font-weight: bold; color: rgba(180, 180, 180, 0.4);
+          pointer-events: none; z-index: 1;
+          white-space: pre-wrap; text-align: center; line-height: 1.4;
+          font-family: Arial, sans-serif;
+        }
+        .header { position: relative; z-index: 2; text-align: center; margin-bottom: 20px; border-bottom: 3px solid #1a56db; padding-bottom: 12px; }
+        .header .company { font-size: 18px; font-weight: bold; color: #1a56db; }
+        .header .title { font-size: 14px; color: #333; margin: 6px 0 4px; }
+        .header .meta { font-size: 10px; color: #6b7280; }
+        .info { display: flex; justify-content: space-between; margin-bottom: 12px; font-size: 10px; color: #6b7280; }
+        .table-wrap { width: 100%; overflow-x: auto; -webkit-overflow-scrolling: touch; }
+        table { width: 100%; border-collapse: collapse; font-size: 9px; }
+        th { background: #1a56db; color: #fff; padding: 6px 4px; border: 1px solid #1a56db; text-align: center; font-weight: 600; white-space: nowrap; }
+        td { padding: 5px 4px; border: 1px solid #d1d5db; color: #333; word-break: break-word; }
         tbody tr:nth-child(even) { background: #f9fafb; }
         .text-right { text-align: right; }
         .text-center { text-align: center; }
-        .footer { text-align: center; margin-top: 25px; padding-top: 12px; border-top: 1px solid #e5e7eb; font-size: 10px; color: #9ca3af; }
+        .footer { text-align: center; margin-top: 20px; padding-top: 10px; border-top: 1px solid #e5e7eb; font-size: 9px; color: #9ca3af; }
         @media print { body { padding: 0; } body { -webkit-print-color-adjust: exact; print-color-adjust: exact; } }
       </style>
       </head>
@@ -700,17 +726,24 @@ export default function Reports() {
           <div class="title">${reportTitle}</div>
           <div class="meta">${period}</div>
         </div>
-        <table>
-          <thead><tr>${headerRow.map(h => `<th>${h}</th>`).join('')}</tr></thead>
-          <tbody>${rows.map(r => `<tr>${r.cols.map(c => `<td>${c}</td>`).join('')}</tr>`).join('')}</tbody>
-          ${totalRow}
-        </table>
+        <div class="table-wrap">
+          <table style="${isLandscape ? '' : 'min-width: auto;'}">
+            <thead><tr>${headerRow.map(h => `<th>${h}</th>`).join('')}</tr></thead>
+            <tbody>${rows.map(r => `<tr>${r.cols.map(c => `<td>${c}</td>`).join('')}</tr>`).join('')}</tbody>
+            ${totalRow}
+          </table>
+        </div>
         <div class="footer">${isBn ? 'ডিস্ট্রিবিউশন ম্যানেজমেন্ট সিস্টেম দ্বারা জেনারেটেড' : 'Generated by Distribution Management System'}</div>
-        <script>window.print();window.close();</script>
       </body>
       </html>
-    `);
-    printWindow.document.close();
+    `;
+    const blob = new Blob([html], { type: 'text/html' });
+    const url = URL.createObjectURL(blob);
+    const pw = window.open(url, '_blank');
+    if (pw) {
+      pw.onload = () => { pw.focus(); pw.print(); };
+    }
+    setTimeout(() => URL.revokeObjectURL(url), 30000);
   };
 
   const tabs = [
@@ -749,25 +782,23 @@ export default function Reports() {
         </div>
       )}
 
-      <div className="card mb-4">
+      <div className="card mb-4" style={{ overflow: 'visible' }}>
         <div className="card-body">
           <div className="flex gap-4 items-center">
             <div>
               <label className="form-label">{t('StartDate')}</label>
-              <input
-                type="date"
-                className="form-input"
+              <DatePicker
                 value={dateRange.start_date}
-                onChange={(e) => setDateRange({ ...dateRange, start_date: e.target.value })}
+                onChange={(v) => setDateRange({ ...dateRange, start_date: v })}
+                language={language}
               />
             </div>
             <div>
               <label className="form-label">{t('EndDate')}</label>
-              <input
-                type="date"
-                className="form-input"
+              <DatePicker
                 value={dateRange.end_date}
-                onChange={(e) => setDateRange({ ...dateRange, end_date: e.target.value })}
+                onChange={(v) => setDateRange({ ...dateRange, end_date: v })}
+                language={language}
               />
             </div>
           </div>
@@ -926,10 +957,10 @@ export default function Reports() {
           <div className="card-body text-center" style={{ padding: '40px', color: 'var(--text-secondary)' }}>
             <FileText size={48} style={{ opacity: 0.3, marginBottom: '16px' }} />
             <h3>{t('NoDataFound')}</h3>
-            <p>No {activeTab} sales found for the selected date range.</p>
+            <p>{t('NoSalesForDateRange', { tab: tabs.find(t => t.id === activeTab)?.label || activeTab })}</p>
             {activeTab === 'daily' && (
               <p style={{ fontSize: '12px', marginTop: '8px' }}>
-                Selected date: {dateRange.start_date}
+                {t('SelectedDate', { date: dateRange.start_date })}
               </p>
             )}
           </div>
@@ -954,9 +985,9 @@ export default function Reports() {
                     <tr key={item.id}>
                       <td>{item.invoice_no}</td>
                       <td>{item.retailer_name}</td>
-                      <td className="text-right">{formatCurrency(item.total_amount)}</td>
-                      <td className="text-right">{formatCurrency(item.paid_amount)}</td>
-                      <td className="text-right">{formatCurrency(item.due_amount)}</td>
+                      <td className="text-right">{formatCurrency(item.total_amount, language)}</td>
+                      <td className="text-right">{formatCurrency(item.paid_amount, language)}</td>
+                      <td className="text-right">{formatCurrency(item.due_amount, language)}</td>
                       <td><span className={`badge badge-${item.status === 'paid' ? 'success' : item.status === 'partial' ? 'warning' : 'danger'}`}>{item.status}</span></td>
                     </tr>
                   ))}
@@ -1055,7 +1086,7 @@ export default function Reports() {
                   {data.map(item => (
                     <tr key={item.invoice_id}>
                       <td>{item.invoice_no}</td>
-                      <td>{formatDate(item.invoice_date)}</td>
+                      <td>{formatDate(item.invoice_date, language)}</td>
                       <td>{item.retailer_name}</td>
                       <td className="text-right">{formatCurrency(item.sales_amount, language)}</td>
                       <td className="text-right">{formatCurrency(item.cost_amount, language)}</td>
@@ -1124,9 +1155,9 @@ export default function Reports() {
                       <td>{item.retailer_name}</td>
                       <td>{item.phone}</td>
                       <td>{item.area || '-'}</td>
-                      <td className="text-right">{formatCurrency(item.credit_limit)}</td>
-                      <td className="text-right text-danger">{formatCurrency(item.outstanding_balance)}</td>
-                      <td className="text-right">{item.total_invoices}</td>
+                      <td className="text-right">{formatCurrency(item.credit_limit, language)}</td>
+                      <td className="text-right text-danger">{formatCurrency(item.outstanding_balance, language)}</td>
+                      <td className="text-right">{formatNumber(item.total_invoices, language)}</td>
                     </tr>
                   ))}
                 </tbody>

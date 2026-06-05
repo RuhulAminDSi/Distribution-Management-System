@@ -151,15 +151,28 @@ export default function Landing() {
 
       <header className={`site-nav ${scrolled ? 'is-scrolled' : ''}`}>
         <div className="landing-container nav-inner">
-          <Link to="/" className="brand" onClick={() => setMobileMenuOpen(false)}>
-            <span className="brand-mark"><Package size={24} /></span>
-            <span><strong>DMS</strong><small>{t('brandSubtitle')}</small></span>
-          </Link>
+          <div className="brand-group">
+            <Link to="/" className="brand" onClick={() => setMobileMenuOpen(false)}>
+              <span className="brand-mark"><Package size={24} /></span>
+              <span><strong>DMS</strong><small>{t('brandSubtitle')}</small></span>
+            </Link>
+            <button className="language-pill lang-left" onClick={() => setLanguage(language === 'en' ? 'bn' : 'en')}>
+              <Globe2 size={15} /> {language === 'en' ? 'বাংলা' : 'EN'}
+            </button>
+          </div>
 
           <nav className={`nav-links ${mobileMenuOpen ? 'is-open' : ''}`}>
             {['navHome', 'navBenefits', 'navHowItWorks', 'navWhyDMS', 'navContact'].map((key, index) => (
               <a key={key} href={`#${navTargets[index]}`} className={activeSection === navTargets[index] ? 'active' : ''} onClick={() => setMobileMenuOpen(false)}>{t(key)}</a>
             ))}
+            <div className="nav-links-actions">
+              <button className="language-pill mobile-only" onClick={() => setLanguage(language === 'en' ? 'bn' : 'en')}>
+                <Globe2 size={15} /> {language === 'en' ? 'বাংলা' : 'EN'}
+              </button>
+              <Link to="/register" className="ghost-link mobile-only" onClick={() => setMobileMenuOpen(false)}>{t('signUp')}</Link>
+              <Link to="/demo" className="ghost-link mobile-only" onClick={() => setMobileMenuOpen(false)}>{t('demo')}</Link>
+              <Link to="/login" className="nav-cta mobile-only" onClick={() => setMobileMenuOpen(false)}>{t('login')}</Link>
+            </div>
           </nav>
 
           <div className="nav-actions">

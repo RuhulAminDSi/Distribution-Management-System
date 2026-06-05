@@ -1199,7 +1199,22 @@ export default function Demo() {
           .demo-brand-text { display: none; }
           .demo-sidebar-new { width: 70px !important; }
           .demo-main-content { margin-left: 70px !important; }
+          .demo-page-content { padding: 12px; }
           .demo-page-banner { flex-direction: column; gap: 10px; text-align: center; }
+          .demo-page-banner .btn { width: 100%; justify-content: center; }
+          .demo-topnav-actions { gap: 4px; }
+          .demo-nav-icon-btn { width: 36px; height: 36px; }
+          .demo-user-trigger { padding: 4px 8px 4px 4px; }
+          .demo-user-avatar { width: 30px; height: 30px; font-size: 0.8rem; }
+        }
+
+        @media (max-width: 480px) {
+          .demo-main-content { padding: 12px; margin-left: 0 !important; }
+          .demo-sidebar-new { width: 0 !important; overflow: hidden; }
+          .demo-sidebar-new.open { width: 240px !important; }
+          .demo-topnav-actions .demo-home-btn { display: none; }
+          .reports-grid { grid-template-columns: 1fr; }
+          .settings-grid { grid-template-columns: 1fr; }
         }
       `}</style>
     </div>
