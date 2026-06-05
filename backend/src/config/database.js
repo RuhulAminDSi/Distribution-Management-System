@@ -13,7 +13,8 @@ const pool = new Pool({
   database: process.env.DB_NAME || 'dms_db',
   max: 10,
   idleTimeoutMillis: 10000,
-  connectionTimeoutMillis: 10000
+  connectionTimeoutMillis: 30000,
+  ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false
 });
 
 function convertPlaceholders(sql) {

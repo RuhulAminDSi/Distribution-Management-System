@@ -101,8 +101,17 @@ export default function Users() {
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    const hasFieldErrors = Object.values(errors).some(msg => msg);
+    const nextErrors = {};
+    if (!formData.username?.trim()) nextErrors.username = 'Username is required';
+    if (!editItem && (!formData.password || formData.password.length < 6)) {
+      nextErrors.password = 'Password must be at least 6 characters';
+    }
+    if (!formData.full_name?.trim()) nextErrors.full_name = 'Full name is required';
+    if (!formData.role_id) nextErrors.role_id = 'Role is required';
+
+    const hasFieldErrors = Object.values({ ...errors, ...nextErrors }).some(msg => msg);
     if (hasFieldErrors) {
+      setErrors(prev => ({ ...prev, ...nextErrors }));
       alert('Please fix the highlighted errors before submitting');
       return;
     }
@@ -144,6 +153,12 @@ export default function Users() {
       console.error('Failed to save:', error);
       console.error('Error response:', error.response?.data);
       console.error('Error status:', error.response?.status);
+      const apiErrors = error.response?.data?.errors;
+      if (apiErrors) {
+        setErrors(prev => ({ ...prev, ...apiErrors }));
+        alert(Object.values(apiErrors)[0] || error.response?.data?.message || 'Failed to save');
+        return;
+      }
       alert(error.response?.data?.message || error.response?.data?.error || 'Failed to save');
     }
   };
@@ -496,13 +511,16 @@ export default function Users() {
                       <input 
                         type="password" 
                         value={formData.password || ''}
-                        onChange={e => setFormData({...formData, password: e.target.value})}
+                        onChange={e => { setFormData({...formData, password: e.target.value}); setErrors(prev => ({ ...prev, password: '' })); }}
                         required={!editItem}
+                        minLength={editItem ? undefined : 6}
                         placeholder={editItem ? 'Leave blank to keep current' : t('Password')}
-                        className="form-input"
+                        className={`form-input ${errors.password ? 'input-error' : ''}`}
                         autoComplete="new-password"
                       />
+                      {errors.password && <AlertCircle size={16} className="field-error-icon" />}
                     </div>
+                    {errors.password && <span className="field-error-text">{errors.password}</span>}
                   </div>
                 </div>
               </div>
@@ -540,14 +558,16 @@ export default function Users() {
                     <input 
                       type="text" 
                       value={formData.full_name || ''}
-                      onChange={e => setFormData({...formData, full_name: e.target.value})}
+                      onChange={e => { setFormData({...formData, full_name: e.target.value}); setErrors(prev => ({ ...prev, full_name: '' })); }}
                       required 
                       placeholder={t('FullName')}
-                      className="form-input"
+                      className={`form-input ${errors.full_name ? 'input-error' : ''}`}
                       autoComplete="off"
                     />
+                    {errors.full_name && <AlertCircle size={16} className="field-error-icon" />}
                   </div>
-                </div>
+                  {errors.full_name && <span className="field-error-text">{errors.full_name}</span>}
+                  </div>
                 <div className="form-row">
                   <div className="form-group">
                     <label>{t('Email')}</label>
@@ -599,10 +619,10 @@ export default function Users() {
                     <Shield size={18} className="input-icon" />
                     <select 
                       value={formData.role_id || ''}
-                      onChange={e => setFormData({...formData, role_id: e.target.value})}
+                      onChange={e => { setFormData({...formData, role_id: e.target.value}); setErrors(prev => ({ ...prev, role_id: '' })); }}
                       required
                       disabled={editItem?.role_id === 1}
-                      className="form-input"
+                      className={`form-select ${errors.role_id ? 'input-error' : ''}`}
                       style={{ paddingLeft: '40px' }}
                     >
                       <option value="">{t('SelectRole') || 'Select role'}</option>
@@ -612,7 +632,9 @@ export default function Users() {
                         <option key={r.id} value={r.id}>{formatRole(r.name)}</option>
                       ))}
                     </select>
+                    {errors.role_id && <AlertCircle size={16} className="field-error-icon" />}
                   </div>
+                  {errors.role_id && <span className="field-error-text">{errors.role_id}</span>}
                 </div>
               </div>
               

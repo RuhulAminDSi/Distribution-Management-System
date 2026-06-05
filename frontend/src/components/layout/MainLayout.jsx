@@ -71,6 +71,10 @@ export default function MainLayout({ children }) {
     return () => window.removeEventListener('openPasswordModal', handleOpenPasswordModal);
   }, []);
 
+  useEffect(() => {
+    document.title = `${getPageTitle()} - DMS`;
+  }, [location.pathname, location.search, t]);
+
   const handleSidebarToggle = () => {
     setSidebarOpen(!sidebarOpen);
   };

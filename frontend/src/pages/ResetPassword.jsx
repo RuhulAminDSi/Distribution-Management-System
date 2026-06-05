@@ -1,10 +1,13 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useLanguage } from '../context/LanguageContext';
 import { authService } from '../services/api';
 import { Warehouse, Eye, EyeOff } from 'lucide-react';
 
 export default function ResetPassword() {
+  useEffect(() => {
+    document.title = `${t('ResetPassword') || 'Reset Password'} - DMS`;
+  }, [t]);
   const { t } = useLanguage();
   const [searchParams] = useSearchParams();
   const token = searchParams.get('token');

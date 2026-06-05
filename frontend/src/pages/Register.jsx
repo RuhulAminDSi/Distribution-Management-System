@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useLanguage } from '../context/LanguageContext';
 import { authService } from '../services/api';
 import {
-  Warehouse, Eye, EyeOff, ArrowLeft, UserPlus, Mail, Phone, User, Lock, AlertCircle, CheckCircle
+  Package, Eye, EyeOff, ArrowLeft, UserPlus, Mail, Phone, User, Lock, AlertCircle, CheckCircle
 } from 'lucide-react';
 
 const floatingIcons = [
@@ -68,6 +68,10 @@ export default function Register() {
   const handleBlur = (field) => (e) => {
     debouncedCheck(field, e.target.value);
   };
+
+  useEffect(() => {
+    document.title = `${t('Register')} - DMS`;
+  }, [t]);
 
   useEffect(() => {
     setIsVisible(true);
@@ -179,7 +183,7 @@ export default function Register() {
           <div className="register-header">
             <div className="register-logo">
               <div className="logo-icon">
-                <Warehouse size={32} />
+                <Package size={32} />
               </div>
               <h1>DMS</h1>
             </div>
@@ -350,8 +354,6 @@ export default function Register() {
       </div>
 
       <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@300;400;500;600;700&family=Noto+Sans+Bengali:wght@400;500;600;700&display=swap');
-
         .register-page {
           min-height: 100vh;
           display: flex;
@@ -360,7 +362,6 @@ export default function Register() {
           background: linear-gradient(135deg, #0f0f1a 0%, #1a1a2e 50%, #16213e 100%);
           position: relative;
           overflow: hidden;
-          font-family: 'IBM Plex Sans', 'Noto Sans Bengali', sans-serif;
         }
 
         .register-bg-shapes {

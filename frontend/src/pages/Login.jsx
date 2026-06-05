@@ -4,8 +4,8 @@ import { useAuth } from '../context/AuthContext';
 import { useLanguage } from '../context/LanguageContext';
 import { authService } from '../services/api';
 import { 
-  X, Warehouse, Eye, EyeOff, ArrowLeft,
-  Package, TrendingUp, Users, CreditCard,
+  X, Package, Eye, EyeOff, ArrowLeft,
+  TrendingUp, Users, CreditCard,
   ShoppingCart, BarChart3, Building2, Truck,
   Circle
 } from 'lucide-react';
@@ -42,6 +42,10 @@ export default function Login() {
       navigate('/dashboard', { replace: true });
     }
   }, [user, navigate]);
+
+  useEffect(() => {
+    document.title = `${t('SignIn') || 'Sign In'} - DMS`;
+  }, [t]);
 
   useEffect(() => {
     setIsVisible(true);
@@ -149,7 +153,7 @@ export default function Login() {
           <div className="login-header">
             <div className="login-logo">
               <div className="logo-icon">
-                <Warehouse size={32} />
+                <Package size={32} />
               </div>
               <h1>DMS</h1>
             </div>
@@ -285,8 +289,6 @@ export default function Login() {
       )}
 
       <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@300;400;500;600;700&family=Noto+Sans+Bengali:wght@400;500;600;700&display=swap');
-
         .login-page {
           min-height: 100vh;
           display: flex;
@@ -295,7 +297,6 @@ export default function Login() {
           background: linear-gradient(135deg, #0f0f1a 0%, #1a1a2e 50%, #16213e 100%);
           position: relative;
           overflow: hidden;
-          font-family: 'IBM Plex Sans', 'Noto Sans Bengali', sans-serif;
         }
 
         .login-bg-shapes {

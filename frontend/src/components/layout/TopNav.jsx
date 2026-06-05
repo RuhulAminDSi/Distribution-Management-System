@@ -207,8 +207,6 @@ export default function TopNav({ onSidebarToggle, sidebarOpen }) {
       </div>
 
       <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@300;400;500;600;700&family=Noto+Sans+Bengali:wght@400;500;600;700&display=swap');
-
         .topnav-header {
           position: fixed;
           top: 0;
@@ -222,7 +220,6 @@ export default function TopNav({ onSidebarToggle, sidebarOpen }) {
           justify-content: space-between;
           padding: 0 20px;
           z-index: 1000;
-          font-family: 'IBM Plex Sans', 'Noto Sans Bengali', sans-serif;
           box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
         }
 

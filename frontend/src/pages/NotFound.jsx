@@ -20,6 +20,10 @@ export default function NotFound({ type = 'not-found' }) {
   const [floatingIcons, setFloatingIcons] = useState([]);
 
   useEffect(() => {
+    document.title = 'Page Not Found - DMS';
+  }, []);
+
+  useEffect(() => {
     setIsVisible(true);
   }, []);
 
@@ -196,10 +200,7 @@ export default function NotFound({ type = 'not-found' }) {
       </footer>
 
       <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@300;400;500;600;700&family=Noto+Sans+Bengali:wght@400;500;600;700&display=swap');
-
         .not-found-page {
-          font-family: 'IBM Plex Sans', 'Noto Sans Bengali', sans-serif;
           min-height: 100vh;
           background: #0f0f1a;
           position: relative;

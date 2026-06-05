@@ -3,6 +3,9 @@ import { MessageSquare, Send, Phone, User, ArrowDown } from 'lucide-react';
 import api from '../services/api';
 
 export default function PublicMessages() {
+  useEffect(() => {
+    document.title = 'Messages - DMS';
+  }, []);
   const [conversations, setConversations] = useState([]);
   const [activePhone, setActivePhone] = useState(null);
   const [messages, setMessages] = useState([]);
