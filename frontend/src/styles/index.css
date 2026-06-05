@@ -810,6 +810,7 @@ textarea.form-input {
 @media (max-width: 768px) {
   .sidebar {
     transform: translateX(-100%);
+    top: 94px;
   }
   
   .sidebar.show {
@@ -873,7 +874,7 @@ textarea.form-input {
   /* Page Content */
   .page-content {
     padding: 15px;
-    padding-top: 84px;
+    padding-top: 95px;
   }
 
   .page-header {
@@ -910,6 +911,25 @@ textarea.form-input {
 
   th, td {
     padding: 10px 8px;
+  }
+
+  .hide-mobile {
+    display: none !important;
+  }
+
+  .table td:last-child .btn {
+    padding: 4px 6px;
+    min-width: 28px;
+    height: 28px;
+  }
+
+  .table td:last-child .btn svg {
+    width: 14px;
+    height: 14px;
+  }
+
+  .table td:last-child {
+    white-space: nowrap;
   }
 
   /* Forms */
@@ -1150,8 +1170,8 @@ textarea.form-input {
     display: block;
   }
   .page-content {
-    padding: 12px;
-    padding-top: 80px;
+    padding: 15px;
+    padding-top: 95px;
   }
 
   .page-header h1 {

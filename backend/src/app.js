@@ -23,6 +23,7 @@ import orderRoutes from './routes/orderRoutes.js';
 import uploadRoutes from './routes/uploadRoutes.js';
 import chatbotRoutes from './routes/chatbotRoutes.js';
 import publicMessageRoutes from './routes/publicMessageRoutes.js';
+import noticeRoutes from './routes/noticeRoutes.js';
 
 import { errorHandler, notFound } from './middleware/errorHandler.js';
 
@@ -64,6 +65,7 @@ app.use('/api/orders', orderRoutes);
 app.use('/api', uploadRoutes);
 app.use('/api/chatbot', chatbotRoutes);
 app.use('/api/public-messages', publicMessageRoutes);
+app.use('/api', noticeRoutes);
 
 app.get('/api/health', (req, res) => {
   res.json({ status: 'OK', timestamp: new Date().toISOString() });

@@ -21,6 +21,7 @@ import Users from './pages/Users';
 import Settings from './pages/Settings';
 import Notifications from './pages/Notifications';
 import PublicMessages from './pages/PublicMessages';
+import Notices from './pages/Notices';
 import PublicChat from './pages/PublicChat';
 import NotFound from './pages/NotFound';
 
@@ -152,6 +153,11 @@ export default function App() {
         <Route path="/messages" element={
           <PermissionRoute permission="messages_view">
             <MainLayout><PublicMessages /></MainLayout>
+          </PermissionRoute>
+        } />
+        <Route path="/notices" element={
+          <PermissionRoute permission="notices_view">
+            <MainLayout><Notices /></MainLayout>
           </PermissionRoute>
         } />
         <Route path="/unauthorized" element={<NotFound type="unauthorized" />} />

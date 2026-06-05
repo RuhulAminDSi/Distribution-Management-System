@@ -488,5 +488,16 @@
   "totalRetailers": "মোট রিটেইলার",
   "paid": "পেইড",
   "due": "বকেয়া",
-  "lowStock": "লো স্টক"
+  "lowStock": "লো স্টক",
+
+  "NoticeBoard": "নোটিশ বোর্ড",
+  "Notices": "নোটিশ",
+  "AddNotice": "নোটিশ যোগ করুন",
+  "EditNotice": "নোটিশ সম্পাদনা",
+  "SearchNotices": "শিরোনাম বা বিষয়বস্তু দ্বারা খুঁজুন",
+  "NoNoticesFound": "কোনো নোটিশ পাওয়া যায়নি",
+  "NoticeTitlePlaceholder": "নোটিশের শিরোনাম লিখুন",
+  "NoticeContentPlaceholder": "নোটিশের বিষয়বস্তু লিখুন",
+  "Activate": "সক্রিয় করুন",
+  "Deactivate": "নিষ্ক্রিয় করুন"
 }

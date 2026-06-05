@@ -339,6 +339,19 @@ export const initializeDatabase = async () => {
       END $$;
     `);
 
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS notices (
+        id SERIAL PRIMARY KEY,
+        title VARCHAR(255) NOT NULL,
+        content TEXT NOT NULL,
+        created_by INT NOT NULL REFERENCES users(id),
+        is_active SMALLINT DEFAULT 1,
+        is_published SMALLINT DEFAULT 0,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      )
+    `);
+
     // Migrate old public_messages data if old table exists
     const oldTable = await client.query(`
       SELECT EXISTS (SELECT FROM information_schema.tables WHERE table_name = 'public_messages_old')
@@ -409,7 +422,11 @@ export const initializeDatabase = async () => {
         { name: 'view_deliveries', description: 'View deliveries', module: 'deliveries' },
         { name: 'orders_view', description: 'View orders', module: 'orders' },
         { name: 'orders_create', description: 'Create orders', module: 'orders' },
-        { name: 'messages_view', description: 'View public messages', module: 'messages' }
+        { name: 'messages_view', description: 'View public messages', module: 'messages' },
+        { name: 'notices_view', description: 'View notices', module: 'notices' },
+        { name: 'notices_create', description: 'Create notices', module: 'notices' },
+        { name: 'notices_edit', description: 'Edit notices', module: 'notices' },
+        { name: 'notices_delete', description: 'Delete notices', module: 'notices' }
       ];
 
       for (const perm of defaultPermissions) {
@@ -421,18 +438,49 @@ export const initializeDatabase = async () => {
       console.log('Default permissions created');
     }
 
-    const missingPerms = ['orders_view', 'orders_create'];
+    const missingPerms = ['orders_view', 'orders_create', 'notices_view', 'notices_create', 'notices_edit', 'notices_delete'];
+    const noticePerms = ['notices_view', 'notices_create', 'notices_edit', 'notices_delete'];
     for (const permName of missingPerms) {
       const existing = await client.query('SELECT id FROM permissions WHERE name = $1', [permName]);
       if (existing.rows.length === 0) {
-        const desc = permName === 'orders_view' ? 'View orders' : 'Create orders';
+        const descMap = {
+          'orders_view': 'View orders',
+          'orders_create': 'Create orders',
+          'notices_view': 'View notices',
+          'notices_create': 'Create notices',
+          'notices_edit': 'Edit notices',
+          'notices_delete': 'Delete notices'
+        };
+        const moduleMap = {
+          'orders_view': 'orders',
+          'orders_create': 'orders',
+          'notices_view': 'notices',
+          'notices_create': 'notices',
+          'notices_edit': 'notices',
+          'notices_delete': 'notices'
+        };
         await client.query(
           'INSERT INTO permissions (name, description, module) VALUES ($1, $2, $3)',
-          [permName, desc, 'orders']
+          [permName, descMap[permName], moduleMap[permName]]
         );
         console.log(`Added missing permission: ${permName}`);
       }
     }
+
+    // Assign notice permissions to manager and admin roles
+    const noticePermRoles = ['manager', 'admin', 'system_admin'];
+    for (const roleName of noticePermRoles) {
+      const roleRow = await client.query("SELECT id FROM roles WHERE name = $1", [roleName]);
+      if (roleRow.rows.length > 0) {
+        for (const permName of noticePerms) {
+          await client.query(
+            'INSERT INTO role_permissions (role_id, permission) VALUES ($1, $2) ON CONFLICT DO NOTHING',
+            [roleRow.rows[0].id, permName]
+          );
+        }
+      }
+    }
+    console.log('Notice permissions assigned to manager, admin and system_admin roles');
 
     const existingRoles = await client.query('SELECT id FROM roles LIMIT 1');
     if (existingRoles.rows.length === 0) {
@@ -625,6 +673,18 @@ export const initializeDatabase = async () => {
           WHERE table_name = 'users' AND constraint_type = 'UNIQUE' AND constraint_name = 'users_username_key'
         ) THEN
           ALTER TABLE users ADD CONSTRAINT users_username_key UNIQUE (username);
+        END IF;
+      END $$;
+    `);
+
+    // Add is_published column to existing notices table
+    await client.query(`
+      DO $$ BEGIN
+        IF NOT EXISTS (
+          SELECT 1 FROM information_schema.columns
+          WHERE table_name = 'notices' AND column_name = 'is_published'
+        ) THEN
+          ALTER TABLE notices ADD COLUMN is_published SMALLINT DEFAULT 0;
         END IF;
       END $$;
     `);
