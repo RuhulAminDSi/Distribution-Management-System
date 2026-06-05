@@ -1,0 +1,601 @@
+{
+  "info": {
+    "name": "Distribution Management System (DMS)",
+    "description": "Complete API collection for DMS — all endpoints organized by module.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Auth",
+      "item": [
+        {
+          "name": "Login",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/api/auth/login",
+            "header": [{"key": "Content-Type", "value": "application/json"}],
+            "body": {"mode": "raw", "raw": "{\n  \"username\": \"SystemAdmin\",\n  \"password\": \"admin123\"\n}"}
+          }
+        },
+        {
+          "name": "Logout",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/api/auth/logout"
+          }
+        },
+        {
+          "name": "Get Current User",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/auth/me"
+          }
+        },
+        {
+          "name": "Register User",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/api/auth/register",
+            "header": [{"key": "Content-Type", "value": "application/json"}],
+            "body": {"mode": "raw", "raw": "{\n  \"username\": \"newuser\",\n  \"password\": \"password123\",\n  \"email\": \"user@example.com\",\n  \"phone\": \"01700000000\",\n  \"role_id\": 2\n}"}
+          }
+        },
+        {
+          "name": "Get All Users",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/auth/users"
+          }
+        },
+        {
+          "name": "Update User",
+          "request": {
+            "method": "PUT",
+            "url": "{{baseUrl}}/api/auth/users/:id",
+            "header": [{"key": "Content-Type", "value": "application/json"}],
+            "body": {"mode": "raw", "raw": "{\n  \"username\": \"updateduser\",\n  \"email\": \"updated@example.com\",\n  \"phone\": \"01711111111\"\n}"}
+          }
+        },
+        {
+          "name": "Delete User",
+          "request": {
+            "method": "DELETE",
+            "url": "{{baseUrl}}/api/auth/users/:id"
+          }
+        },
+        {
+          "name": "Change Password",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/api/auth/change-password",
+            "header": [{"key": "Content-Type", "value": "application/json"}],
+            "body": {"mode": "raw", "raw": "{\n  \"current_password\": \"oldpass\",\n  \"new_password\": \"newpass123\"\n}"}
+          }
+        },
+        {
+          "name": "Forgot Password",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/api/auth/forgot-password",
+            "header": [{"key": "Content-Type", "value": "application/json"}],
+            "body": {"mode": "raw", "raw": "{\n  \"email\": \"user@example.com\"\n}"}
+          }
+        },
+        {
+          "name": "Reset Password",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/api/auth/reset-password",
+            "header": [{"key": "Content-Type", "value": "application/json"}],
+            "body": {"mode": "raw", "raw": "{\n  \"token\": \"reset-token-here\",\n  \"password\": \"newpassword123\"\n}"}
+          }
+        },
+        {
+          "name": "Shopkeeper Register",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/api/auth/shopkeeper-register",
+            "header": [{"key": "Content-Type", "value": "application/json"}],
+            "body": {"mode": "raw", "raw": "{\n  \"username\": \"shop1\",\n  \"password\": \"password123\",\n  \"email\": \"shop1@example.com\",\n  \"phone\": \"01722222222\",\n  \"shop_name\": \"My Shop\"\n}"}
+          }
+        },
+        {
+          "name": "Check Unique",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/auth/check-unique?field=email&value=user@example.com"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Roles & Permissions",
+      "item": [
+        {
+          "name": "Get All Roles",
+          "request": {"method": "GET", "url": "{{baseUrl}}/api/roles/"}
+        },
+        {
+          "name": "Get Role By ID",
+          "request": {"method": "GET", "url": "{{baseUrl}}/api/roles/:id"}
+        },
+        {
+          "name": "Create Role",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/api/roles/",
+            "header": [{"key": "Content-Type", "value": "application/json"}],
+            "body": {"mode": "raw", "raw": "{\n  \"name\": \"New Role\",\n  \"permissions\": [1, 2, 3]\n}"}
+          }
+        },
+        {
+          "name": "Update Role",
+          "request": {
+            "method": "PUT",
+            "url": "{{baseUrl}}/api/roles/:id",
+            "header": [{"key": "Content-Type", "value": "application/json"}],
+            "body": {"mode": "raw", "raw": "{\n  \"name\": \"Updated Role\",\n  \"permissions\": [1, 2, 3, 4]\n}"}
+          }
+        },
+        {
+          "name": "Delete Role",
+          "request": {"method": "DELETE", "url": "{{baseUrl}}/api/roles/:id"}
+        },
+        {
+          "name": "Get All Permissions",
+          "request": {"method": "GET", "url": "{{baseUrl}}/api/roles/permissions"}
+        }
+      ]
+    },
+    {
+      "name": "Companies & Categories",
+      "item": [
+        {
+          "name": "Get All Companies",
+          "request": {"method": "GET", "url": "{{baseUrl}}/api/companies"}
+        },
+        {
+          "name": "Get Company By ID",
+          "request": {"method": "GET", "url": "{{baseUrl}}/api/companies/:id"}
+        },
+        {
+          "name": "Create Company",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/api/companies",
+            "header": [{"key": "Content-Type", "value": "application/json"}],
+            "body": {"mode": "raw", "raw": "{\n  \"name\": \"Company Name\",\n  \"phone\": \"01733333333\",\n  \"address\": \"Dhaka, Bangladesh\"\n}"}
+          }
+        },
+        {
+          "name": "Update Company",
+          "request": {
+            "method": "PUT",
+            "url": "{{baseUrl}}/api/companies/:id",
+            "header": [{"key": "Content-Type", "value": "application/json"}],
+            "body": {"mode": "raw", "raw": "{\n  \"name\": \"Updated Company\",\n  \"phone\": \"01744444444\"\n}"}
+          }
+        },
+        {
+          "name": "Delete Company",
+          "request": {"method": "DELETE", "url": "{{baseUrl}}/api/companies/:id"}
+        },
+        {
+          "name": "Get All Categories",
+          "request": {"method": "GET", "url": "{{baseUrl}}/api/categories"}
+        },
+        {
+          "name": "Get Category By ID",
+          "request": {"method": "GET", "url": "{{baseUrl}}/api/categories/:id"}
+        },
+        {
+          "name": "Create Category",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/api/categories",
+            "header": [{"key": "Content-Type", "value": "application/json"}],
+            "body": {"mode": "raw", "raw": "{\n  \"name\": \"Category Name\"\n}"}
+          }
+        },
+        {
+          "name": "Update Category",
+          "request": {
+            "method": "PUT",
+            "url": "{{baseUrl}}/api/categories/:id",
+            "header": [{"key": "Content-Type", "value": "application/json"}],
+            "body": {"mode": "raw", "raw": "{\n  \"name\": \"Updated Category\"\n}"}
+          }
+        },
+        {
+          "name": "Delete Category",
+          "request": {"method": "DELETE", "url": "{{baseUrl}}/api/categories/:id"}
+        }
+      ]
+    },
+    {
+      "name": "Products",
+      "item": [
+        {
+          "name": "Get All Products",
+          "request": {"method": "GET", "url": "{{baseUrl}}/api/products/"}
+        },
+        {
+          "name": "Get Product By ID",
+          "request": {"method": "GET", "url": "{{baseUrl}}/api/products/:id"}
+        },
+        {
+          "name": "Create Product",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/api/products/",
+            "header": [{"key": "Content-Type", "value": "application/json"}],
+            "body": {"mode": "raw", "raw": "{\n  \"name\": \"Product Name\",\n  \"company_id\": 1,\n  \"category_id\": 1,\n  \"unit\": \"PCS\",\n  \"purchase_price\": 50,\n  \"sale_price\": 70,\n  \"stock\": 100,\n  \"low_stock_limit\": 10\n}"}
+          }
+        },
+        {
+          "name": "Update Product",
+          "request": {
+            "method": "PUT",
+            "url": "{{baseUrl}}/api/products/:id",
+            "header": [{"key": "Content-Type", "value": "application/json"}],
+            "body": {"mode": "raw", "raw": "{\n  \"name\": \"Updated Product\",\n  \"sale_price\": 80\n}"}
+          }
+        },
+        {
+          "name": "Delete Product",
+          "request": {"method": "DELETE", "url": "{{baseUrl}}/api/products/:id"}
+        },
+        {
+          "name": "Get Low Stock Products",
+          "request": {"method": "GET", "url": "{{baseUrl}}/api/products/low-stock"}
+        },
+        {
+          "name": "Get Expired Products",
+          "request": {"method": "GET", "url": "{{baseUrl}}/api/products/expired"}
+        },
+        {
+          "name": "Get Expiring Soon Products",
+          "request": {"method": "GET", "url": "{{baseUrl}}/api/products/expiring-soon"}
+        }
+      ]
+    },
+    {
+      "name": "Stock",
+      "item": [
+        {
+          "name": "Get Stock History",
+          "request": {"method": "GET", "url": "{{baseUrl}}/api/stock/history"}
+        },
+        {
+          "name": "Get Purchase Orders",
+          "request": {"method": "GET", "url": "{{baseUrl}}/api/stock/purchase-orders"}
+        },
+        {
+          "name": "Create Purchase Order",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/api/stock/purchase-orders",
+            "header": [{"key": "Content-Type", "value": "application/json"}],
+            "body": {"mode": "raw", "raw": "{\n  \"items\": [\n    {\"product_id\": 1, \"quantity\": 50, \"unit_price\": 45}\n  ]\n}"}
+          }
+        },
+        {
+          "name": "Receive Purchase Order",
+          "request": {"method": "PUT", "url": "{{baseUrl}}/api/stock/purchase-orders/:id/receive"}
+        }
+      ]
+    },
+    {
+      "name": "Invoices (Sales)",
+      "item": [
+        {
+          "name": "Get All Invoices",
+          "request": {"method": "GET", "url": "{{baseUrl}}/api/invoices/"}
+        },
+        {
+          "name": "Get Invoice By ID",
+          "request": {"method": "GET", "url": "{{baseUrl}}/api/invoices/:id"}
+        },
+        {
+          "name": "Create Invoice",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/api/invoices/",
+            "header": [{"key": "Content-Type", "value": "application/json"}],
+            "body": {"mode": "raw", "raw": "{\n  \"retailer_id\": 1,\n  \"items\": [\n    {\"product_id\": 1, \"quantity\": 5, \"unit_price\": 70}\n  ],\n  \"paid_amount\": 350\n}"}
+          }
+        },
+        {
+          "name": "Update Invoice Payment",
+          "request": {
+            "method": "PUT",
+            "url": "{{baseUrl}}/api/invoices/:id/payment",
+            "header": [{"key": "Content-Type", "value": "application/json"}],
+            "body": {"mode": "raw", "raw": "{\n  \"paid_amount\": 500\n}"}
+          }
+        }
+      ]
+    },
+    {
+      "name": "Orders",
+      "item": [
+        {
+          "name": "Get All Orders",
+          "request": {"method": "GET", "url": "{{baseUrl}}/api/orders/"}
+        },
+        {
+          "name": "Get Order By ID",
+          "request": {"method": "GET", "url": "{{baseUrl}}/api/orders/:id"}
+        },
+        {
+          "name": "Create Order",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/api/orders/",
+            "header": [{"key": "Content-Type", "value": "application/json"}],
+            "body": {"mode": "raw", "raw": "{\n  \"retailer_id\": 1,\n  \"items\": [\n    {\"product_id\": 1, \"quantity\": 10}\n  ]\n}"}
+          }
+        }
+      ]
+    },
+    {
+      "name": "Payments",
+      "item": [
+        {
+          "name": "Get All Payments",
+          "request": {"method": "GET", "url": "{{baseUrl}}/api/payments/"}
+        },
+        {
+          "name": "Get Payment By ID",
+          "request": {"method": "GET", "url": "{{baseUrl}}/api/payments/:id"}
+        },
+        {
+          "name": "Create Payment",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/api/payments/",
+            "header": [{"key": "Content-Type", "value": "application/json"}],
+            "body": {"mode": "raw", "raw": "{\n  \"retailer_id\": 1,\n  \"amount\": 1000,\n  \"payment_method\": \"Cash\",\n  \"note\": \"Payment for invoice #1\"\n}"}
+          }
+        },
+        {
+          "name": "Get Retailer Payments",
+          "request": {"method": "GET", "url": "{{baseUrl}}/api/payments/retailer/:retailerId"}
+        }
+      ]
+    },
+    {
+      "name": "Retailers",
+      "item": [
+        {
+          "name": "Get All Retailers",
+          "request": {"method": "GET", "url": "{{baseUrl}}/api/retailers/"}
+        },
+        {
+          "name": "Get Retailer By ID",
+          "request": {"method": "GET", "url": "{{baseUrl}}/api/retailers/:id"}
+        },
+        {
+          "name": "Create Retailer",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/api/retailers/",
+            "header": [{"key": "Content-Type", "value": "application/json"}],
+            "body": {"mode": "raw", "raw": "{\n  \"name\": \"Retailer Name\",\n  \"phone\": \"01755555555\",\n  \"address\": \"Dhaka\",\n  \"area\": \"Mirpur\"\n}"}
+          }
+        },
+        {
+          "name": "Update Retailer",
+          "request": {
+            "method": "PUT",
+            "url": "{{baseUrl}}/api/retailers/:id",
+            "header": [{"key": "Content-Type", "value": "application/json"}],
+            "body": {"mode": "raw", "raw": "{\n  \"name\": \"Updated Retailer\",\n  \"area\": \"Uttara\"\n}"}
+          }
+        },
+        {
+          "name": "Delete Retailer",
+          "request": {"method": "DELETE", "url": "{{baseUrl}}/api/retailers/:id"}
+        },
+        {
+          "name": "Get Retailer Balance",
+          "request": {"method": "GET", "url": "{{baseUrl}}/api/retailers/:id/balance"}
+        },
+        {
+          "name": "Get Areas",
+          "request": {"method": "GET", "url": "{{baseUrl}}/api/retailers/areas"}
+        }
+      ]
+    },
+    {
+      "name": "Dashboard",
+      "item": [
+        {
+          "name": "Get Dashboard Summary",
+          "request": {"method": "GET", "url": "{{baseUrl}}/api/dashboard/summary"}
+        }
+      ]
+    },
+    {
+      "name": "Reports",
+      "item": [
+        {
+          "name": "Report Summary",
+          "request": {"method": "GET", "url": "{{baseUrl}}/api/reports/summary"}
+        },
+        {
+          "name": "Daily Sales Report",
+          "request": {"method": "GET", "url": "{{baseUrl}}/api/reports/daily-sales"}
+        },
+        {
+          "name": "Product Sales Report",
+          "request": {"method": "GET", "url": "{{baseUrl}}/api/reports/product-sales"}
+        },
+        {
+          "name": "Company Sales Report",
+          "request": {"method": "GET", "url": "{{baseUrl}}/api/reports/company-sales"}
+        },
+        {
+          "name": "Profit Report",
+          "request": {"method": "GET", "url": "{{baseUrl}}/api/reports/profit"}
+        },
+        {
+          "name": "Stock Report",
+          "request": {"method": "GET", "url": "{{baseUrl}}/api/reports/stock"}
+        },
+        {
+          "name": "Due Report",
+          "request": {"method": "GET", "url": "{{baseUrl}}/api/reports/due"}
+        },
+        {
+          "name": "Expiry Report",
+          "request": {"method": "GET", "url": "{{baseUrl}}/api/reports/expiry"}
+        }
+      ]
+    },
+    {
+      "name": "Notifications",
+      "item": [
+        {
+          "name": "Get Notifications",
+          "request": {"method": "GET", "url": "{{baseUrl}}/api/notifications/"}
+        },
+        {
+          "name": "Get Unread Count",
+          "request": {"method": "GET", "url": "{{baseUrl}}/api/notifications/unread"}
+        },
+        {
+          "name": "Get By Category",
+          "request": {"method": "GET", "url": "{{baseUrl}}/api/notifications/category/:category"}
+        },
+        {
+          "name": "Mark All As Read",
+          "request": {"method": "PUT", "url": "{{baseUrl}}/api/notifications/all/read"}
+        },
+        {
+          "name": "Get Notification Detail",
+          "request": {"method": "GET", "url": "{{baseUrl}}/api/notifications/:id"}
+        },
+        {
+          "name": "Mark As Read",
+          "request": {"method": "PUT", "url": "{{baseUrl}}/api/notifications/:id/read"}
+        },
+        {
+          "name": "Delete Notification",
+          "request": {"method": "DELETE", "url": "{{baseUrl}}/api/notifications/:id"}
+        }
+      ]
+    },
+    {
+      "name": "Upload",
+      "item": [
+        {
+          "name": "Upload Profile Picture",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/api/users/:id/upload-photo",
+            "header": [{"key": "Content-Type", "value": "multipart/form-data"}],
+            "body": {"mode": "formdata", "formdata": [{"key": "profile_picture", "type": "file", "src": ""}]}
+          }
+        },
+        {
+          "name": "Delete Profile Picture",
+          "request": {"method": "DELETE", "url": "{{baseUrl}}/api/users/:id/upload-photo"}
+        }
+      ]
+    },
+    {
+      "name": "Public Messages",
+      "item": [
+        {
+          "name": "Start Session",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/api/public-messages/start-session",
+            "header": [{"key": "Content-Type", "value": "application/json"}],
+            "body": {"mode": "raw", "raw": "{\n  \"phone\": \"01766666666\",\n  \"customer_name\": \"Customer Name\"\n}"}
+          }
+        },
+        {
+          "name": "Send Message (Public)",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/api/public-messages/",
+            "header": [{"key": "Content-Type", "value": "application/json"}],
+            "body": {"mode": "raw", "raw": "{\n  \"phone\": \"01766666666\",\n  \"message\": \"Hello!\"\n}"}
+          }
+        },
+        {
+          "name": "Get Messages By Phone",
+          "request": {"method": "GET", "url": "{{baseUrl}}/api/public-messages/:phone"}
+        },
+        {
+          "name": "Get Session By Token",
+          "request": {"method": "GET", "url": "{{baseUrl}}/api/public-messages/by-token/:token"}
+        },
+        {
+          "name": "Get Session By Phone",
+          "request": {"method": "GET", "url": "{{baseUrl}}/api/public-messages/by-phone/:phone"}
+        },
+        {
+          "name": "Get Conversations",
+          "request": {"method": "GET", "url": "{{baseUrl}}/api/public-messages/conversations"}
+        },
+        {
+          "name": "Get Unread Count (Public)",
+          "request": {"method": "GET", "url": "{{baseUrl}}/api/public-messages/unread-count"}
+        },
+        {
+          "name": "Reply From Admin",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/api/public-messages/reply",
+            "header": [{"key": "Content-Type", "value": "application/json"}],
+            "body": {"mode": "raw", "raw": "{\n  \"phone\": \"01766666666\",\n  \"message\": \"Thank you for your message!\"\n}"}
+          }
+        },
+        {
+          "name": "Typing Indicator (Public)",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/api/public-messages/typing",
+            "header": [{"key": "Content-Type", "value": "application/json"}],
+            "body": {"mode": "raw", "raw": "{\n  \"phone\": \"01766666666\",\n  \"is_typing\": true\n}"}
+          }
+        },
+        {
+          "name": "Typing Indicator (Admin)",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/api/public-messages/typing-admin",
+            "header": [{"key": "Content-Type", "value": "application/json"}],
+            "body": {"mode": "raw", "raw": "{\n  \"phone\": \"01766666666\",\n  \"is_typing\": true\n}"}
+          }
+        }
+      ]
+    },
+    {
+      "name": "Chatbot",
+      "item": [
+        {
+          "name": "Chat",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/api/chatbot/chat",
+            "header": [{"key": "Content-Type", "value": "application/json"}],
+            "body": {"mode": "raw", "raw": "{\n  \"message\": \"What products are low in stock?\"\n}"}
+          }
+        }
+      ]
+    },
+    {
+      "name": "Health",
+      "item": [
+        {
+          "name": "Health Check",
+          "request": {"method": "GET", "url": "{{baseUrl}}/api/health"}
+        }
+      ]
+    }
+  ]
+}

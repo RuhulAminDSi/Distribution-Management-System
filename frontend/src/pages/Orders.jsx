@@ -93,7 +93,7 @@ export default function Orders() {
       <html>
       <head><meta charset="UTF-8"><title>অর্ডার ${order.po_no}</title>
       <style>
-        body { font-family: 'Noto Sans Bengali', 'Arial Unicode MS', Arial, sans-serif; margin: 0; padding: 20px; color: #333; }
+        body { font-family: 'IBM Plex Sans', 'Noto Sans Bengali', sans-serif; margin: 0; padding: 20px; color: #333; }
         .header { text-align: center; margin-bottom: 30px; border-bottom: 3px solid #1a56db; padding-bottom: 15px; }
         .header .company-name { font-size: 20px; font-weight: bold; color: #1a56db; margin: 5px 0; }
         .header .order-label { font-size: 14px; color: #6b7280; margin: 2px 0; }

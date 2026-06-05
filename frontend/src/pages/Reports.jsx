@@ -468,8 +468,8 @@ export default function Reports() {
 
     const element = document.createElement('div');
     element.innerHTML = `
-      <div style="font-family: 'Noto Sans Bengali', sans-serif; padding: 30px; background: white; position: relative;">
-        <div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%) rotate(-30deg); font-size: 26px; font-weight: bold; color: rgba(180,180,180,0.4); z-index: 9999; pointer-events: none; text-align: center; line-height: 1.4; font-family: Arial, sans-serif;">রুহানা এন্টারপ্রাইজ<br>ডি এম এস</div>
+      <div style="font-family: 'IBM Plex Sans', 'Noto Sans Bengali', sans-serif; padding: 30px; background: white; position: relative;">
+        <div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%) rotate(-30deg); font-size: 26px; font-weight: bold; color: rgba(180,180,180,0.4); z-index: 9999; pointer-events: none; text-align: center; line-height: 1.4; font-family: 'IBM Plex Sans', 'Noto Sans Bengali', sans-serif;">রুহানা এন্টারপ্রাইজ<br>ডি এম এস</div>
         <div style="text-align: center; margin-bottom: 25px; border-bottom: 3px solid #1a56db; padding-bottom: 15px;">
           <h1 style="font-size: 28px; margin-bottom: 5px; color: #1a56db; font-weight: bold;">${banglaCompanyName}</h1>
           <p style="font-size: 14px; color: #6b7280;">${banglaCompanyAddress}</p>
@@ -693,7 +693,7 @@ export default function Reports() {
       <head><meta charset="UTF-8"><title>${reportTitle}</title>
       <style>
         @page { size: 210mm 297mm; margin: 10mm; }
-        body { font-family: 'Noto Sans Bengali', 'Arial Unicode MS', Arial, sans-serif; margin: 0; padding: 12px; color: #333; position: relative; }
+        body { font-family: 'IBM Plex Sans', 'Noto Sans Bengali', sans-serif; margin: 0; padding: 12px; color: #333; position: relative; }
         body::before {
           content: '${isBn ? 'রুহানা এন্টারপ্রাইজ\\aডি এম এস' : 'Ruhana Enterprise\\aDMS'}';
           position: fixed; top: 50%; left: 50%;
@@ -702,7 +702,7 @@ export default function Reports() {
           font-weight: bold; color: rgba(180, 180, 180, 0.4);
           pointer-events: none; z-index: 1;
           white-space: pre-wrap; text-align: center; line-height: 1.4;
-          font-family: Arial, sans-serif;
+          font-family: 'IBM Plex Sans', 'Noto Sans Bengali', sans-serif;
         }
         .header { position: relative; z-index: 2; text-align: center; margin-bottom: 20px; border-bottom: 3px solid #1a56db; padding-bottom: 12px; }
         .header .company { font-size: 18px; font-weight: bold; color: #1a56db; }

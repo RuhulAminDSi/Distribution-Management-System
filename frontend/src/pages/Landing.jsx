@@ -105,6 +105,10 @@ export default function Landing() {
   const security = securityContent[language];
 
   useEffect(() => {
+    document.title = `DMS - ${t('brandSubtitle')}`;
+  }, [t]);
+
+  useEffect(() => {
     const handleScroll = () => setScrolled(window.scrollY > 32);
 
     const sectionIds = ['home', 'modules', 'workflow', 'security', 'contact'];

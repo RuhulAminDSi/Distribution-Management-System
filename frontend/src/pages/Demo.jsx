@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { 
   LayoutDashboard, 
@@ -53,6 +53,16 @@ export default function Demo() {
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [notifOpen, setNotifOpen] = useState(false);
   const [dropdownOpen, setDropdownOpen] = useState(false);
+
+  useEffect(() => {
+    const labels = {
+      dashboard: t('dashboard'), companies: t('companies'), products: t('products'),
+      retailers: t('retailers'), sales: t('sales'), payments: t('payments'),
+      stock: t('stock'), reports: t('reports'), users: t('users'), settings: t('settings'),
+    };
+    const pageLabel = labels[activePage] || t('dashboard');
+    document.title = `${pageLabel} - DMS`;
+  }, [activePage, t]);
 
   const navItems = [
     { id: 'dashboard', icon: LayoutDashboard, label: t('dashboard') },

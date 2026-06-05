@@ -123,7 +123,7 @@ export default function Payments() {
       <html>
       <head><meta charset="UTF-8"><title>${t('PaymentReceipt') || 'Payment Receipt'}</title>
       <style>
-        body { font-family: 'Noto Sans Bengali', 'Arial Unicode MS', Arial, sans-serif; margin: 0; padding: 20px; color: #333; }
+        body { font-family: 'IBM Plex Sans', 'Noto Sans Bengali', sans-serif; margin: 0; padding: 20px; color: #333; }
         .header { text-align: center; margin-bottom: 25px; border-bottom: 3px solid #1a56db; padding-bottom: 15px; }
         .header .company { font-size: 20px; font-weight: bold; color: #1a56db; }
         .header .title { font-size: 16px; color: #333; margin: 8px 0 4px; }

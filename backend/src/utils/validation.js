@@ -34,6 +34,12 @@ export const validateRegister = [
   body('username').trim().notEmpty().withMessage('Username is required'),
   body('password').isLength({ min: 6 }).withMessage('Password must be at least 6 characters'),
   body('full_name').trim().notEmpty().withMessage('Full name is required'),
+  body('role_id').custom((value, { req }) => {
+    if (!value && !req.body.role) {
+      throw new Error('Role is required');
+    }
+    return true;
+  }),
   body('email').optional(),
   body('phone').optional(),
   handleValidationErrors

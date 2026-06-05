@@ -69,6 +69,15 @@ app.get('/api/health', (req, res) => {
   res.json({ status: 'OK', timestamp: new Date().toISOString() });
 });
 
+if (process.env.NODE_ENV === 'production') {
+  const distPath = path.join(__dirname, '../frontend-dist');
+  app.use(express.static(distPath));
+  app.get('*', (req, res, next) => {
+    if (req.path.startsWith('/api')) return next();
+    res.sendFile(path.join(distPath, 'index.html'));
+  });
+}
+
 app.use(notFound);
 app.use(errorHandler);
 

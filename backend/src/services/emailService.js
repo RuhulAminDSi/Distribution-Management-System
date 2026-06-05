@@ -19,7 +19,7 @@ export const sendPasswordResetEmail = async (email, resetToken) => {
     to: email,
     subject: 'Password Reset - DMS',
     html: `
-      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+      <div style="font-family: 'IBM Plex Sans', 'Noto Sans Bengali', Arial, sans-serif; max-width: 600px; margin: 0 auto;">
         <h2>Password Reset Request</h2>
         <p>You requested a password reset for your DMS account.</p>
         <p>Click the button below to reset your password:</p>

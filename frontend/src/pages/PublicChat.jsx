@@ -15,6 +15,9 @@ const floatingIcons = [
 ];
 
 export default function PublicChat() {
+  useEffect(() => {
+    document.title = 'Chat - DMS';
+  }, []);
   const navigate = useNavigate();
   const { t, language, setLanguage } = useLanguage();
   const [searchParams] = useSearchParams();
