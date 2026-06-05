@@ -45,148 +45,33 @@ import {
   ChevronDown,
   Save
 } from 'lucide-react';
-
-const translations = {
-  bn: {
-    demoTitle: 'ডেমো ভিউ',
-    demoSubtitle: 'সিস্টেমের সম্পূর্ণ ফিচার এবং ফাংশনালিটি দেখুন',
-    dashboard: 'ড্যাশবোর্ড',
-    companies: 'কোম্পানি',
-    products: 'পণ্য',
-    retailers: 'রিটেইলার',
-    sales: 'বিক্রয়',
-    payments: 'পেমেন্ট',
-    stock: 'স্টক',
-    reports: 'রিপোর্ট',
-    users: 'ইউজার',
-    settings: 'সেটিংস',
-    totalSales: 'মোট বিক্রয়',
-    totalOrders: 'মোট অর্ডার',
-    totalRevenue: 'মোট রাজস্ব',
-    pendingPayments: 'পেন্ডিং পেমেন্ট',
-    recentSales: 'সাম্প্রতিক বিক্রয়',
-    stockAlerts: 'স্টক অ্যালার্ট',
-    topProducts: 'শীর্ষ পণ্য',
-    today: 'আজ',
-    thisWeek: 'এই সপ্তাহ',
-    thisMonth: 'এই মাস',
-    viewAll: 'সব দেখুন',
-    totalCompanies: 'মোট কোম্পানি',
-    activeCompanies: 'অ্যাক্টিভ কোম্পানি',
-    totalProducts: 'মোট পণ্য',
-    totalRetailers: 'মোট রিটেইলার',
-    activeRetailers: 'অ্যাক্টিভ রিটেইলার',
-    newOrders: 'নতুন অর্ডার',
-    completedOrders: 'সম্পন্ন অর্ডার',
-    cancelledOrders: 'বাতিল অর্ডার',
-    totalAmount: 'মোট পরিমাণ',
-    paid: 'পেইড',
-    due: 'বকেয়া',
-    totalStock: 'মোট স্টক',
-    lowStock: 'লো স্টক',
-    outOfStock: 'স্টক আউট',
-    newRetailer: 'নতুন রিটেইলার',
-    newProduct: 'নতুন পণ্য',
-    newSale: 'নতুন বিক্রয়',
-    newPayment: 'নতুন পেমেন্ট',
-    demoNote: 'এটি একটি ডেমো পেজ। সম্পূর্ণ সিস্টেম ব্যবহার করতে লগইন করুন।',
-    getStarted: 'শুরু করুন',
-    exploreFeatures: 'ফিচারগুলো দেখুন',
-    home: 'হোম',
-    notifications: 'নোটিফিকেশন',
-    markAllRead: 'সব পড়া হয়েছে',
-    myProfile: 'আমার প্রোফাইল',
-    changePassword: 'পাসওয়ার্ড পরিবর্তন',
-    logout: 'লগআউট',
-    admin: 'অ্যাডমিন',
-  },
-  en: {
-    demoTitle: 'Demo View',
-    demoSubtitle: 'Explore all features and functionality of the system',
-    dashboard: 'Dashboard',
-    companies: 'Companies',
-    products: 'Products',
-    retailers: 'Retailers',
-    sales: 'Sales',
-    payments: 'Payments',
-    stock: 'Stock',
-    reports: 'Reports',
-    users: 'Users',
-    settings: 'Settings',
-    totalSales: 'Total Sales',
-    totalOrders: 'Total Orders',
-    totalRevenue: 'Total Revenue',
-    pendingPayments: 'Pending Payments',
-    recentSales: 'Recent Sales',
-    stockAlerts: 'Stock Alerts',
-    topProducts: 'Top Products',
-    today: 'Today',
-    thisWeek: 'This Week',
-    thisMonth: 'This Month',
-    viewAll: 'View All',
-    totalCompanies: 'Total Companies',
-    activeCompanies: 'Active Companies',
-    totalProducts: 'Total Products',
-    totalRetailers: 'Total Retailers',
-    activeRetailers: 'Active Retailers',
-    newOrders: 'New Orders',
-    completedOrders: 'Completed Orders',
-    cancelledOrders: 'Cancelled Orders',
-    totalAmount: 'Total Amount',
-    paid: 'Paid',
-    due: 'Due',
-    totalStock: 'Total Stock',
-    lowStock: 'Low Stock',
-    outOfStock: 'Out of Stock',
-    newRetailer: 'New Retailer',
-    newProduct: 'New Product',
-    newSale: 'New Sale',
-    newPayment: 'New Payment',
-    demoNote: 'This is a demo page. Login to use the full system.',
-    getStarted: 'Get Started',
-    exploreFeatures: 'Explore Features',
-    home: 'Home',
-    notifications: 'Notifications',
-    markAllRead: 'Mark all read',
-    myProfile: 'My Profile',
-    changePassword: 'Change Password',
-    logout: 'Logout',
-    admin: 'Admin',
-  }
-};
+import { useLanguage } from '../context/LanguageContext';
 
 export default function Demo() {
-  const [language, setLanguage] = useState(() => localStorage.getItem('dms_language') || 'bn');
+  const { t, language, setLanguage } = useLanguage();
   const [activePage, setActivePage] = useState('dashboard');
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [notifOpen, setNotifOpen] = useState(false);
   const [dropdownOpen, setDropdownOpen] = useState(false);
-  const t = translations[language];
-
-  const toggleLanguage = () => {
-    const newLang = language === 'en' ? 'bn' : 'en';
-    setLanguage(newLang);
-    localStorage.setItem('dms_language', newLang);
-  };
 
   const navItems = [
-    { id: 'dashboard', icon: LayoutDashboard, label: t.dashboard },
-    { id: 'companies', icon: Building2, label: t.companies },
-    { id: 'products', icon: Package, label: t.products },
-    { id: 'retailers', icon: Users, label: t.retailers },
-    { id: 'sales', icon: ShoppingCart, label: t.sales },
-    { id: 'payments', icon: CreditCard, label: t.payments },
-    { id: 'stock', icon: Warehouse, label: t.stock },
-    { id: 'reports', icon: FileText, label: t.reports },
-    { id: 'users', icon: UserCircle, label: t.users },
-    { id: 'settings', icon: Settings, label: t.settings },
+    { id: 'dashboard', icon: LayoutDashboard, label: t('dashboard') },
+    { id: 'companies', icon: Building2, label: t('companies') },
+    { id: 'products', icon: Package, label: t('products') },
+    { id: 'retailers', icon: Users, label: t('retailers') },
+    { id: 'sales', icon: ShoppingCart, label: t('sales') },
+    { id: 'payments', icon: CreditCard, label: t('payments') },
+    { id: 'stock', icon: Warehouse, label: t('stock') },
+    { id: 'reports', icon: FileText, label: t('reports') },
+    { id: 'users', icon: UserCircle, label: t('users') },
+    { id: 'settings', icon: Settings, label: t('settings') },
   ];
 
   const renderDashboard = () => (
     <div>
       <div className="page-header">
-        <h1 className="page-title">{t.dashboard}</h1>
-        <span style={{ color: 'var(--text-secondary)', fontSize: '14px' }}>{t.demoSubtitle}</span>
+        <h1 className="page-title">{t('dashboard')}</h1>
+        <span style={{ color: 'var(--text-secondary)', fontSize: '14px' }}>{t('demoSubtitle')}</span>
       </div>
       <div className="stats-grid">
         <div className="stat-card">
@@ -194,35 +79,35 @@ export default function Demo() {
             <DollarSign size={24} />
           </div>
           <div className="stat-value">৳ 12,50,000</div>
-          <div className="stat-label">{t.totalSales}</div>
+          <div className="stat-label">{t('totalSales')}</div>
         </div>
         <div className="stat-card">
           <div className="stat-icon orange">
             <ShoppingCart size={24} />
           </div>
           <div className="stat-value">1,250</div>
-          <div className="stat-label">{t.totalOrders}</div>
+          <div className="stat-label">{t('totalOrders')}</div>
         </div>
         <div className="stat-card">
           <div className="stat-icon green">
             <TrendingUp size={24} />
           </div>
           <div className="stat-value">৳ 8,75,000</div>
-          <div className="stat-label">{t.totalRevenue}</div>
+          <div className="stat-label">{t('totalRevenue')}</div>
         </div>
         <div className="stat-card">
           <div className="stat-icon red">
             <DollarSign size={24} />
           </div>
           <div className="stat-value">৳ 2,15,000</div>
-          <div className="stat-label">{t.pendingPayments}</div>
+          <div className="stat-label">{t('pendingPayments')}</div>
         </div>
       </div>
 
       <div className="grid-2">
         <div className="card">
           <div className="card-header">
-            <h3 className="card-title">{t.topProducts}</h3>
+            <h3 className="card-title">{t('topProducts')}</h3>
           </div>
           <div className="card-body">
             <div className="top-products-list">
@@ -243,7 +128,7 @@ export default function Demo() {
 
         <div className="card">
           <div className="card-header">
-            <h3 className="card-title">{t.recentSales}</h3>
+            <h3 className="card-title">{t('recentSales')}</h3>
           </div>
           <div className="card-body" style={{ padding: 0 }}>
             <table className="table">
@@ -291,7 +176,7 @@ export default function Demo() {
   const renderCompanies = () => (
     <div>
       <div className="page-header">
-        <h1 className="page-title">{t.companies}</h1>
+        <h1 className="page-title">{t('companies')}</h1>
         <button className="btn btn-primary"><Plus size={18} /> Add Company</button>
       </div>
       <div className="card">
@@ -369,7 +254,7 @@ export default function Demo() {
   const renderProducts = () => (
     <div>
       <div className="page-header">
-        <h1 className="page-title">{t.products}</h1>
+        <h1 className="page-title">{t('products')}</h1>
         <button className="btn btn-primary"><Plus size={18} /> Add Product</button>
       </div>
       <div className="card">
@@ -455,7 +340,7 @@ export default function Demo() {
   const renderRetailers = () => (
     <div>
       <div className="page-header">
-        <h1 className="page-title">{t.retailers}</h1>
+        <h1 className="page-title">{t('retailers')}</h1>
         <button className="btn btn-primary"><Plus size={18} /> Add Retailer</button>
       </div>
       <div className="card">
@@ -537,7 +422,7 @@ export default function Demo() {
   const renderSales = () => (
     <div>
       <div className="page-header">
-        <h1 className="page-title">{t.sales}</h1>
+        <h1 className="page-title">{t('sales')}</h1>
         <button className="btn btn-primary"><Plus size={18} /> New Sale</button>
       </div>
       <div className="card">
@@ -600,7 +485,7 @@ export default function Demo() {
   const renderPayments = () => (
     <div>
       <div className="page-header">
-        <h1 className="page-title">{t.payments}</h1>
+        <h1 className="page-title">{t('payments')}</h1>
         <button className="btn btn-primary"><Plus size={18} /> New Payment</button>
       </div>
       <div className="card">
@@ -652,7 +537,7 @@ export default function Demo() {
   const renderStock = () => (
     <div>
       <div className="page-header">
-        <h1 className="page-title">{t.stock}</h1>
+        <h1 className="page-title">{t('stock')}</h1>
         <button className="btn btn-primary"><Plus size={18} /> Transfer</button>
       </div>
       <div className="grid-2">
@@ -687,7 +572,7 @@ export default function Demo() {
   const renderReports = () => (
     <div>
       <div className="page-header">
-        <h1 className="page-title">{t.reports}</h1>
+        <h1 className="page-title">{t('reports')}</h1>
       </div>
       <div className="reports-grid">
         {[
@@ -712,7 +597,7 @@ export default function Demo() {
   const renderUsers = () => (
     <div>
       <div className="page-header">
-        <h1 className="page-title">{t.users}</h1>
+        <h1 className="page-title">{t('users')}</h1>
         <button className="btn btn-primary"><Plus size={18} /> Add User</button>
       </div>
       <div className="card">
@@ -801,7 +686,7 @@ export default function Demo() {
   const renderSettings = () => (
     <div>
       <div className="page-header">
-        <h1 className="page-title">{t.settings}</h1>
+        <h1 className="page-title">{t('settings')}</h1>
       </div>
       <div className="settings-grid">
         {[
@@ -874,7 +759,7 @@ export default function Demo() {
             <Link to="/" className="demo-nav-icon-btn demo-home-btn">
               <Home size={18} />
             </Link>
-            <button className="demo-nav-icon-btn demo-lang-btn" onClick={toggleLanguage}>
+            <button className="demo-nav-icon-btn demo-lang-btn" onClick={() => setLanguage(language === 'en' ? 'bn' : 'en')}>
               <Globe size={18} />
               <span className="demo-lang-label">{language === 'en' ? 'BN' : 'EN'}</span>
             </button>
@@ -886,8 +771,8 @@ export default function Demo() {
               {notifOpen && (
                 <div className="demo-notif-dropdown">
                   <div className="demo-notif-header">
-                    <span>{t.notifications}</span>
-                    <button className="demo-mark-read">{t.markAllRead}</button>
+                    <span>{t('notifications')}</span>
+                    <button className="demo-mark-read">{t('markAllRead')}</button>
                   </div>
                   <div className="demo-notif-list">
                     <div className="demo-notif-item unread">
@@ -912,7 +797,7 @@ export default function Demo() {
                       </div>
                     </div>
                   </div>
-                  <div className="demo-notif-footer">{t.viewAll}</div>
+                  <div className="demo-notif-footer">{t('viewAll')}</div>
                 </div>
               )}
             </div>
@@ -923,7 +808,7 @@ export default function Demo() {
               <div className="demo-user-avatar">A</div>
               <div className="demo-user-info">
                 <span className="demo-user-name">Admin User</span>
-                <span className="demo-user-role">{t.admin}</span>
+                <span className="demo-user-role">{t('admin')}</span>
               </div>
               <ChevronDown size={16} className={`demo-chevron ${dropdownOpen ? 'rotate' : ''}`} />
             </button>
@@ -937,10 +822,10 @@ export default function Demo() {
                   </div>
                 </div>
                 <div className="demo-dropdown-divider"></div>
-                <button className="demo-dropdown-item"><User size={16} /> <span>{t.myProfile}</span></button>
-                <button className="demo-dropdown-item"><Key size={16} /> <span>{t.changePassword}</span></button>
+                <button className="demo-dropdown-item"><User size={16} /> <span>{t('myProfile')}</span></button>
+                <button className="demo-dropdown-item"><Key size={16} /> <span>{t('changePassword')}</span></button>
                 <div className="demo-dropdown-divider"></div>
-                <button className="demo-dropdown-item logout" disabled style={{ cursor: 'default', opacity: 0.7 }}><LogOut size={16} /> <span>{t.logout}</span></button>
+                <button className="demo-dropdown-item logout" disabled style={{ cursor: 'default', opacity: 0.7 }}><LogOut size={16} /> <span>{t('logout')}</span></button>
               </div>
             )}
           </div>
@@ -965,9 +850,9 @@ export default function Demo() {
       <main className="demo-main-content" style={{ marginLeft: sidebarOpen ? '240px' : '70px' }}>
         <div className="demo-page-content">
           <div className="demo-page-banner">
-            <span>{t.demoNote}</span>
+            <span>{t('demoNote')}</span>
             <Link to="/login" className="btn btn-primary" style={{ padding: '8px 20px', fontSize: '13px' }}>
-              {t.getStarted} <ArrowRight size={14} />
+              {t('getStarted')} <ArrowRight size={14} />
             </Link>
           </div>
           {renderContent()}

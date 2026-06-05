@@ -1,56 +1,10 @@
 import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useLanguage } from '../context/LanguageContext';
 import { authService } from '../services/api';
 import {
   Warehouse, Eye, EyeOff, ArrowLeft, UserPlus, Mail, Phone, User, Lock, AlertCircle, CheckCircle
 } from 'lucide-react';
-
-const translations = {
-  en: {
-    CreateAccount: 'Create Account',
-    Subtitle: 'Register as a shopkeeper to start your business journey',
-    FullName: 'Full Name',
-    Username: 'Username',
-    Email: 'Email',
-    Phone: 'Phone',
-    Password: 'Password',
-    ConfirmPassword: 'Confirm Password',
-    Register: 'Sign Up',
-    AlreadyHaveAccount: 'Already have an account?',
-    SignIn: 'Sign In',
-    Error: 'Error',
-    TryAgain: 'Please try again',
-    Loading: 'Loading',
-    Success: 'Account created successfully!',
-    PasswordsDoNotMatch: 'Passwords do not match',
-    PasswordMinLength: 'Password must be at least 6 characters',
-    Helpline: 'Helpline',
-    Back: 'Back',
-    RegisterFailed: 'Registration failed. Please try again.',
-  },
-  bn: {
-    CreateAccount: 'অ্যাকাউন্ট তৈরি করুন',
-    Subtitle: 'আপনার ব্যবসা শুরু করতে দোকানদার হিসেবে রেজিস্টার করুন',
-    FullName: 'পূর্ণ নাম',
-    Username: 'ইউজারনেম',
-    Email: 'ইমেইল',
-    Phone: 'ফোন',
-    Password: 'পাসওয়ার্ড',
-    ConfirmPassword: 'পাসওয়ার্ড নিশ্চিত করুন',
-    Register: 'সাইন আপ',
-    AlreadyHaveAccount: 'ইতিমধ্যে অ্যাকাউন্ট আছে?',
-    SignIn: 'সাইন ইন',
-    Error: 'ত্রুটি',
-    TryAgain: 'আবার চেষ্টা করুন',
-    Loading: 'লোড হচ্ছে',
-    Success: 'অ্যাকাউন্ট সফলভাবে তৈরি হয়েছে!',
-    PasswordsDoNotMatch: 'পাসওয়ার্ড মেলেনি',
-    PasswordMinLength: 'পাসওয়ার্ড কমপক্ষে ৬ অক্ষরের হতে হবে',
-    Helpline: 'হেল্প লাইন',
-    Back: 'ফিরুন',
-    RegisterFailed: 'রেজিস্ট্রেশন ব্যর্থ। আবার চেষ্টা করুন।',
-  }
-};
 
 const floatingIcons = [
   { icon: UserPlus, delay: 0, x: '10%', y: '15%' },
@@ -62,10 +16,7 @@ const floatingIcons = [
 ];
 
 export default function Register() {
-  const [language, setLanguage] = useState(() => {
-    return localStorage.getItem('dms_language') || 'bn';
-  });
-  const t = translations[language];
+  const { t, language, setLanguage } = useLanguage();
   const [form, setForm] = useState({
     full_name: '',
     username: '',
@@ -122,32 +73,8 @@ export default function Register() {
     setIsVisible(true);
   }, []);
 
-  useEffect(() => {
-    const handleStorageChange = () => {
-      const savedLang = localStorage.getItem('dms_language');
-      if (savedLang && savedLang !== language) {
-        setLanguage(savedLang);
-      }
-    };
-
-    window.addEventListener('storage', handleStorageChange);
-    const interval = setInterval(() => {
-      const savedLang = localStorage.getItem('dms_language');
-      if (savedLang && savedLang !== language) {
-        setLanguage(savedLang);
-      }
-    }, 500);
-
-    return () => {
-      window.removeEventListener('storage', handleStorageChange);
-      clearInterval(interval);
-    };
-  }, [language]);
-
   const toggleLanguage = () => {
-    const newLang = language === 'en' ? 'bn' : 'en';
-    setLanguage(newLang);
-    localStorage.setItem('dms_language', newLang);
+    setLanguage(language === 'en' ? 'bn' : 'en');
   };
 
   const updateField = (field) => (e) => {
@@ -165,12 +92,12 @@ export default function Register() {
     }
 
     if (form.password.length < 6) {
-      setError(t.PasswordMinLength);
+      setError(t('PasswordMinLength'));
       return;
     }
 
     if (form.password !== form.confirmPassword) {
-      setError(t.PasswordsDoNotMatch);
+      setError(t('PasswordsDoNotMatch'));
       return;
     }
 
@@ -214,9 +141,9 @@ export default function Register() {
       const fieldErrors = err.response?.data?.errors;
       if (fieldErrors) {
         const messages = Object.values(fieldErrors).join('. ');
-        setError(messages || t.RegisterFailed);
+        setError(messages || t('RegisterFailed'));
       } else {
-        setError(msg || t.RegisterFailed);
+        setError(msg || t('RegisterFailed'));
       }
     } finally {
       setLoading(false);
@@ -256,20 +183,20 @@ export default function Register() {
               </div>
               <h1>DMS</h1>
             </div>
-            <p className="register-subtitle">{t.Subtitle}</p>
+            <p className="register-subtitle">{t('Subtitle')}</p>
           </div>
 
           {error && <div className="alert alert-danger">{error}</div>}
 
           <form onSubmit={handleSubmit} autoComplete="off">
             <div className="form-group">
-              <label className="form-label">{t.FullName}</label>
+              <label className="form-label">{t('FullName')}</label>
               <input
                 type="text"
                 className="form-input"
                 value={form.full_name}
                 onChange={updateField('full_name')}
-                placeholder={t.FullName}
+                placeholder={t('FullName')}
                 required
                 autoComplete="off"
               />
@@ -277,7 +204,7 @@ export default function Register() {
 
             <div className="form-row">
               <div className="form-group">
-                <label className="form-label">{t.Username}</label>
+                <label className="form-label">{t('Username')}</label>
                 <div style={{ position: 'relative' }}>
                   <input
                     type="text"
@@ -285,7 +212,7 @@ export default function Register() {
                     value={form.username}
                     onChange={updateField('username')}
                     onBlur={handleBlur('username')}
-                    placeholder={t.Username}
+                    placeholder={t('Username')}
                     required
                     autoComplete="off"
                   />
@@ -296,7 +223,7 @@ export default function Register() {
                 {errors.username && <span className="field-error-text">{errors.username}</span>}
               </div>
               <div className="form-group">
-                <label className="form-label">{t.Email}</label>
+                <label className="form-label">{t('Email')}</label>
                 <div style={{ position: 'relative' }}>
                   <input
                     type="email"
@@ -304,7 +231,7 @@ export default function Register() {
                     value={form.email}
                     onChange={updateField('email')}
                     onBlur={handleBlur('email')}
-                    placeholder={t.Email}
+                    placeholder={t('Email')}
                     autoComplete="off"
                   />
                   {validating.email && <div className="field-spinner" />}
@@ -316,7 +243,7 @@ export default function Register() {
             </div>
 
             <div className="form-group">
-              <label className="form-label">{t.Phone}</label>
+              <label className="form-label">{t('Phone')}</label>
               <div style={{ position: 'relative' }}>
                 <input
                   type="tel"
@@ -324,7 +251,7 @@ export default function Register() {
                   value={form.phone}
                   onChange={updateField('phone')}
                   onBlur={handleBlur('phone')}
-                  placeholder={t.Phone}
+                  placeholder={t('Phone')}
                   autoComplete="off"
                 />
                 {validating.phone && <div className="field-spinner" />}
@@ -336,14 +263,14 @@ export default function Register() {
 
             <div className="form-row">
               <div className="form-group">
-                <label className="form-label">{t.Password}</label>
+                <label className="form-label">{t('Password')}</label>
                 <div style={{ position: 'relative' }}>
                   <input
                     type={showPassword ? 'text' : 'password'}
                     className="form-input"
                     value={form.password}
                     onChange={updateField('password')}
-                    placeholder={t.Password}
+                    placeholder={t('Password')}
                     required
                     style={{ paddingRight: '40px' }}
                     autoComplete="new-password"
@@ -358,14 +285,14 @@ export default function Register() {
                 </div>
               </div>
               <div className="form-group">
-                <label className="form-label">{t.ConfirmPassword}</label>
+                <label className="form-label">{t('ConfirmPassword')}</label>
                 <div style={{ position: 'relative' }}>
                   <input
                     type={showConfirmPassword ? 'text' : 'password'}
                     className="form-input"
                     value={form.confirmPassword}
                     onChange={updateField('confirmPassword')}
-                    placeholder={t.ConfirmPassword}
+                    placeholder={t('ConfirmPassword')}
                     required
                     autoComplete="new-password"
                     style={{ paddingRight: '40px' }}
@@ -382,24 +309,24 @@ export default function Register() {
             </div>
 
             <button type="submit" className="btn btn-primary register-btn" disabled={loading}>
-              {loading ? t.Loading + '...' : t.Register}
+              {loading ? t('Loading') + '...' : t('Register')}
               {!loading && <UserPlus size={18} className="btn-arrow" />}
             </button>
           </form>
 
           <p className="login-link">
-            {t.AlreadyHaveAccount}{' '}
+            {t('AlreadyHaveAccount')}{' '}
             <button
               type="button"
               className="link-btn"
               onClick={() => navigate('/login')}
             >
-              {t.SignIn}
+              {t('SignIn')}
             </button>
           </p>
 
           <p className="helpline">
-            {t.Helpline}: <b>+880-173-8957729</b>
+            {t('Helpline')}: <b>+880-173-8957729</b>
           </p>
 
           <div className="card-bottom-bar">
@@ -409,7 +336,7 @@ export default function Register() {
               onClick={() => navigate('/')}
             >
               <ArrowLeft size={15} />
-              {language === 'en' ? 'Back' : 'ফিরুন'}
+              {t('Back')}
             </button>
             <button
               type="button"

@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import { useLanguage } from '../context/LanguageContext';
 import { authService } from '../services/api';
 import { 
   Warehouse, Eye, EyeOff, ArrowLeft,
@@ -8,59 +9,6 @@ import {
   ShoppingCart, BarChart3, Building2, Truck,
   Circle
 } from 'lucide-react';
-
-const translations = {
-  en: {
-    Sales: 'Sales',
-    Username: 'Username',
-    Email: 'Email',
-    Phone: 'Phone',
-    Password: 'Password',
-    Login: 'Sign In',
-    LoginFailed: 'Sign in failed. Please check your credentials.',
-    AccountDeactivated: 'Your account has been deactivated.',
-    ForgotPassword: 'Forgot Password?',
-    Back: 'Back',
-    Error: 'Error',
-    TryAgain: 'Please try again',
-    Loading: 'Loading',
-    Helpline: 'Helpline',
-    ResetPassword: 'Reset Password',
-    EnterAmount: 'Enter',
-    or: 'or',
-    Cancel: 'Cancel',
-    SendResetLink: 'Send Reset Link',
-    WelcomeBack: 'Welcome Back',
-    WelcomeSubtitle: 'Sign in to manage your distribution business',
-    NoAccount: "Don't have an account?",
-    CreateAccount: 'Sign Up',
-  },
-  bn: {
-    Sales: 'বিক্রয়',
-    Username: 'ইউজারনেম',
-    Email: 'ইমেইল',
-    Phone: 'ফোন',
-    Password: 'পাসওয়ার্ড',
-    Login: 'সাইন ইন',
-    LoginFailed: 'সাইন ইন ব্যর্থ। অনুগ্রহ করে আপনার তথ্য পরীক্ষা করুন।',
-    AccountDeactivated: 'আপনার অ্যাকাউন্ট নিষ্ক্রিয় করা হয়েছে।',
-    ForgotPassword: 'পাসওয়ার্ড ভুলে গেছেন?',
-    Back: 'ফিরুন',
-    Error: 'ত্রুটি',
-    TryAgain: 'আবার চেষ্টা করুন',
-    Loading: 'লোড হচ্ছে',
-    Helpline: 'হেল্প লাইন',
-    ResetPassword: 'পাসওয়ার্ড রিসেট',
-    EnterAmount: 'লিখুন',
-    or: 'অথবা',
-    Cancel: 'বাতিল',
-    SendResetLink: 'রিসেট লিংক পাঠান',
-    WelcomeBack: 'স্বাগতম',
-    WelcomeSubtitle: 'আপনার ডিস্ট্রিবিউশন ব্যবসা পরিচালনা করতে সাইন ইন করুন',
-    NoAccount: 'অ্যাকাউন্ট নেই?',
-    CreateAccount: 'সাইন আপ',
-  }
-};
 
 const floatingIcons = [
   { icon: Package, delay: 0, x: '10%', y: '15%' },
@@ -74,10 +22,7 @@ const floatingIcons = [
 ];
 
 export default function Login() {
-  const [language, setLanguage] = useState(() => {
-    return localStorage.getItem('dms_language') || 'bn';
-  });
-  const t = translations[language];
+  const { t, language, setLanguage } = useLanguage();
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
@@ -114,32 +59,8 @@ export default function Login() {
     }
   }, [navigate, user]);
 
-  useEffect(() => {
-    const handleStorageChange = () => {
-      const savedLang = localStorage.getItem('dms_language');
-      if (savedLang && savedLang !== language) {
-        setLanguage(savedLang);
-      }
-    };
-
-    window.addEventListener('storage', handleStorageChange);
-    const interval = setInterval(() => {
-      const savedLang = localStorage.getItem('dms_language');
-      if (savedLang && savedLang !== language) {
-        setLanguage(savedLang);
-      }
-    }, 500);
-
-    return () => {
-      window.removeEventListener('storage', handleStorageChange);
-      clearInterval(interval);
-    };
-  }, [language]);
-
   const toggleLanguage = () => {
-    const newLang = language === 'en' ? 'bn' : 'en';
-    setLanguage(newLang);
-    localStorage.setItem('dms_language', newLang);
+    setLanguage(language === 'en' ? 'bn' : 'en');
   };
 
   const handleSubmit = async (e) => {
@@ -161,9 +82,9 @@ export default function Login() {
     } catch (err) {
       const errorMsg = err.response?.data?.message || '';
       if (errorMsg.includes('deactivated') || errorMsg.includes('নিষ্ক্রিয়')) {
-        setError(t.AccountDeactivated);
+        setError(t('AccountDeactivated'));
       } else {
-        setError(t.LoginFailed);
+        setError(t('LoginFailed'));
       }
     } finally {
       setLoading(false);
@@ -193,7 +114,7 @@ export default function Login() {
         setForgotMessage(msg);
       }
     } catch (error) {
-        setForgotMessage(error.response?.data?.message || t.Error + '. ' + t.TryAgain + '.');
+        setForgotMessage(error.response?.data?.message || t('Error') + '. ' + t('TryAgain') + '.');
     } finally {
       setForgotLoading(false);
     }
@@ -232,33 +153,33 @@ export default function Login() {
               </div>
               <h1>DMS</h1>
             </div>
-            <p className="login-subtitle">{t.WelcomeSubtitle}</p>
+            <p className="login-subtitle">{t('WelcomeSubtitle')}</p>
           </div>
 
           {error && <div className="alert alert-danger">{error}</div>}
 
           <form onSubmit={handleSubmit}>
             <div className="form-group">
-              <label className="form-label">{t.Username}, {t.Email}, {t.Phone}</label>
+              <label className="form-label">{t('Username')}, {t('Email')}, {t('Phone')}</label>
               <input
                 type="text"
                 className="form-input"
                 value={username}
                 onChange={(e) => setUsername(e.target.value)}
-                placeholder={t.Username + ', ' + t.Email + ', ' + t.Phone}
+                placeholder={t('Username') + ', ' + t('Email') + ', ' + t('Phone')}
                 required
               />
             </div>
 
             <div className="form-group">
-              <label className="form-label">{t.Password}</label>
+              <label className="form-label">{t('Password')}</label>
               <div style={{ position: 'relative' }}>
                 <input
                   type={showPassword ? 'text' : 'password'}
                   className="form-input"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  placeholder={t.Password}
+                  placeholder={t('Password')}
                   required
                   style={{ paddingRight: '40px' }}
                 />
@@ -273,7 +194,7 @@ export default function Login() {
             </div>
 
             <button type="submit" className="btn btn-primary login-btn" disabled={loading}>
-              {loading ? t.Loading + '...' : t.Login}
+              {loading ? t('Loading') + '...' : t('Login')}
               {!loading && <ArrowLeft size={18} className="btn-arrow" />}
             </button>
 
@@ -282,23 +203,23 @@ export default function Login() {
               className="btn btn-secondary forgot-btn"
               onClick={() => setShowForgotModal(true)}
             >
-              {t.ForgotPassword}
+              {t('ForgotPassword')}
             </button>
           </form>
 
           <p className="login-link">
-            {t.NoAccount}{' '}
+            {t('NoAccount')}{' '}
             <button
               type="button"
               className="link-btn"
               onClick={() => navigate('/register')}
             >
-              {t.CreateAccount}
+              {t('CreateAccount')}
             </button>
           </p>
 
           <p className="helpline">
-            {t.Helpline}: <b>+880-173-8957729</b>
+            {t('Helpline')}: <b>+880-173-8957729</b>
           </p>
 
           <div className="card-bottom-bar">
@@ -308,7 +229,7 @@ export default function Login() {
               onClick={() => navigate('/')}
             >
               <ArrowLeft size={15} />
-              {language === 'en' ? 'Back' : 'ফিরুন'}
+              {t('Back')}
             </button>
             <button
               type="button"
@@ -325,13 +246,13 @@ export default function Login() {
         <div className="modal-overlay" onClick={() => setShowForgotModal(false)}>
           <div className="modal" onClick={e => e.stopPropagation()}>
             <div className="modal-header">
-              <h3>{t.ResetPassword}</h3>
+              <h3>{t('ResetPassword')}</h3>
               <button type="button" className="modal-close" onClick={() => setShowForgotModal(false)}>×</button>
             </div>
             <form onSubmit={handleForgotPassword}>
               <div className="modal-body">
                 <p style={{ marginBottom: '16px', color: 'var(--text-secondary)' }}>
-                  {t.EnterAmount} your {t.Email} or {t.Phone} and we'll send you a link to reset your {t.Password}.
+                  {t('EnterAmount')} your {t('Email')} or {t('Phone')} and we'll send you a link to reset your {t('Password')}.
                 </p>
                 {forgotMessage && (
                   <div className={`alert ${typeof forgotMessage === 'string' && (forgotMessage.includes('sent') || forgotMessage.includes('success') || forgotMessage.includes('link')) ? 'alert-success' : 'alert-danger'}`}>
@@ -339,23 +260,23 @@ export default function Login() {
                   </div>
                 )}
                 <div className="form-group">
-                  <label className="form-label">{t.Email} {t.or} {t.Phone}</label>
+                  <label className="form-label">{t('Email')} {t('Or')} {t('Phone')}</label>
                   <input
                     type="text"
                     className="form-input"
                     value={forgotEmail}
                     onChange={(e) => setForgotEmail(e.target.value)}
-                    placeholder={t.Email + ' ' + t.or + ' ' + t.Phone}
+                    placeholder={t('Email') + ' ' + t('Or') + ' ' + t('Phone')}
                     required
                   />
                 </div>
               </div>
               <div className="modal-footer">
                 <button type="button" className="btn btn-secondary" onClick={() => setShowForgotModal(false)}>
-                  {t.Cancel}
+                  {t('Cancel')}
                 </button>
                 <button type="submit" className="btn btn-primary" disabled={forgotLoading}>
-                  {forgotLoading ? t.Loading + '...' : t.SendResetLink}
+                  {forgotLoading ? t('Loading') + '...' : t('SendResetLink')}
                 </button>
               </div>
             </form>

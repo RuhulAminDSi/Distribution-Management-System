@@ -1,5 +1,6 @@
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import { useLanguage } from '../context/LanguageContext';
 import { useState, useEffect } from 'react';
 import { 
   Home, 
@@ -11,37 +12,12 @@ import {
   X
 } from 'lucide-react';
 
-const translations = {
-  bn: {
-    notFoundTitle: 'পৃষ্ঠা পাওয়া যায়নি',
-    notFoundDesc: 'আপনি যে পৃষ্ঠাটি খুঁজছেন সেটি বিদ্যমান নেই অথবা সরানো হয়েছে।',
-    unauthorizedTitle: 'অননুমোদিত অ্যাক্সেস',
-    unauthorizedDesc: 'এই পৃষ্ঠাটি দেখার জন্য আপনাকে লগ ইন করতে হবে।',
-    goToLanding: 'হোম পেজে যান',
-    goToDashboard: 'ড্যাশবোর্ডে যান',
-    backToDashboard: 'ড্যাশবোর্ডে ফিরে যান',
-  },
-  en: {
-    notFoundTitle: 'Page Not Found',
-    notFoundDesc: 'The page you are looking for does not exist or has been moved.',
-    unauthorizedTitle: 'Unauthorized Access',
-    unauthorizedDesc: 'You need to be logged in to access this page.',
-    goToLanding: 'Go to Home',
-    goToDashboard: 'Go to Dashboard',
-    backToDashboard: 'Back to Dashboard',
-  }
-};
-
 export default function NotFound({ type = 'not-found' }) {
   const { user } = useAuth();
+  const { t, language, setLanguage } = useLanguage();
   const navigate = useNavigate();
-  const [language, setLanguage] = useState(() => localStorage.getItem('dms_language') || 'bn');
   const [isVisible, setIsVisible] = useState(false);
   const [floatingIcons, setFloatingIcons] = useState([]);
-
-  useEffect(() => {
-    localStorage.setItem('dms_language', language);
-  }, [language]);
 
   useEffect(() => {
     setIsVisible(true);
@@ -59,19 +35,17 @@ export default function NotFound({ type = 'not-found' }) {
     setFloatingIcons(icons);
   }, []);
 
-  const t = translations[language];
-
   const content = {
     'not-found': {
-      title: t.notFoundTitle,
-      description: t.notFoundDesc,
+      title: t('notFoundTitle'),
+      description: t('notFoundDesc'),
       icon: AlertTriangle,
       gradient: 'from-red-500 via-orange-500 to-yellow-500',
       glowColor: 'rgba(239, 68, 68, 0.5)',
     },
     'unauthorized': {
-      title: t.unauthorizedTitle,
-      description: t.unauthorizedDesc,
+      title: t('unauthorizedTitle'),
+      description: t('unauthorizedDesc'),
       icon: AlertTriangle,
       gradient: 'from-purple-600 via-pink-500 to-red-500',
       glowColor: 'rgba(147, 51, 234, 0.5)',
@@ -161,7 +135,7 @@ export default function NotFound({ type = 'not-found' }) {
               {type === 'not-found' && !user && (
                 <Link to="/" className="btn btn-primary btn-lg btn-animate">
                   <Home size={20} />
-                  <span>{t.goToLanding}</span>
+                  <span>{t('goToLanding')}</span>
                   <ArrowRight size={18} className="btn-arrow" />
                 </Link>
               )}
@@ -170,12 +144,12 @@ export default function NotFound({ type = 'not-found' }) {
                 <>
                   <Link to="/" className="btn btn-outline btn-lg btn-animate">
                     <Home size={20} />
-                    <span>{t.goToLanding}</span>
+                    <span>{t('goToLanding')}</span>
                     <ArrowRight size={18} className="btn-arrow" />
                   </Link>
                   <Link to="/dashboard" className="btn btn-primary btn-lg btn-animate">
                     <LayoutDashboard size={20} />
-                    <span>{t.goToDashboard}</span>
+                    <span>{t('goToDashboard')}</span>
                     <ArrowRight size={18} className="btn-arrow" />
                   </Link>
                 </>
@@ -187,7 +161,7 @@ export default function NotFound({ type = 'not-found' }) {
                   className="btn btn-primary btn-lg btn-animate"
                 >
                   <LayoutDashboard size={20} />
-                  <span>{t.backToDashboard}</span>
+                  <span>{t('backToDashboard')}</span>
                   <ArrowRight size={18} className="btn-arrow" />
                 </button>
               )}
@@ -196,17 +170,17 @@ export default function NotFound({ type = 'not-found' }) {
             <div className="error-stats">
               <div className="stat-item">
                 <span className="stat-number">99.9%</span>
-                <span className="stat-label">{language === 'bn' ? 'আপটাইম' : 'Uptime'}</span>
+                <span className="stat-label">{t('Uptime')}</span>
               </div>
               <div className="stat-divider"></div>
               <div className="stat-item">
                 <span className="stat-number">24/7</span>
-                <span className="stat-label">{language === 'bn' ? 'সাপোর্ট' : 'Support'}</span>
+                <span className="stat-label">{t('Support')}</span>
               </div>
               <div className="stat-divider"></div>
               <div className="stat-item">
                 <span className="stat-number">500+</span>
-                <span className="stat-label">{language === 'bn' ? 'কোম্পানি' : 'Companies'}</span>
+                <span className="stat-label">{t('Companies')}</span>
               </div>
             </div>
           </div>
@@ -216,7 +190,7 @@ export default function NotFound({ type = 'not-found' }) {
       <footer className="footer">
         <div className="container">
           <div className="footer-bottom">
-            <p>© 2026 DMS. {language === 'bn' ? 'সর্বস্বত্ব সংরক্ষিত।' : 'All rights reserved.'}</p>
+            <p>© 2026 DMS. {t('AllRightsReserved')}</p>
           </div>
         </div>
       </footer>

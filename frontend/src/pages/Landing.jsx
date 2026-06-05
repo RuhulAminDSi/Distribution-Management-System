@@ -30,99 +30,9 @@ import {
   X,
   Zap
 } from 'lucide-react';
+import { useLanguage } from '../context/LanguageContext';
 import ChatBot from '../components/ChatBot';
 import './Landing.css';
-
-const copy = {
-  bn: {
-    nav: ['হোম', 'সুবিধা', 'কীভাবে কাজ করে', 'কেন ব্যবহার করবেন', 'যোগাযোগ'],
-    login: 'সাইন ইন',
-    signUp: 'সাইন আপ',
-    register: 'সাইন আপ',
-    demo: 'ডেমো',
-    brandSubtitle: 'ডিস্ট্রিবিউশন স্যুইট',
-    eyebrow: 'ডিস্ট্রিবিউশন ব্যবসা সহজে পরিচালনার স্মার্ট সফটওয়্যার',
-    title: 'আপনার বিক্রয়, স্টক ও পেমেন্ট এক জায়গায় সহজ নিয়ন্ত্রণ',
-    subtitle: 'ডিএমএস দিয়ে প্রতিদিনের অর্ডার, বিক্রয়, রিটেইলার, পণ্য, স্টক ও বকেয়া পেমেন্ট সহজে দেখা এবং পরিচালনা করা যায়। খাতায় হিসাব রাখা, স্টক ভুল হওয়া বা পেমেন্ট মিস করার ঝামেলা কমিয়ে ব্যবসাকে আরও গুছিয়ে চালান।',
-    primaryCta: 'সিস্টেমে প্রবেশ করুন',
-    secondaryCta: 'ফিচার দেখুন',
-    trusted: 'ডিস্ট্রিবিউটর, পাইকারি ব্যবসা, দোকান ও সেলস টিমের জন্য উপযোগী',
-    liveOperations: 'আজকের ব্যবসার চিত্র',
-    liveSales: 'আজকের বিক্রয়',
-    pendingOrders: 'পেন্ডিং অর্ডার',
-    lowStock: 'লো স্টক অ্যালার্ট',
-    collection: 'কালেকশন',
-    dispatchReady: 'ডিসপ্যাচ প্রস্তুত',
-    permissionSecure: 'নিরাপদ ব্যবহার',
-    scannerActive: 'স্মার্ট অ্যালার্ট চালু',
-    metricTables: 'ধরনের তথ্য একসাথে',
-    metricModules: 'প্রয়োজনীয় কাজের টুল',
-    metricSession: 'সহজ অ্যাক্সেস',
-    moduleKicker: 'মূল সুবিধা',
-    modulesTitle: 'ব্যবসার প্রতিটি গুরুত্বপূর্ণ কাজ সহজ করুন',
-    modulesSubtitle: 'কোন পণ্য কত আছে, কোন রিটেইলার কত বাকি, আজ কত বিক্রয় হলো, কোন অর্ডার পেন্ডিং - সব তথ্য পরিষ্কারভাবে এক জায়গায় দেখুন।',
-    openModule: 'দেখুন',
-    closeModule: 'কম দেখুন',
-    workflowKicker: 'কীভাবে কাজ করে',
-    workflowTitle: 'প্রতিদিনের কাজ আরও সহজ ও দ্রুত',
-    workflowSubtitle: 'পণ্য যোগ করুন, অর্ডার নিন, বিক্রয় করুন, পেমেন্ট রেকর্ড করুন এবং রিপোর্ট দেখে সিদ্ধান্ত নিন - সবকিছু একই সিস্টেমে।',
-    securityTitle: 'কেন এই সিস্টেম আপনার ব্যবসার জন্য দরকার',
-    securitySubtitle: 'ডিএমএস আপনার ব্যবসার হিসাব গুছিয়ে রাখে, ভুল কমায়, সময় বাঁচায় এবং মালিক/ম্যানেজারকে দ্রুত সিদ্ধান্ত নিতে সাহায্য করে।',
-    ctaKicker: 'শুরু করুন',
-    ctaTitle: 'আপনার ব্যবসা আরও গুছিয়ে চালাতে প্রস্তুত?',
-    ctaSubtitle: 'লগ ইন করে আজকের বিক্রয়, স্টক, পেমেন্ট, অর্ডার এবং রিপোর্ট এক জায়গায় দেখুন।',
-    contactKicker: 'যোগাযোগ',
-    contactTitle: 'সাপোর্ট বা ডেমোর জন্য যোগাযোগ করুন',
-    contactSubtitle: 'আপনার ব্যবসার জন্য কীভাবে ব্যবহার করবেন, সেটআপ বা ট্রেনিং দরকার হলে আমাদের সাথে কথা বলুন।',
-    location: 'ঢাকা, বাংলাদেশ',
-    footer: 'ডিএমএস আপনার ব্যবসার হিসাব সহজ, পরিষ্কার এবং দ্রুত বোঝার মতো করে।',
-    rights: '© ২০২৬ ডিএমএস। সর্বস্বত্ব সংরক্ষিত।'
-  },
-  en: {
-    nav: ['Home', 'Benefits', 'How It Works', 'Why DMS', 'Contact'],
-    login: 'Sign In',
-    signUp: 'Sign Up',
-    register: 'Sign Up',
-    demo: 'Demo',
-    brandSubtitle: 'Distribution Suite',
-    eyebrow: 'Smart software for easier distribution business management',
-    title: 'Manage sales, stock and payments from one simple place',
-    subtitle: 'DMS helps you handle daily orders, sales, retailers, products, stock and due payments without messy notebooks or scattered files. See what is happening in your business, reduce mistakes and make faster decisions.',
-    primaryCta: 'Enter System',
-    secondaryCta: 'Explore Features',
-    trusted: 'Made for distributors, wholesalers, shops and field sales teams',
-    liveOperations: 'Today’s Business Snapshot',
-    liveSales: 'Today Sales',
-    pendingOrders: 'Pending Orders',
-    lowStock: 'Low Stock Alerts',
-    collection: 'Collection',
-    dispatchReady: 'Dispatch ready',
-    permissionSecure: 'Safe access',
-    scannerActive: 'Smart alerts on',
-    metricTables: 'types of business data',
-    metricModules: 'daily work tools',
-    metricSession: 'easy access',
-    moduleKicker: 'Key Benefits',
-    modulesTitle: 'Make every important business task easier',
-    modulesSubtitle: 'Know what products are available, who owes money, how much you sold today and which orders need attention - all from one clean screen.',
-    openModule: 'View details',
-    closeModule: 'Show less',
-    workflowKicker: 'How It Works',
-    workflowTitle: 'A simpler way to run daily distribution work',
-    workflowSubtitle: 'Add products, take orders, make sales, record payments and check reports in the same system.',
-    securityTitle: 'Why your business needs DMS',
-    securitySubtitle: 'DMS keeps your business organized, reduces mistakes, saves time and helps owners or managers make better decisions quickly.',
-    ctaKicker: 'Get Started',
-    ctaTitle: 'Ready to run your business in a more organized way?',
-    ctaSubtitle: 'Login to see sales, stock, payments, orders and reports in one place.',
-    contactKicker: 'Contact',
-    contactTitle: 'Contact us for support or demo',
-    contactSubtitle: 'Talk to us if you need setup help, training or guidance for using DMS in your business.',
-    location: 'Dhaka, Bangladesh',
-    footer: 'DMS makes your business records simple, clear and easy to understand.',
-    rights: '© 2026 DMS. All rights reserved.'
-  }
-};
 
 const moduleContent = {
   bn: [
@@ -184,21 +94,15 @@ const securityContent = {
 };
 
 export default function Landing() {
-  const [language, setLanguage] = useState(() => localStorage.getItem('dms_language') || 'bn');
+  const { t, language, setLanguage } = useLanguage();
   const [scrolled, setScrolled] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [expandedModule, setExpandedModule] = useState(null);
   const [activeSection, setActiveSection] = useState('home');
   const [chatbotOpen, setChatbotOpen] = useState(false);
-  const t = copy[language];
   const modules = moduleContent[language];
   const workflow = workflowContent[language];
   const security = securityContent[language];
-
-  useEffect(() => {
-    localStorage.setItem('dms_language', language);
-    setExpandedModule(null);
-  }, [language]);
 
   useEffect(() => {
     const handleScroll = () => setScrolled(window.scrollY > 32);
@@ -249,12 +153,12 @@ export default function Landing() {
         <div className="landing-container nav-inner">
           <Link to="/" className="brand" onClick={() => setMobileMenuOpen(false)}>
             <span className="brand-mark"><Package size={24} /></span>
-            <span><strong>DMS</strong><small>{t.brandSubtitle}</small></span>
+            <span><strong>DMS</strong><small>{t('brandSubtitle')}</small></span>
           </Link>
 
           <nav className={`nav-links ${mobileMenuOpen ? 'is-open' : ''}`}>
-            {t.nav.map((item, index) => (
-              <a key={item} href={`#${navTargets[index]}`} className={activeSection === navTargets[index] ? 'active' : ''} onClick={() => setMobileMenuOpen(false)}>{item}</a>
+            {['navHome', 'navBenefits', 'navHowItWorks', 'navWhyDMS', 'navContact'].map((key, index) => (
+              <a key={key} href={`#${navTargets[index]}`} className={activeSection === navTargets[index] ? 'active' : ''} onClick={() => setMobileMenuOpen(false)}>{t(key)}</a>
             ))}
           </nav>
 
@@ -262,9 +166,9 @@ export default function Landing() {
             <button className="language-pill" onClick={() => setLanguage(language === 'en' ? 'bn' : 'en')}>
               <Globe2 size={15} /> {language === 'en' ? 'বাংলা' : 'EN'}
             </button>
-            <Link to="/register" className="ghost-link">{t.signUp}</Link>
-            <Link to="/demo" className="ghost-link">{t.demo}</Link>
-            <Link to="/login" className="nav-cta">{t.login}</Link>
+            <Link to="/register" className="ghost-link">{t('signUp')}</Link>
+            <Link to="/demo" className="ghost-link">{t('demo')}</Link>
+            <Link to="/login" className="nav-cta">{t('login')}</Link>
           </div>
 
           <button className="menu-button" onClick={() => setMobileMenuOpen((open) => !open)} aria-label="Toggle menu">
@@ -276,23 +180,23 @@ export default function Landing() {
       <section id="home" className="hero-section">
         <div className="landing-container hero-grid">
           <div className="hero-copy reveal" style={{ opacity: 1, transform: 'translateY(0)' }}>
-            <div className="eyebrow"><Sparkles size={16} /> {t.eyebrow}</div>
-            <h1>{t.title}</h1>
-            <p className="hero-subtitle">{t.subtitle}</p>
+            <div className="eyebrow"><Sparkles size={16} /> {t('eyebrow')}</div>
+            <h1>{t('title')}</h1>
+            <p className="hero-subtitle">{t('subtitle')}</p>
             <div className="hero-actions">
               <Link to="/register" className="register-button" onClick={() => sessionStorage.setItem('fromLanding', 'true')}>
-                {t.register} <ArrowRight size={18} />
+                {t('register')} <ArrowRight size={18} />
               </Link>
               <Link to="/login" className="primary-button" onClick={() => sessionStorage.setItem('fromLanding', 'true')}>
-                {t.primaryCta} <ArrowRight size={18} />
+                {t('primaryCta')} <ArrowRight size={18} />
               </Link>
-              <a href="#modules" className="secondary-button">{t.secondaryCta}</a>
+              <a href="#modules" className="secondary-button">{t('secondaryCta')}</a>
             </div>
-            <p className="trusted-line"><CheckCircle2 size={18} /> {t.trusted}</p>
+            <p className="trusted-line"><CheckCircle2 size={18} /> {t('trusted')}</p>
             <div className="metric-strip">
-              <span><strong>{language === 'bn' ? 'সব' : 'All'}</strong> {t.metricTables}</span>
-              <span><strong>9</strong> {t.metricModules}</span>
-              <span><strong>24/7</strong> {t.metricSession}</span>
+              <span><strong>{t('allText')}</strong> {t('metricTables')}</span>
+              <span><strong>9</strong> {t('metricModules')}</span>
+              <span><strong>24/7</strong> {t('metricSession')}</span>
             </div>
           </div>
 
@@ -302,7 +206,7 @@ export default function Landing() {
             <div className="dashboard-shell">
               <div className="dashboard-topbar">
                 <span></span><span></span><span></span>
-                <b>{t.liveOperations}</b>
+                <b>{t('liveOperations')}</b>
               </div>
               <div className="dashboard-body">
                 <aside className="dash-sidebar">
@@ -310,8 +214,8 @@ export default function Landing() {
                 </aside>
                 <div className="dash-main">
                   <div className="dash-kpis">
-                    <div><small>{t.liveSales}</small><strong>৳ 8.42L</strong></div>
-                    <div><small>{t.collection}</small><strong>৳ 4.18L</strong></div>
+                    <div><small>{t('liveSales')}</small><strong>৳ 8.42L</strong></div>
+                    <div><small>{t('collection')}</small><strong>৳ 4.18L</strong></div>
                   </div>
                   <div className="chart-card">
                     {[58, 82, 46, 92, 68, 76, 54, 88].map((height, index) => (
@@ -319,15 +223,15 @@ export default function Landing() {
                     ))}
                   </div>
                   <div className="signal-list">
-                    <div><Bell size={17} /><span>{t.pendingOrders}</span><strong>37</strong></div>
-                    <div><Zap size={17} /><span>{t.lowStock}</span><strong>12</strong></div>
-                    <div><Truck size={17} /><span>{t.dispatchReady}</span><strong>64%</strong></div>
+                    <div><Bell size={17} /><span>{t('pendingOrders')}</span><strong>37</strong></div>
+                    <div><Zap size={17} /><span>{t('lowStockLanding')}</span><strong>12</strong></div>
+                    <div><Truck size={17} /><span>{t('dispatchReady')}</span><strong>64%</strong></div>
                   </div>
                 </div>
               </div>
             </div>
-            <div className="floating-card card-one"><ShieldCheck size={18} /> {t.permissionSecure}</div>
-            <div className="floating-card card-two"><Circle size={10} fill="currentColor" /> {t.scannerActive}</div>
+            <div className="floating-card card-one"><ShieldCheck size={18} /> {t('permissionSecure')}</div>
+            <div className="floating-card card-two"><Circle size={10} fill="currentColor" /> {t('scannerActive')}</div>
           </div>
         </div>
       </section>
@@ -335,9 +239,9 @@ export default function Landing() {
       <section id="modules" className="section-block">
         <div className="landing-container">
           <div className="section-heading reveal">
-            <span className="section-kicker">{t.moduleKicker}</span>
-            <h2>{t.modulesTitle}</h2>
-            <p>{t.modulesSubtitle}</p>
+            <span className="section-kicker">{t('moduleKicker')}</span>
+            <h2>{t('modulesTitle')}</h2>
+            <p>{t('modulesSubtitle')}</p>
           </div>
           <div className="module-grid">
             {modules.map(({ icon: Icon, title, text, metric, details }, index) => {
@@ -362,7 +266,7 @@ export default function Landing() {
                   onClick={() => setExpandedModule(isExpanded ? null : index)}
                   aria-expanded={isExpanded}
                 >
-                  {isExpanded ? t.closeModule : t.openModule} <ChevronRight size={15} />
+                  {isExpanded ? t('closeModule') : t('openModule')} <ChevronRight size={15} />
                 </button>
               </article>
               );
@@ -374,9 +278,9 @@ export default function Landing() {
       <section id="workflow" className="workflow-section">
         <div className="landing-container workflow-grid">
           <div className="section-heading left reveal">
-            <span className="section-kicker">{t.workflowKicker}</span>
-            <h2>{t.workflowTitle}</h2>
-            <p>{t.workflowSubtitle}</p>
+            <span className="section-kicker">{t('workflowKicker')}</span>
+            <h2>{t('workflowTitle')}</h2>
+            <p>{t('workflowSubtitle')}</p>
           </div>
           <div className="workflow-lane">
             {workflow.map(({ icon: Icon, title, text }, index) => (
@@ -395,8 +299,8 @@ export default function Landing() {
         <div className="landing-container security-grid">
           <div className="security-panel reveal">
             <div className="lock-badge"><LockKeyhole size={34} /></div>
-            <h2>{t.securityTitle}</h2>
-            <p>{t.securitySubtitle}</p>
+            <h2>{t('securityTitle')}</h2>
+            <p>{t('securitySubtitle')}</p>
           </div>
           <div className="security-list">
             {security.map((item, index) => (
@@ -412,39 +316,39 @@ export default function Landing() {
       <section className="cta-section">
         <div className="landing-container cta-card reveal">
           <div>
-            <span className="section-kicker">{t.ctaKicker}</span>
-            <h2>{t.ctaTitle}</h2>
-            <p>{t.ctaSubtitle}</p>
+            <span className="section-kicker">{t('ctaKicker')}</span>
+            <h2>{t('ctaTitle')}</h2>
+            <p>{t('ctaSubtitle')}</p>
           </div>
-          <Link to="/login" className="primary-button">{t.primaryCta} <ArrowRight size={18} /></Link>
+          <Link to="/login" className="primary-button">{t('primaryCta')} <ArrowRight size={18} /></Link>
         </div>
       </section>
 
       <section id="contact" className="contact-section">
         <div className="landing-container contact-grid">
           <div className="section-heading left reveal">
-            <span className="section-kicker">{t.contactKicker}</span>
-            <h2>{t.contactTitle}</h2>
-            <p>{t.contactSubtitle}</p>
+            <span className="section-kicker">{t('contactKicker')}</span>
+            <h2>{t('contactTitle')}</h2>
+            <p>{t('contactSubtitle')}</p>
           </div>
           <div className="contact-cards">
             <a href="tel:+8801738957729" className="contact-card reveal"><Phone size={22} /><span>+880 1738-957729</span></a>
             <a href="mailto:hmruhul16.mbstu@gmail.com" className="contact-card reveal"><Mail size={22} /><span>hmruhul16.mbstu@gmail.com</span></a>
-            <div className="contact-card reveal"><MapPin size={22} /><span>{t.location}</span></div>
+            <div className="contact-card reveal"><MapPin size={22} /><span>{t('location')}</span></div>
           </div>
         </div>
       </section>
 
       <footer className="landing-footer">
         <div className="landing-container footer-inner">
-          <Link to="/" className="brand"><span className="brand-mark"><Package size={22} /></span><span><strong>DMS</strong><small>{t.footer}</small></span></Link>
-          <p>{t.rights}</p>
+          <Link to="/" className="brand"><span className="brand-mark"><Package size={22} /></span><span><strong>DMS</strong><small>{t('footer')}</small></span></Link>
+          <p>{t('rights')}</p>
         </div>
       </footer>
 
       <Link to="/public-chat" className="chat-fab" aria-label="Message with Dealer" style={{ display: chatbotOpen ? 'none' : 'flex' }}>
         <MessageSquare size={24} />
-        <span className="fab-tooltip">{language === 'bn' ? 'ডিলারকে মেসেজ দিন' : 'Message the dealer'}</span>
+        <span className="fab-tooltip">{t('MessageDealer')}</span>
       </Link>
       <ChatBot onToggle={setChatbotOpen} />
     </main>
