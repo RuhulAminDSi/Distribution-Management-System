@@ -1,12 +1,12 @@
 import { useState, useEffect } from 'react';
-import { useLanguage } from '../context/LanguageContext';
+import { useLanguage, formatCurrency } from '../context/LanguageContext';
 import { companyService } from '../services/api';
 import { X, Plus, Pencil, Trash2, ChevronLeft, ChevronRight, Building2, User, Phone, MapPin, CreditCard, Save, Search } from 'lucide-react';
 import ConfirmModal from '../components/common/ConfirmModal';
 import Toast from '../components/common/Toast';
 
 export default function Companies() {
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
   const [companies, setCompanies] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
@@ -132,7 +132,7 @@ export default function Companies() {
                     <td>{c.name}</td>
                     <td>{c.contact_person || '-'}</td>
                     <td>{c.phone || '-'}</td>
-                    <td className="text-right">{c.due_limit}</td>
+                    <td className="text-right">{formatCurrency(c.due_limit, language)}</td>
                     <td>
                       <div className="flex gap-2">
                         <button className="btn btn-secondary btn-sm" onClick={() => openModal(c)}>

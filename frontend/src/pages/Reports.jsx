@@ -1155,8 +1155,8 @@ export default function Reports() {
                       <td>{item.retailer_name}</td>
                       <td>{item.phone}</td>
                       <td>{item.area || '-'}</td>
-                      <td className="text-right">{formatCurrency(item.credit_limit)}</td>
-                      <td className="text-right text-danger">{formatCurrency(item.outstanding_balance)}</td>
+                      <td className="text-right">{formatCurrency(item.credit_limit, language)}</td>
+                      <td className="text-right text-danger">{formatCurrency(item.outstanding_balance, language)}</td>
                       <td className="text-right">{formatNumber(item.total_invoices, language)}</td>
                     </tr>
                   ))}
