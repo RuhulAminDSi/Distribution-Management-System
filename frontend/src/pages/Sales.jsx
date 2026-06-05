@@ -562,7 +562,7 @@ export default function Sales() {
                   {viewInvoice.items.map(item => (
                     <tr key={item.id}>
                       <td>{item.product_name}</td>
-                      <td className="text-center">{item.quantity}</td>
+                      <td className="text-center">{formatNumber(item.quantity, language)}</td>
                       <td className="text-right">{formatCurrency(item.rate, language)}</td>
                       <td className="text-right">{formatCurrency(item.amount, language)}</td>
                     </tr>
@@ -577,7 +577,7 @@ export default function Sales() {
                 </div>
                 {viewInvoice.discount_amount > 0 && (
                   <div className="flex justify-between" style={{ marginBottom: '4px' }}>
-                    <span style={{ fontSize: '14px' }}>{t('Discount')} ({viewInvoice.discount_percent}%)</span>
+                    <span style={{ fontSize: '14px' }}>{t('Discount')} ({formatNumber(viewInvoice.discount_percent, language)}%)</span>
                     <span style={{ fontSize: '14px', color: '#e74c3c' }}>-{formatCurrency(viewInvoice.discount_amount, language)}</span>
                   </div>
                 )}

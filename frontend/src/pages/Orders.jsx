@@ -272,7 +272,7 @@ export default function Orders() {
                     <td>{order.company_name}</td>
                     <td className="text-right">{formatCurrency(order.total_amount, language)}</td>
                     <td>{order.created_by_name}</td>
-                    <td className="text-center">{order.items_count || '-'}</td>
+                    <td className="text-center">{formatNumber(order.items_count, language) || '-'}</td>
                     <td>
                       <span className={`badge badge-${order.status === 'received' ? 'success' : 'warning'}`}>
                         {order.status === 'received' ? t('Received') : t('Pending')}
