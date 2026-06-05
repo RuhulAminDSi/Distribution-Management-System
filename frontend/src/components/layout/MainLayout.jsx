@@ -41,12 +41,12 @@ export default function MainLayout({ children }) {
   const { t } = useLanguage();
   const location = useLocation();
   const navigate = useNavigate();
-  const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [sidebarOpen, setSidebarOpen] = useState(window.innerWidth > 768);
   const [passwordModalOpen, setPasswordModalOpen] = useState(false);
   const [passwordData, setPasswordData] = useState({ currentPassword: '', newPassword: '', confirmPassword: '' });
   const [passwordError, setPasswordError] = useState('');
   const [passwordSuccess, setPasswordSuccess] = useState('');
-  const [isMobile, setIsMobile] = useState(false);
+  const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
 
   useEffect(() => {
     function handleResize() {
@@ -54,6 +54,8 @@ export default function MainLayout({ children }) {
       setIsMobile(mobile);
       if (!mobile) {
         setSidebarOpen(true);
+      } else {
+        setSidebarOpen(false);
       }
     }
     handleResize();
@@ -133,6 +135,7 @@ export default function MainLayout({ children }) {
                 to={item.path} 
                 className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}
                 end={index === 0}
+                onClick={() => { if (isMobile) setSidebarOpen(false); }}
               >
                 <item.icon size={20} />
                 <span>{t(item.labelKey)}</span>
