@@ -409,8 +409,8 @@
 }
 
 .chat-input-row input:focus {
-  border-color: #e94560;
-  box-shadow: 0 0 0 3px rgba(233, 69, 96, 0.15);
+  border-color: rgba(255, 255, 255, 0.25);
+  box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.06);
 }
 
 .chat-input-row input::placeholder {

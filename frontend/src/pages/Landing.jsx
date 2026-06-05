@@ -189,6 +189,7 @@ export default function Landing() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [expandedModule, setExpandedModule] = useState(null);
   const [activeSection, setActiveSection] = useState('home');
+  const [chatbotOpen, setChatbotOpen] = useState(false);
   const t = copy[language];
   const modules = moduleContent[language];
   const workflow = workflowContent[language];
@@ -427,8 +428,8 @@ export default function Landing() {
             <p>{t.contactSubtitle}</p>
           </div>
           <div className="contact-cards">
-            <a href="tel:+8801234567890" className="contact-card reveal"><Phone size={22} /><span>+880 1234-567890</span></a>
-            <a href="mailto:support@dms.com" className="contact-card reveal"><Mail size={22} /><span>support@dms.com</span></a>
+            <a href="tel:+8801738957729" className="contact-card reveal"><Phone size={22} /><span>+880 1738-957729</span></a>
+            <a href="mailto:hmruhul16.mbstu@gmail.com" className="contact-card reveal"><Mail size={22} /><span>hmruhul16.mbstu@gmail.com</span></a>
             <div className="contact-card reveal"><MapPin size={22} /><span>{t.location}</span></div>
           </div>
         </div>
@@ -441,11 +442,11 @@ export default function Landing() {
         </div>
       </footer>
 
-      <Link to="/public-chat" className="chat-fab" aria-label="Message with Dealer">
+      <Link to="/public-chat" className="chat-fab" aria-label="Message with Dealer" style={{ display: chatbotOpen ? 'none' : 'flex' }}>
         <MessageSquare size={24} />
         <span className="fab-tooltip">{language === 'bn' ? 'ডিলারকে মেসেজ দিন' : 'Message the dealer'}</span>
       </Link>
-      <ChatBot />
+      <ChatBot onToggle={setChatbotOpen} />
     </main>
   );
 }

@@ -962,7 +962,7 @@ export default function Reports() {
                   ))}
                 </tbody>
                 <tfoot>
-                  <tr style={{ fontWeight: 'bold', background: '#f0f4ff' }}>
+                  <tr style={{ fontWeight: 'bold', background: 'rgba(255,255,255,0.05)' }}>
                     <td colSpan={2} style={{ textAlign: 'right', paddingRight: '12px' }}>{t('Total')}</td>
                     <td className="text-right">{formatCurrency(data.reduce((s, i) => s + Number(i.total_amount), 0), language)}</td>
                     <td className="text-right">{formatCurrency(data.reduce((s, i) => s + Number(i.paid_amount), 0), language)}</td>
@@ -996,7 +996,7 @@ export default function Reports() {
                   ))}
                 </tbody>
                 <tfoot>
-                  <tr style={{ fontWeight: 'bold', background: '#f0f4ff' }}>
+                  <tr style={{ fontWeight: 'bold', background: 'rgba(255,255,255,0.05)' }}>
                     <td colSpan={3} style={{ textAlign: 'right', paddingRight: '12px' }}>{t('Total')}</td>
                     <td className="text-right">{formatNumber(data.reduce((s, i) => s + Number(i.total_quantity), 0), language)}</td>
                     <td className="text-right">{formatCurrency(data.reduce((s, i) => s + Number(i.total_amount), 0), language)}</td>
@@ -1028,7 +1028,7 @@ export default function Reports() {
                   ))}
                 </tbody>
                 <tfoot>
-                  <tr style={{ fontWeight: 'bold', background: '#f0f4ff' }}>
+                  <tr style={{ fontWeight: 'bold', background: 'rgba(255,255,255,0.05)' }}>
                     <td style={{ textAlign: 'right', paddingRight: '12px' }}>{t('Total')}</td>
                     <td className="text-right">{formatNumber(data.reduce((s, i) => s + Number(i.total_invoices), 0), language)}</td>
                     <td className="text-right">{formatNumber(data.reduce((s, i) => s + Number(i.total_quantity), 0), language)}</td>
@@ -1064,7 +1064,7 @@ export default function Reports() {
                   ))}
                 </tbody>
                 <tfoot>
-                  <tr style={{ fontWeight: 'bold', background: '#f0f4ff' }}>
+                  <tr style={{ fontWeight: 'bold', background: 'rgba(255,255,255,0.05)' }}>
                     <td colSpan={3} style={{ textAlign: 'right', paddingRight: '12px' }}>{t('Total')}</td>
                     <td className="text-right">{formatCurrency(data.reduce((s, i) => s + Number(i.sales_amount), 0), language)}</td>
                     <td className="text-right">{formatCurrency(data.reduce((s, i) => s + Number(i.cost_amount), 0), language)}</td>
@@ -1097,7 +1097,7 @@ export default function Reports() {
                   ))}
                 </tbody>
                 <tfoot>
-                  <tr style={{ fontWeight: 'bold', background: '#f0f4ff' }}>
+                  <tr style={{ fontWeight: 'bold', background: 'rgba(255,255,255,0.05)' }}>
                     <td colSpan={3} style={{ textAlign: 'right', paddingRight: '12px' }}>{t('Total')}</td>
                     <td className="text-right">{formatCurrency(data.reduce((s, i) => s + Number(i.stock_value), 0), language)}</td>
                     <td></td>
@@ -1131,7 +1131,7 @@ export default function Reports() {
                   ))}
                 </tbody>
                 <tfoot>
-                  <tr style={{ fontWeight: 'bold', background: '#f0f4ff' }}>
+                  <tr style={{ fontWeight: 'bold', background: 'rgba(255,255,255,0.05)' }}>
                     <td colSpan={3} style={{ textAlign: 'right', paddingRight: '12px' }}>{t('Total')}</td>
                     <td className="text-right">{formatCurrency(data.reduce((s, i) => s + Number(i.credit_limit), 0), language)}</td>
                     <td className="text-right">{formatCurrency(data.reduce((s, i) => s + Number(i.outstanding_balance), 0), language)}</td>
@@ -1169,7 +1169,7 @@ export default function Reports() {
                   )})}
                 </tbody>
                 <tfoot>
-                  <tr style={{ fontWeight: 'bold', background: '#f0f4ff' }}>
+                  <tr style={{ fontWeight: 'bold', background: 'rgba(255,255,255,0.05)' }}>
                     <td colSpan={3} style={{ textAlign: 'right', paddingRight: '12px' }}>{t('Total')}</td>
                     <td className="text-right">{formatNumber(data.reduce((s, i) => s + Number(i.stock_quantity), 0), language)}</td>
                     <td colSpan={2}></td>

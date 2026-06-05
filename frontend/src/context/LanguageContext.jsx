@@ -675,7 +675,7 @@ const translations = {
     MessageDealer: 'ডিলারকে মেসেজ দিন',
     QuickAskHint: 'প্রোডাক্টের দাম ও স্টক জানুন',
     QuickMsgHint: 'ডিলারকে একটি বার্তা পাঠান',
-    Back: 'পেছনে',
+    Back: 'ফিরুন',
     DealerIsTyping: 'ডিলার লিখছেন...',
     Dealer: 'ডিলার',
     SessionNotFound: 'সেশন পাওয়া যায়নি। অনুগ্রহ করে নতুন চ্যাট শুরু করুন।',

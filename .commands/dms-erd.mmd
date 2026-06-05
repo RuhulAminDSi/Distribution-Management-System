@@ -1,0 +1,194 @@
+erDiagram
+    roles ||--o{ role_permissions : "has many"
+    permissions ||--o{ role_permissions : "granted via"
+    roles ||--o{ users : "assigned to"
+    users ||--o{ notifications : "receives"
+    companies ||--o{ categories : "owns (SET NULL)"
+    companies ||--o{ products : "supplies (SET NULL)"
+    categories ||--o{ products : "groups (SET NULL)"
+    products ||--o{ stock_logs : "tracks"
+    users ||--o{ stock_logs : "creates"
+    retailers ||--o{ invoices : "billed to"
+    users ||--o{ invoices : "creates"
+    invoices ||--|{ invoice_items : "contains (CASCADE)"
+    products ||--o{ invoice_items : "sold in"
+    retailers ||--o{ payments : "pays via"
+    users ||--o{ payments : "collected by"
+    companies ||--o{ purchase_orders : "receives"
+    users ||--o{ purchase_orders : "creates"
+    purchase_orders ||--|{ purchase_order_items : "contains (CASCADE)"
+    products ||--o{ purchase_order_items : "ordered"
+
+    roles {
+        int id PK
+        string name UK "system_admin, admin, manager, ..."
+        string color
+        string description
+        smallint is_active
+        timestamp created_at
+        timestamp updated_at
+    }
+    permissions {
+        int id PK
+        string name UK "dashboard_view, products_create, ..."
+        string module "dashboard, products, sales, ..."
+        string description
+        timestamp created_at
+    }
+    role_permissions {
+        int id PK
+        int role_id FK
+        string permission "matches permissions.name"
+    }
+    users {
+        int id PK
+        string username UK
+        string password_hash "bcrypt"
+        string full_name
+        string email UK
+        string phone UK
+        int role_id FK
+        string profile_picture "path"
+        string reset_token
+        timestamp reset_expires
+        smallint is_active
+        timestamp created_at
+        timestamp updated_at
+    }
+    companies {
+        int id PK
+        string name
+        string code UK
+        string contact_person
+        string phone
+        text address
+        decimal due_limit
+        smallint is_active
+        timestamp created_at
+    }
+    categories {
+        int id PK
+        string name
+        int company_id FK
+        text description
+        smallint is_active
+        timestamp created_at
+    }
+    products {
+        int id PK
+        string name
+        string code UK
+        int category_id FK
+        int company_id FK
+        decimal purchase_price
+        decimal dealer_price
+        decimal mrp
+        int stock_quantity
+        int low_stock_alert
+        string unit "piece, kg, ..."
+        int pack_size
+        date expiry_date
+        smallint is_active
+        timestamp created_at
+        timestamp updated_at
+    }
+    retailers {
+        int id PK
+        string name
+        string code UK
+        string owner_name
+        string phone
+        text address
+        string area
+        decimal credit_limit
+        decimal outstanding_balance
+        decimal due_limit
+        smallint is_active
+        timestamp created_at
+        timestamp updated_at
+    }
+    invoices {
+        int id PK
+        string invoice_no UK
+        int retailer_id FK
+        int created_by FK
+        decimal subtotal
+        decimal discount_percent
+        decimal discount_amount
+        decimal total_amount
+        decimal paid_amount
+        decimal due_amount
+        string status "paid, due, partial"
+        text notes
+        date invoice_date
+        timestamp created_at
+    }
+    invoice_items {
+        int id PK
+        int invoice_id FK
+        int product_id FK
+        int quantity
+        decimal rate
+        decimal amount
+        timestamp created_at
+    }
+    payments {
+        int id PK
+        string payment_no UK
+        int retailer_id FK
+        decimal amount
+        string payment_method "cash, bank, ..."
+        string reference_no
+        text notes
+        int collected_by FK
+        date payment_date
+        timestamp created_at
+    }
+    stock_logs {
+        int id PK
+        int product_id FK
+        int quantity
+        string type "IN, OUT, ADJUSTMENT"
+        string reference_type "invoice, purchase_order, manual"
+        int reference_id
+        text notes
+        int created_by FK
+        timestamp created_at
+    }
+    purchase_orders {
+        int id PK
+        string po_no UK
+        int company_id FK
+        decimal total_amount
+        decimal paid_amount
+        decimal due_amount
+        string status "pending, received, cancelled"
+        text notes
+        date order_date
+        int created_by FK
+        timestamp created_at
+    }
+    purchase_order_items {
+        int id PK
+        int purchase_order_id FK
+        int product_id FK
+        int quantity
+        decimal rate
+        decimal amount
+        int received_quantity
+        timestamp created_at
+    }
+    notifications {
+        int id PK
+        int user_id FK
+        string title
+        text message
+        string type "info, warning, alert"
+        string category "stock, payment, expiry, order"
+        string reference_type
+        int reference_id
+        smallint is_read
+        string action_url
+        timestamp created_at
+        timestamp updated_at
+    }

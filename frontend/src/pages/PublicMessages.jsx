@@ -348,7 +348,7 @@ export default function PublicMessages() {
                   }}>
                     <div style={styles.bubble(!!m.is_from_public)}>{m.message}</div>
                     <div style={styles.time}>
-                      {new Date(m.created_at).toLocaleString([], { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
+                      {new Date(m.created_at).toLocaleString([], { year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit', second: '2-digit' })}
                       {!m.is_from_public && <span style={{ marginLeft: 5 }}>• Admin</span>}
                     </div>
                   </div>

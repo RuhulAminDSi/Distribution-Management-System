@@ -1,0 +1,9 @@
+{
+  "$schema": "https://opencode.ai/config.json",
+  "agent": {
+    "dms-agent": {
+      "description": "DMS assistant — answers questions about the codebase, business data, and workflows",
+      "mode": "primary"
+    }
+  }
+}

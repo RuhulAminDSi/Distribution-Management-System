@@ -1,0 +1,51 @@
+flowchart TD
+    Start([fa7-solid:play Start]):::startend
+    Landing[fa7-solid:house Landing Page]:::fe
+    Login[fa7-solid:right-to-bracket Login]:::fe
+    AuthAPI[fa7-solid:server POST /api/auth/login]:::be
+    AuthCheck{fa7-solid:shield-halved Authenticated?}:::decision
+    LoadPerms[fa7-solid:key Load role_permissions 5min cache]:::be
+    Dashboard[fa7-solid:gauge Dashboard]:::fe
+    Guard{fa7-solid:lock PermissionRoute}:::decision
+    Unauth[fa7-solid:ban /unauthorized/]:::error
+    Action[fa7-solid:hand-pointer Action: Sale / PO / Payment / Stock]:::fe
+    Txn[fa7-solid:database BEGIN TRANSACTION]:::db
+    InsertInv[fa7-solid:plus Insert invoice + invoice_items]:::db
+    StockOut[fa7-solid:box-open Stock OUT + stock_logs]:::db
+    Commit{fa7-solid:check-double COMMIT / ROLLBACK}:::decision
+    PaymentFlow[fa7-solid:money-bill Payment Flow]:::fe
+    POFlow[fa7-solid:cart-shopping Purchase Order Flow]:::fe
+    Scanner[fa7-solid:clock Background Scanner every 5min]:::be
+    Notif[fa7-solid:bell Insert notifications]:::db
+    UIBell[fa7-solid:bell-ring TopNav badge]:::fe
+    End([fa7-solid:flag-checkered User views]):::startend
+
+    Start --> Landing
+    Landing -->|Click Login| Login
+    Login -->|Submit creds| AuthAPI
+    AuthAPI -->|bcrypt verify| AuthCheck
+    AuthCheck -->|No| Login
+    AuthCheck -->|Yes| LoadPerms
+    LoadPerms --> Dashboard
+    Dashboard -->|Navigate| Guard
+    Guard -->|Denied| Unauth
+    Guard -->|Has permission| Action
+    Action -->|Sale| Txn
+    Txn --> InsertInv
+    InsertInv --> StockOut
+    StockOut --> Commit
+    Commit -->|OK| PaymentFlow
+    Commit -->|Fail| Txn
+    PaymentFlow -->|Replenish| POFlow
+    POFlow -->|Loop| Scanner
+    Scanner -->|low stock / expiry / due| Notif
+    Notif -->|poll/refetch| UIBell
+    UIBell --> End
+    End -.->|next cycle| Scanner
+
+    classDef startend fill:#22c55e,color:#fff,stroke:#15803d,stroke-width:2px
+    classDef fe fill:#61dafb,color:#000,stroke:#0a91a5,stroke-width:2px
+    classDef be fill:#68a063,color:#fff,stroke:#3b6e35,stroke-width:2px
+    classDef db fill:#336791,color:#fff,stroke:#1f3a52,stroke-width:2px
+    classDef decision fill:#fbbf24,color:#000,stroke:#b45309,stroke-width:2px
+    classDef error fill:#ef4444,color:#fff,stroke:#991b1b,stroke-width:2px

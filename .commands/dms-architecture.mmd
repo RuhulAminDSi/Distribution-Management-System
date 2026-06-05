@@ -1,0 +1,43 @@
+flowchart TB
+    Browser["fa7-solid:user Browser"]:::user
+    subgraph FE["Frontend (Vite :5173)"]
+        Landing["fa7-solid:house Landing"]:::fe
+        Pages["fa7-solid:browser 15 Pages"]:::fe
+        Auth["fa7-solid:key AuthContext"]:::fe
+        Lang["fa7-solid:globe LanguageContext"]:::fe
+        Axios["fa7-solid:plug Axios API Service"]:::fe
+    end
+    subgraph BE["Backend (Express :5000)"]
+        MW["fa7-solid:shield JWT + Permission Cache"]:::be
+        Routes["fa7-solid:route 13 Route Groups"]:::be
+        Ctrl["fa7-solid:cog Controllers"]:::be
+        Svc["fa7-solid:server Services"]:::be
+        Scanner["fa7-solid:clock Notification Scanner 5min"]:::be
+    end
+    subgraph DB["PostgreSQL :5432 (dms_db)"]
+        Users["fa7-solid:database users/roles/permissions"]:::db
+        Biz["fa7-solid:database products/retailers/invoices"]:::db
+        Money["fa7-solid:database payments/stock_logs/PO"]:::db
+    end
+    Uploads["fa7-solid:folder Multer Uploads"]:::storage
+
+    Browser --> Landing
+    Browser --> Pages
+    Pages --> Auth
+    Auth --> Lang
+    Pages --> Axios
+    Axios -->|"HTTP /api"| MW
+    MW --> Routes
+    Routes --> Ctrl
+    Ctrl --> Svc
+    Scanner --> Svc
+    Svc -->|"pg pool SQL"| Users
+    Svc --> Biz
+    Svc --> Money
+    Svc --> Uploads
+
+    classDef user fill:#3b82f6,color:#fff,stroke:#1e40af,stroke-width:2px
+    classDef fe fill:#61dafb,color:#000,stroke:#0a91a5,stroke-width:2px
+    classDef be fill:#68a063,color:#fff,stroke:#3b6e35,stroke-width:2px
+    classDef db fill:#336791,color:#fff,stroke:#1f3a52,stroke-width:2px
+    classDef storage fill:#f59e0b,color:#000,stroke:#b45309,stroke-width:2px

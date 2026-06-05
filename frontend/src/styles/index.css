@@ -118,7 +118,7 @@ body {
   top: 64px;
   left: 0;
   bottom: 0;
-  overflow: hidden;
+  overflow-y: auto;
   z-index: 99;
   transition: transform 0.3s ease;
   display: flex;

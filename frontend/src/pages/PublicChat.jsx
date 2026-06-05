@@ -350,7 +350,7 @@ export default function PublicChat() {
               <div key={m.id} className={`chat-msg ${m.is_from_public ? 'sent' : 'received'}`}>
                 <div className="chat-bubble">{m.message}</div>
                 <div className="chat-time">
-                  {new Date(m.created_at).toLocaleString([], { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
+                  {new Date(m.created_at).toLocaleString([], { year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit', second: '2-digit' })}
                   {!m.is_from_public && ` • ${t('Dealer')}`}
                 </div>
               </div>
