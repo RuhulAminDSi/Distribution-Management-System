@@ -1,9 +1,9 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useLanguage } from '../context/LanguageContext';
 import { useAuth } from '../context/AuthContext';
 import { useSearchParams } from 'react-router-dom';
 import { authService, roleService } from '../services/api';
-import { Shield, Key, Database, User, Bell, Globe, Plus, Save, Check, X, Trash2, Edit, FileText } from 'lucide-react';
+import { Shield, Key, Database, User, Bell, Globe, Plus, Save, Check, X, Trash2, Edit, FileText, Camera } from 'lucide-react';
 import ConfirmModal from '../components/common/ConfirmModal';
 import Toast from '../components/common/Toast';
 
@@ -65,6 +65,8 @@ export default function Settings() {
   });
   const [profileLoading, setProfileLoading] = useState(false);
   const [profileSuccess, setProfileSuccess] = useState(false);
+  const [photoUploading, setPhotoUploading] = useState(false);
+  const fileInputRef = useRef(null);
 
   const isSystemAdmin = user?.role === 'system_admin';
   const isAdmin = user?.role === 'system_admin' || user?.role === 'admin';
@@ -212,6 +214,34 @@ export default function Settings() {
       alert(error.response?.data?.message || 'Failed to update profile');
     } finally {
       setProfileLoading(false);
+    }
+  };
+
+  const handlePhotoUpload = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    setPhotoUploading(true);
+    try {
+      const formData = new FormData();
+      formData.append('profile_picture', file);
+      const res = await authService.uploadProfilePicture(user.id, formData);
+      user.profile_picture = res.data.profile_picture;
+      setProfileData({ ...profileData, profile_picture: res.data.profile_picture });
+    } catch (error) {
+      alert(error.response?.data?.message || 'Upload failed');
+    } finally {
+      setPhotoUploading(false);
+    }
+  };
+
+  const handlePhotoDelete = async () => {
+    if (!confirm('Remove profile picture?')) return;
+    try {
+      await authService.deleteProfilePicture(user.id);
+      user.profile_picture = null;
+      setProfileData({ ...profileData, profile_picture: null });
+    } catch (error) {
+      alert(error.response?.data?.message || 'Delete failed');
     }
   };
 
@@ -505,7 +535,25 @@ export default function Settings() {
             <div className="settings-card">
               <div className="profile-header">
                 <div className="profile-avatar">
-                  {profileData.full_name?.charAt(0) || 'U'}
+                  {user?.profile_picture ? (
+                    <img src={user.profile_picture} alt="" className="profile-avatar-img" />
+                  ) : (
+                    profileData.full_name?.charAt(0) || 'U'
+                  )}
+                  <div className="profile-avatar-overlay" onClick={() => fileInputRef.current?.click()}>
+                    {photoUploading ? '...' : <Camera size={20} />}
+                  </div>
+                  {user?.profile_picture && (
+                    <div className="profile-avatar-delete" onClick={handlePhotoDelete} title="Remove photo">
+                      <Trash2 size={14} />
+                    </div>
+                  )}
+                  <input
+                    type="file"
+                    ref={fileInputRef}
+                    accept="image/*"
+                    onChange={handlePhotoUpload}
+                  />
                 </div>
                 <div className="profile-info">
                   <h4>{profileData.full_name}</h4>
@@ -815,6 +863,56 @@ export default function Settings() {
           color: white;
           font-size: 32px;
           font-weight: 700;
+          position: relative;
+          cursor: pointer;
+          overflow: hidden;
+          flex-shrink: 0;
+        }
+
+        .profile-avatar input[type="file"] {
+          display: none;
+        }
+
+        .profile-avatar-img {
+          width: 100%;
+          height: 100%;
+          object-fit: cover;
+          border-radius: 20px;
+        }
+
+        .profile-avatar-overlay {
+          position: absolute;
+          inset: 0;
+          background: rgba(0,0,0,0.5);
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          opacity: 0;
+          transition: opacity 0.2s;
+          border-radius: 20px;
+          color: white;
+        }
+
+        .profile-avatar-delete {
+          position: absolute;
+          top: 4px;
+          right: 4px;
+          width: 24px;
+          height: 24px;
+          background: rgba(233, 69, 96, 0.9);
+          border-radius: 50%;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          color: white;
+          opacity: 0;
+          transition: opacity 0.2s;
+          cursor: pointer;
+        }
+
+        .profile-avatar:hover .profile-avatar-overlay,
+        .profile-avatar:hover .profile-avatar-delete {
+          opacity: 1;
         }
         
         .profile-info h4 {

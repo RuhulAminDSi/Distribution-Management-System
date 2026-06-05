@@ -148,8 +148,8 @@ export const userService = {
       throw new ApiError(403, 'You can only edit your own profile');
     }
 
-    // Admin cannot edit System Admin or Admin users
-    if (isAdmin && (targetRoleName === 'system_admin' || targetRoleName === 'admin')) {
+    // Admin cannot edit System Admin or Admin users (except own profile)
+    if (isAdmin && !isOwnProfile && (targetRoleName === 'system_admin' || targetRoleName === 'admin')) {
       throw new ApiError(403, 'Cannot edit System Admin or Admin users');
     }
 
