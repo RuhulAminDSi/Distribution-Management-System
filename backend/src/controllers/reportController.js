@@ -36,7 +36,11 @@ export const reportController = {
   async productSales(req, res, next) {
     try {
       const { start_date, end_date, product_id, page = 1, limit = 20 } = req.query;
-      const result = await reportService.productSales(start_date, end_date, product_id ? parseInt(product_id) : null, parseInt(page), parseInt(limit));
+      const today = new Date();
+      const firstDay = new Date(today.getFullYear(), today.getMonth(), 1);
+      const start = start_date || firstDay.toISOString().split('T')[0];
+      const end = end_date || today.toISOString().split('T')[0];
+      const result = await reportService.productSales(start, end, product_id ? parseInt(product_id) : null, parseInt(page), parseInt(limit));
       res.json(result);
     } catch (error) {
       next(error);

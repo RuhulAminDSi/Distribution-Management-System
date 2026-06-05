@@ -2,7 +2,9 @@
 import { authService, roleService } from '../services/api';
 import { useLanguage } from '../context/LanguageContext';
 import { useAuth } from '../context/AuthContext';
-import { X, Plus, Pencil, Trash2, ChevronLeft, ChevronRight, User, Mail, Phone, Lock, Shield, Search, Camera, AlertCircle, CheckCircle } from 'lucide-react';
+import { X, Plus, Pencil, Trash2, ChevronLeft, ChevronRight, User, Mail, Phone, Lock, Shield, Search, Camera, AlertCircle, CheckCircle, Save } from 'lucide-react';
+import ConfirmModal from '../components/common/ConfirmModal';
+import Toast from '../components/common/Toast';
 
 export default function Users() {
   const { t } = useLanguage();
@@ -25,6 +27,8 @@ export default function Users() {
   const [errors, setErrors] = useState({});
   const [validating, setValidating] = useState({});
   const [showInactive, setShowInactive] = useState(false);
+  const [confirmModal, setConfirmModal] = useState({ show: false, action: null, title: '', message: '' });
+  const [toast, setToast] = useState('');
   const fileInputRef = useRef(null);
   const checkTimers = useRef({});
 
@@ -195,15 +199,25 @@ export default function Users() {
   const handleDelete = async (id, role_id) => {
     if (role_id === 1) return;
     if (user?.role === 'admin' && role_id === 2) return;
-    if (!confirm(t('ConfirmDelete'))) return;
-    
+    setConfirmModal({
+      show: true,
+      action: () => deleteConfirmed(id),
+      title: t('ConfirmDelete'),
+      message: t('DeleteConfirmMessage')
+    });
+  };
+
+  const deleteConfirmed = async (id) => {
     try {
       await authService.deleteUser(id);
+      setConfirmModal({ show: false, action: null, title: '', message: '' });
+      setToast(t('DeleteSuccess'));
       fetchUsers();
     } catch (error) {
       console.error('Delete error:', error);
       const msg = error.response?.data?.message || error.message || t('DeleteError');
-      alert(msg);
+      setToast(msg);
+      setConfirmModal({ show: false, action: null, title: '', message: '' });
     }
   };
 
@@ -214,13 +228,23 @@ export default function Users() {
     const newStatus = targetUser.is_active ? 0 : 1;
     const action = newStatus ? 'activate' : 'deactivate';
 
-    if (!confirm(`Are you sure you want to ${action} this user?`)) return;
+    setConfirmModal({
+      show: true,
+      action: () => toggleStatusConfirmed(targetUser.id, newStatus),
+      title: newStatus ? t('ConfirmActivate') : t('ConfirmDeactivate'),
+      message: t('ConfirmToggleUserMsg', { action: action })
+    });
+  };
 
+  const toggleStatusConfirmed = async (id, newStatus) => {
     try {
-      await authService.updateUser(targetUser.id, { is_active: newStatus });
+      await authService.updateUser(id, { is_active: newStatus });
+      setConfirmModal({ show: false, action: null, title: '', message: '' });
+      setToast(newStatus ? t('UserActivated') : t('UserDeactivated'));
       fetchUsers();
     } catch (error) {
-      alert(error.response?.data?.message || 'Failed to update status');
+      setToast(error.response?.data?.message || 'Failed to update status');
+      setConfirmModal({ show: false, action: null, title: '', message: '' });
     }
   };
 
@@ -326,7 +350,7 @@ export default function Users() {
                 {loading ? (
                   <tr><td colSpan="8">{t('Loading')}</td></tr>
                 ) : !users || displayUsers.length === 0 ? (
-                  <tr><td colSpan="8">{t('NoUsersFound')}</td></tr>
+                  <tr><td colSpan="8" className="text-center" style={{ padding: '40px', color: 'var(--text-secondary)', textAlign: 'center' }}>{t('NoUsersFound')}</td></tr>
                 ) : (
                   displayUsers.map(u => (
                   <tr key={u.id}>
@@ -414,18 +438,26 @@ export default function Users() {
         </div>
       </div>
 
+      <ConfirmModal
+        isOpen={confirmModal.show}
+        onClose={() => setConfirmModal({ show: false, action: null, title: '', message: '' })}
+        onConfirm={confirmModal.action}
+        title={confirmModal.title}
+        message={confirmModal.message}
+        confirmText={t('Confirm')}
+        cancelText={t('Cancel')}
+        confirmVariant="danger"
+      />
+
+      <Toast message={toast} onClose={() => setToast('')} />
+
       {showModal && (
         <div className="modal-overlay" onClick={closeModal}>
-          <div className="user-modal" onClick={e => e.stopPropagation()}>
+          <div className="modal" onClick={e => e.stopPropagation()}>
             <div className="modal-header">
               <div className="modal-title-wrapper">
-                <div className="modal-icon">
-                  <User size={20} />
-                </div>
-                <div>
-                  <h3>{editItem ? t('EditUser') : t('AddUser')}</h3>
-                  <p>{editItem ? 'Update user information' : 'Create a new user account'}</p>
-                </div>
+                <User size={24} className="modal-header-icon" />
+                <h3>{editItem ? t('EditUser') : t('AddUser')}</h3>
               </div>
               <button className="modal-close" onClick={closeModal}>
                 <X size={20} />
@@ -433,455 +465,167 @@ export default function Users() {
             </div>
             
             <form onSubmit={handleSubmit} className="modal-body">
-              <div className="form-grid">
-                <div className="form-group">
-                  <label><User size={14} /> {t('Username')} *</label>
-                  <div style={{ position: 'relative' }}>
-                    <input 
-                      type="text" 
-                      value={formData.username || ''}
-                      onChange={e => { setFormData({...formData, username: e.target.value}); setErrors(prev => ({ ...prev, username: '' })); }}
-                      onBlur={handleBlur('username')}
-                      required 
-                      placeholder="Enter username"
-                      className={`form-input ${errors.username ? 'form-input-error' : ''}`}
-                      autoComplete="off"
-                    />
-                    {validating.username && <div className="field-spinner" />}
-                    {errors.username && <AlertCircle size={16} className="field-error-icon" />}
-                    {!errors.username && formData.username && !validating.username && <CheckCircle size={16} className="field-success-icon" />}
+              <div className="form-section">
+                <div className="form-section-title">{t('AccountInformation') || 'Account Information'}</div>
+                <div className="form-row">
+                  <div className="form-group">
+                    <label>{t('Username')} *</label>
+                    <div className="input-with-icon">
+                      <User size={18} className="input-icon" />
+                      <input 
+                        type="text" 
+                        value={formData.username || ''}
+                        onChange={e => { setFormData({...formData, username: e.target.value}); setErrors(prev => ({ ...prev, username: '' })); }}
+                        onBlur={handleBlur('username')}
+                        required 
+                        placeholder={t('Username')}
+                        className={`form-input ${errors.username ? 'input-error' : ''}`}
+                        autoComplete="off"
+                      />
+                      {validating.username && <div className="field-spinner" />}
+                      {errors.username && <AlertCircle size={16} className="field-error-icon" />}
+                      {!errors.username && formData.username && !validating.username && <CheckCircle size={16} className="field-success-icon" />}
+                    </div>
+                    {errors.username && <span className="field-error-text">{errors.username}</span>}
                   </div>
-                  {errors.username && <span className="field-error-text">{errors.username}</span>}
-                </div>
-                
-                <div className="form-group">
-                  <label><Lock size={14} /> {t('Password')} {editItem ? '(Optional)' : '*'}</label>
-                  <input 
-                    type="password" 
-                    value={formData.password || ''}
-                    onChange={e => setFormData({...formData, password: e.target.value})}
-                    required={!editItem}
-                    placeholder={editItem ? 'Leave blank to keep current' : 'Enter password'}
-                    className="form-input"
-                    autoComplete="new-password"
-                  />
-                </div>
-                
-                  <div className="form-group full-width">
-                    <div className="profile-upload-wrapper">
-                      <div className="profile-preview" onClick={() => fileInputRef.current?.click()}>
-                        {profilePreview ? (
-                          <img src={profilePreview} alt="Preview" />
-                        ) : (
-                          <div className="profile-placeholder">
-                            <Camera size={24} />
-                            <span>300×300</span>
-                          </div>
-                        )}
-                      </div>
-                      <input
-                        ref={fileInputRef}
-                        type="file"
-                        accept="image/*"
-                        onChange={handleFileSelect}
-                        style={{ display: 'none' }}
+                  
+                  <div className="form-group">
+                    <label>{t('Password')} {editItem ? `(${t('Optional')})` : '*'}</label>
+                    <div className="input-with-icon">
+                      <Lock size={18} className="input-icon" />
+                      <input 
+                        type="password" 
+                        value={formData.password || ''}
+                        onChange={e => setFormData({...formData, password: e.target.value})}
+                        required={!editItem}
+                        placeholder={editItem ? 'Leave blank to keep current' : t('Password')}
+                        className="form-input"
+                        autoComplete="new-password"
                       />
                     </div>
                   </div>
+                </div>
+              </div>
 
-                <div className="form-group full-width">
-                  <label><User size={14} /> {t('FullName')} *</label>
-                  <input 
-                    type="text" 
-                    value={formData.full_name || ''}
-                    onChange={e => setFormData({...formData, full_name: e.target.value})}
-                    required 
-                    placeholder="Enter full name"
-                    className="form-input"
-                    autoComplete="off"
+              <div className="form-section">
+                <div className="form-section-title">{t('ProfilePhoto') || 'Profile Photo'}</div>
+                <div className="profile-upload-wrapper">
+                  <div className="profile-preview" onClick={() => fileInputRef.current?.click()}>
+                    {profilePreview ? (
+                      <img src={profilePreview} alt="Preview" />
+                    ) : (
+                      <div className="profile-placeholder">
+                        <Camera size={28} />
+                        <span>{t('ClickToUpload') || 'Click to upload'}</span>
+                        <span style={{fontSize: '0.65rem', opacity: 0.6}}>300×300</span>
+                      </div>
+                    )}
+                  </div>
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept="image/*"
+                    onChange={handleFileSelect}
+                    style={{ display: 'none' }}
                   />
                 </div>
-                
+              </div>
+
+              <div className="form-section">
+                <div className="form-section-title">{t('PersonalInformation') || 'Personal Information'}</div>
                 <div className="form-group">
-                  <label><Mail size={14} /> {t('Email')}</label>
-                  <div style={{ position: 'relative' }}>
-                    <input 
-                      type="email" 
-                      value={formData.email || ''}
-                      onChange={e => { setFormData({...formData, email: e.target.value}); setErrors(prev => ({ ...prev, email: '' })); }}
-                      onBlur={handleBlur('email')}
-                      placeholder="Enter email address"
-                      className={`form-input ${errors.email ? 'form-input-error' : ''}`}
-                      autoComplete="off"
-                    />
-                    {validating.email && <div className="field-spinner" />}
-                    {errors.email && <AlertCircle size={16} className="field-error-icon" />}
-                    {!errors.email && formData.email && !validating.email && <CheckCircle size={16} className="field-success-icon" />}
-                  </div>
-                  {errors.email && <span className="field-error-text">{errors.email}</span>}
-                </div>
-                
-                <div className="form-group">
-                  <label><Phone size={14} /> {t('Phone')}</label>
-                  <div style={{ position: 'relative' }}>
+                  <label>{t('FullName')} *</label>
+                  <div className="input-with-icon">
+                    <User size={18} className="input-icon" />
                     <input 
                       type="text" 
-                      value={formData.phone || ''}
-                      onChange={e => { setFormData({...formData, phone: e.target.value}); setErrors(prev => ({ ...prev, phone: '' })); }}
-                      onBlur={handleBlur('phone')}
-                      placeholder="Enter phone number"
-                      className={`form-input ${errors.phone ? 'form-input-error' : ''}`}
+                      value={formData.full_name || ''}
+                      onChange={e => setFormData({...formData, full_name: e.target.value})}
+                      required 
+                      placeholder={t('FullName')}
+                      className="form-input"
                       autoComplete="off"
                     />
-                    {validating.phone && <div className="field-spinner" />}
-                    {errors.phone && <AlertCircle size={16} className="field-error-icon" />}
-                    {!errors.phone && formData.phone && !validating.phone && <CheckCircle size={16} className="field-success-icon" />}
                   </div>
-                  {errors.phone && <span className="field-error-text">{errors.phone}</span>}
                 </div>
-                
-                <div className="form-group full-width">
-                  <label><Shield size={14} /> {t('Role')} *</label>
-                  <select 
-                    value={formData.role_id || ''}
-                    onChange={e => setFormData({...formData, role_id: e.target.value})}
-                    required
-                    disabled={editItem?.role_id === 1}
-                    className="form-input"
-                  >
-                    <option value="">Select role</option>
-                    {roles
-                      .filter(r => user?.role !== 'admin' || (r.id !== 1 && r.id !== 2))
-                      .map(r => (
-                      <option key={r.id} value={r.id}>{formatRole(r.name)}</option>
-                    ))}
-                  </select>
+                <div className="form-row">
+                  <div className="form-group">
+                    <label>{t('Email')}</label>
+                    <div className="input-with-icon">
+                      <Mail size={18} className="input-icon" />
+                      <input 
+                        type="email" 
+                        value={formData.email || ''}
+                        onChange={e => { setFormData({...formData, email: e.target.value}); setErrors(prev => ({ ...prev, email: '' })); }}
+                        onBlur={handleBlur('email')}
+                        placeholder={t('Email')}
+                        className={`form-input ${errors.email ? 'input-error' : ''}`}
+                        autoComplete="off"
+                      />
+                      {validating.email && <div className="field-spinner" />}
+                      {errors.email && <AlertCircle size={16} className="field-error-icon" />}
+                      {!errors.email && formData.email && !validating.email && <CheckCircle size={16} className="field-success-icon" />}
+                    </div>
+                    {errors.email && <span className="field-error-text">{errors.email}</span>}
+                  </div>
+                  
+                  <div className="form-group">
+                    <label>{t('Phone')}</label>
+                    <div className="input-with-icon">
+                      <Phone size={18} className="input-icon" />
+                      <input 
+                        type="text" 
+                        value={formData.phone || ''}
+                        onChange={e => { setFormData({...formData, phone: e.target.value}); setErrors(prev => ({ ...prev, phone: '' })); }}
+                        onBlur={handleBlur('phone')}
+                        placeholder={t('Phone')}
+                        className={`form-input ${errors.phone ? 'input-error' : ''}`}
+                        autoComplete="off"
+                      />
+                      {validating.phone && <div className="field-spinner" />}
+                      {errors.phone && <AlertCircle size={16} className="field-error-icon" />}
+                      {!errors.phone && formData.phone && !validating.phone && <CheckCircle size={16} className="field-success-icon" />}
+                    </div>
+                    {errors.phone && <span className="field-error-text">{errors.phone}</span>}
+                  </div>
+                </div>
+              </div>
+
+              <div className="form-section">
+                <div className="form-section-title">{t('Permissions') || 'Permissions'}</div>
+                <div className="form-group">
+                  <label>{t('Role')} *</label>
+                  <div className="input-with-icon">
+                    <Shield size={18} className="input-icon" />
+                    <select 
+                      value={formData.role_id || ''}
+                      onChange={e => setFormData({...formData, role_id: e.target.value})}
+                      required
+                      disabled={editItem?.role_id === 1}
+                      className="form-input"
+                      style={{ paddingLeft: '40px' }}
+                    >
+                      <option value="">{t('SelectRole') || 'Select role'}</option>
+                      {roles
+                        .filter(r => user?.role !== 'admin' || (r.id !== 1 && r.id !== 2))
+                        .map(r => (
+                        <option key={r.id} value={r.id}>{formatRole(r.name)}</option>
+                      ))}
+                    </select>
+                  </div>
                 </div>
               </div>
               
               <div className="modal-footer">
-                <button type="button" className="btn-cancel" onClick={closeModal}>
-                  {t('Cancel')}
+                <button type="button" className="btn btn-secondary" onClick={closeModal}>
+                  <X size={18} /> {t('Cancel')}
                 </button>
                 <button type="submit" className="btn btn-primary">
-                  {editItem ? t('Save') : t('AddUser')}
+                  <Save size={18} /> {editItem ? t('Save') : t('AddUser')}
                 </button>
               </div>
             </form>
           </div>
-          
-          <style>{`
-            .user-modal {
-              background: #1a1a2e !important;
-              color: white !important;
-              border-radius: 16px;
-              width: 100%;
-              max-width: 520px;
-              max-height: 90vh;
-              display: flex;
-              flex-direction: column;
-              border: 1px solid rgba(233, 69, 96, 0.2);
-              box-shadow: 0 25px 50px rgba(0, 0, 0, 0.5);
-              animation: modalSlide 0.3s ease;
-            }
-
-            .profile-upload-wrapper {
-              display: flex;
-              justify-content: center;
-              padding: 8px 0;
-            }
-
-            .profile-preview {
-              width: 100px;
-              height: 100px;
-              border-radius: 50%;
-              overflow: hidden;
-              cursor: pointer;
-              border: 2px dashed rgba(255,255,255,0.3);
-              display: flex;
-              align-items: center;
-              justify-content: center;
-              transition: border-color 0.2s;
-            }
-
-            .profile-preview:hover {
-              border-color: #e94560;
-            }
-
-            .profile-preview img {
-              width: 100%;
-              height: 100%;
-              object-fit: cover;
-            }
-
-            .profile-placeholder {
-              display: flex;
-              flex-direction: column;
-              align-items: center;
-              gap: 4px;
-              color: rgba(255,255,255,0.4);
-              font-size: 0.75rem;
-            }
-
-            .user-avatar-cell {
-              display: flex;
-              align-items: center;
-              justify-content: center;
-            }
-
-            .user-avatar {
-              width: 36px;
-              height: 36px;
-              border-radius: 50%;
-              object-fit: cover;
-            }
-
-            .user-avatar-placeholder {
-              width: 36px;
-              height: 36px;
-              border-radius: 50%;
-              background: rgba(255,255,255,0.1);
-              display: flex;
-              align-items: center;
-              justify-content: center;
-              color: rgba(255,255,255,0.4);
-            }
-            
-            @keyframes modalSlide {
-              from { opacity: 0; transform: scale(0.95) translateY(-10px); }
-              to { opacity: 1; transform: scale(1) translateY(0); }
-            }
-            
-            .user-modal .modal-header {
-              display: flex;
-              justify-content: space-between;
-              align-items: flex-start;
-              padding: 24px;
-              border-bottom: 1px solid rgba(255, 255, 255, 0.05);
-              background: #1a1a2e !important;
-            }
-            
-            .modal-title-wrapper {
-              display: flex;
-              align-items: center;
-              gap: 14px;
-            }
-            
-            .modal-icon {
-              width: 44px;
-              height: 44px;
-              background: linear-gradient(135deg, #e94560 0%, #ff6b6b 100%);
-              border-radius: 12px;
-              display: flex;
-              align-items: center;
-              justify-content: center;
-              color: white;
-            }
-            
-            .modal-title-wrapper h3 {
-              margin: 0;
-              color: white;
-              font-size: 1.25rem;
-              font-weight: 600;
-            }
-            
-            .modal-title-wrapper p {
-              margin: 4px 0 0;
-              color: rgba(255, 255, 255, 0.5);
-              font-size: 0.85rem;
-            }
-            
-            .user-modal .modal-close {
-              background: rgba(255, 255, 255, 0.1) !important;
-              border: none;
-              color: white !important;
-              width: 36px;
-              height: 36px;
-              border-radius: 10px;
-              cursor: pointer;
-              display: flex;
-              align-items: center;
-              justify-content: center;
-              transition: all 0.2s;
-            }
-            
-            .user-modal .modal-close:hover {
-              background: rgba(239, 68, 68, 0.3) !important;
-              color: #ff6b6b !important;
-            }
-            
-            .user-modal .modal-body {
-              padding: 24px;
-              background: #1a1a2e !important;
-              overflow-y: auto;
-              flex: 1;
-              min-height: 0;
-            }
-            
-            .form-grid {
-              display: grid;
-              grid-template-columns: 1fr 1fr;
-              gap: 16px;
-            }
-            
-            .form-group.full-width {
-              grid-column: span 2;
-            }
-            
-            .form-group label {
-              display: flex;
-              align-items: center;
-              gap: 8px;
-              color: rgba(255, 255, 255, 0.8);
-              font-size: 0.875rem;
-              font-weight: 500;
-              margin-bottom: 8px;
-            }
-            
-            .form-input {
-              width: 100%;
-              padding: 12px 14px;
-              background: rgba(255, 255, 255, 0.05);
-              border: 1px solid rgba(255, 255, 255, 0.1);
-              border-radius: 10px;
-              color: white;
-              font-size: 0.95rem;
-              transition: all 0.3s;
-            }
-            
-            .form-input:focus {
-              outline: none;
-              border-color: #e94560;
-              box-shadow: 0 0 0 3px rgba(233, 69, 96, 0.15);
-            }
-            
-            .form-input::placeholder {
-              color: rgba(255, 255, 255, 0.3);
-            }
-            
-            .form-input:disabled {
-              background: rgba(255, 255, 255, 0.02);
-              cursor: not-allowed;
-            }
-
-            .form-input-error {
-              border-color: #ef4444 !important;
-              box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.15) !important;
-            }
-
-            .field-error-text {
-              display: block;
-              color: #ef4444;
-              font-size: 0.78rem;
-              margin-top: 4px;
-            }
-
-            .field-error-icon {
-              position: absolute;
-              right: 12px;
-              top: 50%;
-              transform: translateY(-50%);
-              color: #ef4444;
-            }
-
-            .field-success-icon {
-              position: absolute;
-              right: 12px;
-              top: 50%;
-              transform: translateY(-50%);
-              color: #22c55e;
-            }
-
-            .field-spinner {
-              position: absolute;
-              right: 12px;
-              top: 50%;
-              transform: translateY(-50%);
-              width: 16px;
-              height: 16px;
-              border: 2px solid rgba(255,255,255,0.2);
-              border-top-color: #6366f1;
-              border-radius: 50%;
-              animation: spin 0.6s linear infinite;
-            }
-
-            @keyframes spin {
-              to { transform: translateY(-50%) rotate(360deg); }
-            }
-            
-            select.form-input {
-              cursor: pointer;
-            }
-            
-            select.form-input option {
-              background: #1a1a2e;
-              color: white;
-            }
-            
-            .user-modal .modal-footer {
-              display: flex;
-              justify-content: flex-end;
-              gap: 12px;
-              padding: 20px 24px;
-              border-top: 1px solid rgba(255, 255, 255, 0.05);
-              margin: 0 -24px -24px;
-              background: #1a1a2e !important;
-            }
-            
-            .user-modal .btn {
-              padding: 12px 24px;
-              border-radius: 10px;
-              font-weight: 600;
-              cursor: pointer;
-              transition: all 0.2s;
-            }
-            
-            .user-modal .btn-secondary {
-              background: rgba(255, 255, 255, 0.05);
-              border: 1px solid rgba(255, 255, 255, 0.1);
-              color: white;
-            }
-            
-            .user-modal .btn-secondary:hover {
-              background: rgba(255, 255, 255, 0.1);
-            }
-            
-            .user-modal .btn-cancel {
-              background: transparent;
-              border: 1px solid rgba(255, 255, 255, 0.2);
-              color: rgba(255, 255, 255, 0.8);
-              padding: 12px 24px;
-              border-radius: 10px;
-              font-weight: 600;
-              cursor: pointer;
-              transition: all 0.2s;
-            }
-            
-            .user-modal .btn-cancel:hover {
-              background: rgba(255, 255, 255, 0.05);
-              border-color: rgba(255, 255, 255, 0.4);
-              color: white;
-            }
-            
-            .user-modal .btn-primary {
-              background: #1976D2;
-              border: none;
-              color: white;
-            }
-            
-            .user-modal .btn-primary:hover {
-              background: #1565C0;
-            }
-            
-            @media (max-width: 540px) {
-              .form-grid {
-                grid-template-columns: 1fr;
-              }
-              .form-group.full-width {
-                grid-column: span 1;
-              }
-            }
-          `}</style>
         </div>
       )}
     </div>

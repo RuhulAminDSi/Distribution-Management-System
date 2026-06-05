@@ -4,7 +4,7 @@ import { useAuth } from '../context/AuthContext';
 import { useLanguage } from '../context/LanguageContext';
 import { authService } from '../services/api';
 import { 
-  Warehouse, Eye, EyeOff, ArrowLeft,
+  X, Warehouse, Eye, EyeOff, ArrowLeft,
   Package, TrendingUp, Users, CreditCard,
   ShoppingCart, BarChart3, Building2, Truck,
   Circle
@@ -247,7 +247,7 @@ export default function Login() {
           <div className="modal" onClick={e => e.stopPropagation()}>
             <div className="modal-header">
               <h3>{t('ResetPassword')}</h3>
-              <button type="button" className="modal-close" onClick={() => setShowForgotModal(false)}>×</button>
+              <button type="button" className="modal-close" onClick={() => setShowForgotModal(false)}><X size={18} /></button>
             </div>
             <form onSubmit={handleForgotPassword}>
               <div className="modal-body">

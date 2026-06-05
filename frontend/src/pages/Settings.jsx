@@ -3,7 +3,9 @@ import { useLanguage } from '../context/LanguageContext';
 import { useAuth } from '../context/AuthContext';
 import { useSearchParams } from 'react-router-dom';
 import { authService, roleService } from '../services/api';
-import { Shield, Key, Database, User, Bell, Globe, Plus, Save, Check, X, Trash2, Edit } from 'lucide-react';
+import { Shield, Key, Database, User, Bell, Globe, Plus, Save, Check, X, Trash2, Edit, FileText } from 'lucide-react';
+import ConfirmModal from '../components/common/ConfirmModal';
+import Toast from '../components/common/Toast';
 
 const availablePermissionsDefault = [
   { id: 'all', name: 'All Access', module: 'system' },
@@ -45,6 +47,7 @@ export default function Settings() {
   const [activeTab, setActiveTab] = useState(searchParams.get('tab') || 'general');
   const [showRoleModal, setShowRoleModal] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(null);
+  const [toast, setToast] = useState('');
   const [editingRole, setEditingRole] = useState(null);
   const [roles, setRoles] = useState([]);
   const [permissions, setPermissions] = useState([]);
@@ -148,10 +151,11 @@ export default function Settings() {
     try {
       await roleService.delete(id);
       setShowDeleteConfirm(null);
+      setToast(t('RoleDeleted'));
       fetchRoles();
       refreshRoles();
     } catch (error) {
-      alert(error.response?.data?.message || 'Failed to delete role');
+      setToast(error.response?.data?.message || 'Failed to delete role');
     }
   };
 
@@ -390,47 +394,63 @@ export default function Settings() {
         <div className="modal-overlay" onClick={() => setShowRoleModal(false)}>
           <div className="modal" onClick={e => e.stopPropagation()}>
             <div className="modal-header">
-              <h3>{editingRole ? t('EditRole') : t('AddRole')}</h3>
-              <button className="btn-close" onClick={() => setShowRoleModal(false)}>
+              <div className="modal-title-wrapper">
+                <Shield size={24} className="modal-header-icon" />
+                <h3>{editingRole ? t('EditRole') : t('AddRole')}</h3>
+              </div>
+              <button className="modal-close" onClick={() => setShowRoleModal(false)}>
                 <X size={20} />
               </button>
             </div>
-            <form onSubmit={handleRoleSubmit}>
-              <div className="modal-body">
+            <form onSubmit={handleRoleSubmit} className="modal-body">
+              <div className="form-section">
+                <div className="form-section-title">{t('RoleDetails') || 'Role Details'}</div>
                 <div className="form-group">
                   <label>{t('RoleName')}</label>
-                  <input
-                    type="text"
-                    className="form-input"
-                    value={roleForm.name}
-                    onChange={(e) => setRoleForm({...roleForm, name: e.target.value.toLowerCase().replace(/\s+/g, '_')})}
-                    placeholder="e.g., warehouse_manager"
-                    required
-                    disabled={!!editingRole}
-                  />
+                  <div className="input-with-icon">
+                    <Shield size={18} className="input-icon" />
+                    <input
+                      type="text"
+                      className="form-input"
+                      value={roleForm.name}
+                      onChange={(e) => setRoleForm({...roleForm, name: e.target.value.toLowerCase().replace(/\s+/g, '_')})}
+                      placeholder="e.g., warehouse_manager"
+                      required
+                      disabled={!!editingRole}
+                    />
+                  </div>
                 </div>
                 <div className="form-group">
                   <label>{t('Description')}</label>
-                  <input
-                    type="text"
-                    className="form-input"
-                    value={roleForm.description}
-                    onChange={(e) => setRoleForm({...roleForm, description: e.target.value})}
-                    placeholder={t('Description')}
-                  />
+                  <div className="input-with-icon">
+                    <FileText size={18} className="input-icon" />
+                    <input
+                      type="text"
+                      className="form-input"
+                      value={roleForm.description}
+                      onChange={(e) => setRoleForm({...roleForm, description: e.target.value})}
+                      placeholder={t('Description')}
+                    />
+                  </div>
                 </div>
                 <div className="form-group">
                   <label>{t('Color')}</label>
-                  <input
-                    type="color"
-                    className="form-input"
-                    value={roleForm.color}
-                    onChange={(e) => setRoleForm({...roleForm, color: e.target.value})}
-                    style={{ height: '40px', padding: '4px' }}
-                  />
+                  <div className="input-with-icon">
+                    <span className="input-icon" style={{ color: roleForm.color, fontWeight: 'bold', fontSize: '14px' }}>●</span>
+                    <input
+                      type="color"
+                      className="form-input"
+                      value={roleForm.color}
+                      onChange={(e) => setRoleForm({...roleForm, color: e.target.value})}
+                      style={{ height: '40px', padding: '4px' }}
+                    />
+                  </div>
                 </div>
-                  <div className="form-group">
-                  <label>{t('Permissions')}</label>
+              </div>
+
+              <div className="form-section">
+                <div className="form-section-title">{t('Permissions')}</div>
+                <div className="form-group">
                   <div className="permissions-grid">
                     {(permissions.length > 0 ? permissions : availablePermissionsDefault).map(perm => {
                       const permName = perm.name;
@@ -448,12 +468,13 @@ export default function Settings() {
                   </div>
                 </div>
               </div>
+
               <div className="modal-footer">
                 <button type="button" className="btn btn-secondary" onClick={() => setShowRoleModal(false)}>
-                  {t('Cancel')}
+                  <X size={18} /> {t('Cancel')}
                 </button>
                 <button type="submit" className="btn btn-primary" disabled={roleLoading}>
-                  {roleLoading ? t('Loading') : t('Save')}
+                  <Save size={18} /> {roleLoading ? t('Loading') : t('Save')}
                 </button>
               </div>
             </form>
@@ -461,30 +482,18 @@ export default function Settings() {
         </div>
       )}
 
-      {showDeleteConfirm && (
-        <div className="modal-overlay" onClick={() => setShowDeleteConfirm(null)}>
-          <div className="modal modal-sm" onClick={e => e.stopPropagation()}>
-            <div className="modal-header">
-              <h3>{t('DeleteRole')}</h3>
-              <button className="btn-close" onClick={() => setShowDeleteConfirm(null)}>
-                <X size={20} />
-              </button>
-            </div>
-            <div className="modal-body">
-              <p>{t('ConfirmDelete')} "{showDeleteConfirm.name}"?</p>
-              <p className="text-danger">{t('DeleteError')}</p>
-            </div>
-            <div className="modal-footer">
-              <button className="btn btn-secondary" onClick={() => setShowDeleteConfirm(null)}>
-                {t('Cancel')}
-              </button>
-              <button className="btn btn-danger" onClick={() => handleDeleteRole(showDeleteConfirm.id)}>
-                {t('Delete')}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      <ConfirmModal
+        isOpen={!!showDeleteConfirm}
+        onClose={() => setShowDeleteConfirm(null)}
+        onConfirm={() => handleDeleteRole(showDeleteConfirm.id)}
+        title={t('DeleteRole')}
+        message={`${t('ConfirmDelete')} "${showDeleteConfirm?.name}"?`}
+        confirmText={t('Delete')}
+        cancelText={t('Cancel')}
+        confirmVariant="danger"
+      />
+
+      <Toast message={toast} onClose={() => setToast('')} />
 
       {activeTab === 'profile' && (
         <div className="settings-content">
@@ -919,14 +928,6 @@ export default function Settings() {
         .modal-header h3 {
           margin: 0;
           font-size: 18px;
-        }
-
-        .btn-close {
-          background: none;
-          border: none;
-          cursor: pointer;
-          color: var(--text-secondary);
-          padding: 4px;
         }
 
         .modal-body {

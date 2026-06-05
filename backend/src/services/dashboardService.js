@@ -16,10 +16,11 @@ export const dashboardService = {
       .select('COUNT(*) as total_invoices, COALESCE(SUM(total_amount), 0) as total_amount, COALESCE(SUM(paid_amount), 0) as total_collected, COALESCE(SUM(due_amount), 0) as total_due')
       .first();
 
-    // Outstanding balance using QueryBuilder
-    const totalOutstanding = await new QueryBuilder('retailers')
-      .select('COALESCE(SUM(outstanding_balance), 0) as total')
-      .where('is_active', 1)
+    // Outstanding balance from invoice due_amounts (source of truth)
+    const totalOutstanding = await new QueryBuilder('invoices i')
+      .select('COALESCE(SUM(i.due_amount), 0) as total')
+      .join('retailers r', 'i.retailer_id = r.id')
+      .where('r.is_active', 1)
       .first();
 
     // Total products using QueryBuilder

@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react';
 import { orderService, companyService, productService } from '../services/api';
 import { useLanguage, formatCurrency, formatNumber, formatDate } from '../context/LanguageContext';
-import { Plus, Search, Eye, Printer, ChevronLeft, ChevronRight } from 'lucide-react';
+import DatePicker from '../components/common/DatePicker';
+import { X, Plus, Search, Eye, Printer, ChevronLeft, ChevronRight, Save, Building2, ShoppingCart, FileText } from 'lucide-react';
 import { usePagination } from '../hooks';
 
 export default function Orders() {
@@ -76,7 +77,6 @@ export default function Orders() {
   };
 
   const handlePrint = (order) => {
-    const printWindow = window.open('', '_blank');
     const statusBn = order.status === 'received' ? 'গৃহীত' : 'বিচারাধীন';
     const itemsHtml = order.items.map(item => `
       <tr>
@@ -88,7 +88,7 @@ export default function Orders() {
       </tr>
     `).join('');
 
-    printWindow.document.write(`
+    const html = `
       <!DOCTYPE html>
       <html>
       <head><meta charset="UTF-8"><title>অর্ডার ${order.po_no}</title>
@@ -160,11 +160,25 @@ export default function Orders() {
         </table>
         ${order.notes ? `<div class="note-box"><p><strong>নোট:</strong> ${order.notes}</p></div>` : ''}
         <div class="footer">আপনার ব্যবসার জন্য ধন্যবাদ!</div>
-        <script>window.print();window.close();</script>
       </body>
       </html>
-    `);
-    printWindow.document.close();
+    `;
+    const iframe = document.createElement('iframe');
+    iframe.style.position = 'fixed';
+    iframe.style.right = '0';
+    iframe.style.bottom = '0';
+    iframe.style.width = '0';
+    iframe.style.height = '0';
+    iframe.style.border = '0';
+    document.body.appendChild(iframe);
+    const doc = iframe.contentDocument || iframe.contentWindow.document;
+    doc.write(html);
+    doc.close();
+    setTimeout(() => {
+      iframe.contentWindow.focus();
+      iframe.contentWindow.print();
+      setTimeout(() => document.body.removeChild(iframe), 500);
+    }, 250);
   };
 
   const addItem = () => {
@@ -246,7 +260,7 @@ export default function Orders() {
             <tbody>
               {orders.length === 0 ? (
                 <tr>
-                  <td colSpan={8} className="text-center" style={{ padding: '40px', color: 'var(--text-secondary)' }}>
+                  <td colSpan={8} className="text-center" style={{ padding: '40px', color: 'var(--text-secondary)', textAlign: 'center' }}>
                     {t('NoDataFound')}
                   </td>
                 </tr>
@@ -307,89 +321,111 @@ export default function Orders() {
 
       {showModal && (
         <div className="modal-overlay" onClick={() => setShowModal(false)}>
-          <div className="stock-modal" onClick={e => e.stopPropagation()}>
-            <form onSubmit={handleSubmit}>
-              <div className="modal-header">
-                <h2>{t('NewPurchaseOrder')}</h2>
-                <button type="button" className="modal-close" onClick={() => setShowModal(false)}>×</button>
+          <div className="modal" style={{ maxWidth: '700px' }} onClick={e => e.stopPropagation()}>
+            <div className="modal-header">
+              <div className="modal-title-wrapper">
+                <ShoppingCart size={24} className="modal-header-icon" />
+                <h3>{t('NewPurchaseOrder')}</h3>
               </div>
-              <div className="modal-body">
-                <div className="grid-2">
+              <button type="button" className="modal-close" onClick={() => setShowModal(false)}>
+                <X size={20} />
+              </button>
+            </div>
+            <form onSubmit={handleSubmit} className="modal-body">
+              <div className="form-section">
+                <div className="form-section-title">{t('OrderInformation') || 'Order Information'}</div>
+                <div className="form-row">
                   <div className="form-group">
-                    <label className="form-label">{t('Company')} *</label>
-                    <select
-                      className="form-select"
-                      value={formData.company_id}
-                      onChange={(e) => setFormData({ ...formData, company_id: e.target.value })}
-                      required
-                    >
-                      <option value="">{t('SelectCompany')}</option>
-                      {companies.map(c => (
-                        <option key={c.id} value={c.id}>{c.name}</option>
-                      ))}
-                    </select>
+                    <label>{t('Company')} *</label>
+                    <div className="input-with-icon">
+                      <Building2 size={18} className="input-icon" />
+                      <select
+                        className="form-select"
+                        value={formData.company_id}
+                        onChange={(e) => setFormData({ ...formData, company_id: e.target.value })}
+                        required
+                        style={{ paddingLeft: '40px' }}
+                      >
+                        <option value="">{t('SelectCompany')}</option>
+                        {companies.map(c => (
+                          <option key={c.id} value={c.id}>{c.name}</option>
+                        ))}
+                      </select>
+                    </div>
                   </div>
                   <div className="form-group">
-                    <label className="form-label">{t('OrderDate')}</label>
-                    <input
-                      type="date"
-                      className="form-input"
+                    <label>{t('OrderDate')}</label>
+                    <DatePicker
                       value={formData.order_date}
-                      onChange={(e) => setFormData({ ...formData, order_date: e.target.value })}
+                      onChange={(v) => setFormData({ ...formData, order_date: v })}
+                      language={language}
                     />
                   </div>
                 </div>
+              </div>
 
-                <div className="form-group">
-                  <label className="form-label">{t('Products')}</label>
-                  {formData.items.map((item, index) => (
-                    <div key={index} className="flex gap-2 mb-2" style={{ alignItems: 'flex-end' }}>
-                      <select
-                        className="form-select"
-                        style={{ flex: 2 }}
-                        value={item.product_id}
-                        onChange={(e) => updateItem(index, 'product_id', e.target.value)}
-                      >
-                        <option value="">{t('SelectProduct')}</option>
-                        {products.map(p => (
-                          <option key={p.id} value={p.id}>{p.name}</option>
-                        ))}
-                      </select>
-                      <input
-                        type="number"
-                        className="form-input"
-                        style={{ flex: 1 }}
-                        placeholder={t('Quantity')}
-                        value={item.quantity}
-                        onChange={(e) => updateItem(index, 'quantity', parseInt(e.target.value) || 0)}
-                      />
-                      <input
-                        type="number"
-                        className="form-input"
-                        style={{ flex: 1 }}
-                        placeholder={t('Price')}
-                        value={item.rate}
-                        onChange={(e) => updateItem(index, 'rate', parseFloat(e.target.value) || 0)}
-                      />
-                      <button type="button" className="btn btn-danger btn-sm" onClick={() => removeItem(index)}>×</button>
-                    </div>
-                  ))}
-                  <button type="button" className="btn btn-secondary btn-sm" onClick={addItem}>+ {t('AddItem')}</button>
-                </div>
+              <div className="form-section">
+                <div className="form-section-title">{t('Products')}</div>
+                {formData.items.map((item, index) => (
+                  <div key={index} className="flex gap-2 mb-2" style={{ alignItems: 'flex-end' }}>
+                    <select
+                      className="form-select"
+                      style={{ flex: 2 }}
+                      value={item.product_id}
+                      onChange={(e) => updateItem(index, 'product_id', e.target.value)}
+                    >
+                      <option value="">{t('SelectProduct')}</option>
+                      {products.map(p => (
+                        <option key={p.id} value={p.id}>{p.name}</option>
+                      ))}
+                    </select>
+                    <input
+                      type="number"
+                      className="form-input"
+                      style={{ flex: 1 }}
+                      placeholder={t('Quantity')}
+                      value={item.quantity}
+                      onChange={(e) => updateItem(index, 'quantity', parseInt(e.target.value) || 0)}
+                    />
+                    <input
+                      type="number"
+                      className="form-input"
+                      style={{ flex: 1 }}
+                      placeholder={t('Price')}
+                      value={item.rate}
+                      onChange={(e) => updateItem(index, 'rate', parseFloat(e.target.value) || 0)}
+                    />
+                    <button type="button" className="btn btn-danger btn-sm" onClick={() => removeItem(index)}>
+                      <X size={14} />
+                    </button>
+                  </div>
+                ))}
+                <button type="button" className="btn btn-secondary btn-sm" onClick={addItem}>
+                  <Plus size={14} /> {t('AddItem')}
+                </button>
 
-                <div className="form-group">
-                  <label className="form-label">{t('Notes')}</label>
-                  <input
-                    type="text"
-                    className="form-input"
-                    value={formData.notes}
-                    onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
-                  />
+                <div className="form-group" style={{ marginTop: '16px' }}>
+                  <label>{t('Notes')}</label>
+                  <div className="input-with-icon" style={{alignItems: 'flex-start'}}>
+                    <FileText size={18} className="input-icon" style={{marginTop: '12px'}} />
+                    <input
+                      type="text"
+                      value={formData.notes}
+                      onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
+                      placeholder={t('Notes')}
+                      className="form-input"
+                    />
+                  </div>
                 </div>
               </div>
+
               <div className="modal-footer">
-                <button type="button" className="btn btn-secondary" onClick={() => setShowModal(false)}>{t('Cancel')}</button>
-                <button type="submit" className="btn btn-primary">{t('NewPurchaseOrder')}</button>
+                <button type="button" className="btn btn-secondary" onClick={() => setShowModal(false)}>
+                  <X size={18} /> {t('Cancel')}
+                </button>
+                <button type="submit" className="btn btn-primary">
+                  <Save size={18} /> {t('NewPurchaseOrder')}
+                </button>
               </div>
             </form>
           </div>
@@ -398,10 +434,13 @@ export default function Orders() {
 
       {showViewModal && viewOrder && (
         <div className="modal-overlay" onClick={() => setShowViewModal(false)}>
-          <div className="stock-modal" onClick={e => e.stopPropagation()}>
+          <div className="modal" onClick={e => e.stopPropagation()}>
             <div className="modal-header">
-              <h2>{t('OrderDetails')} - {viewOrder.po_no}</h2>
-              <button type="button" className="modal-close" onClick={() => setShowViewModal(false)}>×</button>
+              <div className="modal-title-wrapper">
+                <FileText size={24} className="modal-header-icon" />
+                <h3>{t('OrderDetails')} - {viewOrder.po_no}</h3>
+              </div>
+              <button type="button" className="modal-close" onClick={() => setShowViewModal(false)}><X size={20} /></button>
             </div>
             <div className="modal-body">
               <div className="card" style={{ background: 'var(--background)', marginBottom: '16px' }}>
@@ -488,62 +527,7 @@ export default function Orders() {
         </div>
       )}
 
-      <style>{`
-        .stock-modal {
-          background: var(--surface);
-          border-radius: 16px;
-          width: 90%;
-          max-width: 700px;
-          max-height: 90vh;
-          overflow-y: auto;
-          box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
-          animation: slideUp 0.3s ease;
-        }
-        @keyframes slideUp {
-          from { transform: translateY(20px); opacity: 0; }
-          to { transform: translateY(0); opacity: 1; }
-        }
-        .stock-modal .modal-header {
-          padding: 20px 24px;
-          border-bottom: 1px solid var(--border);
-          display: flex;
-          justify-content: space-between;
-          align-items: center;
-          background: var(--primary);
-          border-radius: 16px 16px 0 0;
-        }
-        .stock-modal .modal-header h2 {
-          color: white;
-          margin: 0;
-          font-size: 1.25rem;
-        }
-        .stock-modal .modal-close {
-          background: rgba(255,255,255,0.2);
-          border: none;
-          color: white;
-          width: 32px;
-          height: 32px;
-          border-radius: 8px;
-          cursor: pointer;
-          font-size: 1.25rem;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-        }
-        .stock-modal .modal-close:hover {
-          background: rgba(255,255,255,0.3);
-        }
-        .stock-modal .modal-body {
-          padding: 24px;
-        }
-        .stock-modal .modal-footer {
-          padding: 16px 24px;
-          border-top: 1px solid var(--border);
-          display: flex;
-          justify-content: flex-end;
-          gap: 12px;
-        }
-      `}</style>
+
     </div>
   );
 }

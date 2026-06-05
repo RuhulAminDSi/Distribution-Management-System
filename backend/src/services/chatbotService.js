@@ -180,7 +180,12 @@ const intents = {
   outstandingBalance: {
     keywords: ['outstanding', 'due balance', 'outstanding balance', 'total due', 'due amount', 'total outstanding', 'outstanding amount', 'baki', 'bakaya', 'outstandng', 'outstnding', 'du', 'বকেয়া', 'বাকি', 'বাকি টাকা', 'আউটস্ট্যান্ডিং', 'পাওনা', 'বাকি টাকা', 'বাকি পরিমাণ', 'দেনা', 'পায়না'],
     sql: async () => {
-      const rows = await query(`SELECT COALESCE(SUM(outstanding_balance), 0) as total FROM retailers WHERE is_active = 1`);
+      const rows = await query(`
+        SELECT COALESCE(SUM(i.due_amount), 0) as total
+        FROM invoices i
+        JOIN retailers r ON i.retailer_id = r.id
+        WHERE r.is_active = 1
+      `);
       return rows[0];
     },
     response: (data) => `মোট বকেয়া ${data.total} টাকা।`

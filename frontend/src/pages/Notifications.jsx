@@ -2,6 +2,8 @@ import { useState, useEffect } from 'react';
 import { useLanguage, formatDate } from '../context/LanguageContext';
 import { notificationService } from '../services/api';
 import { Bell, CheckCircle, AlertCircle, Info, CheckSquare, X, ChevronLeft, ChevronRight, Eye, Calendar, Tag, Link } from 'lucide-react';
+import ConfirmModal from '../components/common/ConfirmModal';
+import Toast from '../components/common/Toast';
 
 export default function Notifications() {
   const { t, language } = useLanguage();
@@ -14,6 +16,7 @@ export default function Notifications() {
   const [filter, setFilter] = useState('all');
   const [search, setSearch] = useState('');
   const [confirmModal, setConfirmModal] = useState({ show: false, action: null, title: '', message: '' });
+  const [toast, setToast] = useState('');
   const [detailModal, setDetailModal] = useState({ show: false, notification: null });
 
   useEffect(() => {
@@ -67,6 +70,7 @@ export default function Notifications() {
       await notificationService.markAllAsRead();
       setNotifications(notifications.map(n => ({ ...n, is_read: 1 })));
       setConfirmModal({ show: false, action: null, title: '', message: '' });
+      setToast(t('MarkAllReadSuccess'));
     } catch (error) {
       console.error('Failed to mark all as read:', error);
       setConfirmModal({ show: false, action: null, title: '', message: '' });
@@ -85,8 +89,9 @@ export default function Notifications() {
   const deleteConfirmed = async (id) => {
     try {
       await notificationService.delete(id);
-      fetchNotifications();
       setConfirmModal({ show: false, action: null, title: '', message: '' });
+      setToast(t('DeleteSuccess'));
+      fetchNotifications();
     } catch (error) {
       console.error('Failed to delete notification:', error);
       setConfirmModal({ show: false, action: null, title: '', message: '' });
@@ -245,7 +250,7 @@ export default function Notifications() {
                 ))
               ) : (
                 <tr>
-                  <td colSpan="6" className="text-center">
+                  <td colSpan="6" className="text-center" style={{ textAlign: 'center' }}>
                     <div className="empty-state">
                       <Bell size={48} />
                       <p>{t('NoNotifications')}</p>
@@ -288,29 +293,17 @@ export default function Notifications() {
         )}
       </div>
 
-      {confirmModal.show && (
-        <div className="modal-overlay" onClick={() => setConfirmModal({ show: false, action: null, title: '', message: '' })}>
-          <div className="modal" onClick={e => e.stopPropagation()}>
-            <div className="modal-header">
-              <h3>{confirmModal.title}</h3>
-              <button className="modal-close" onClick={() => setConfirmModal({ show: false, action: null, title: '', message: '' })}>
-                <X size={18} />
-              </button>
-            </div>
-            <div className="modal-body">
-              <p>{confirmModal.message}</p>
-            </div>
-            <div className="modal-footer">
-              <button className="btn btn-secondary" onClick={() => setConfirmModal({ show: false, action: null, title: '', message: '' })}>
-                {t('Cancel')}
-              </button>
-              <button className="btn btn-primary" onClick={confirmModal.action}>
-                {t('Confirm')}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      <ConfirmModal
+        isOpen={confirmModal.show}
+        onClose={() => setConfirmModal({ show: false, action: null, title: '', message: '' })}
+        onConfirm={confirmModal.action}
+        title={confirmModal.title}
+        message={confirmModal.message}
+        confirmText={t('Confirm')}
+        cancelText={t('Cancel')}
+      />
+
+      <Toast message={toast} onClose={() => setToast('')} />
 
       {detailModal.show && detailModal.notification && (
         <div className="modal-overlay" onClick={() => setDetailModal({ show: false, notification: null })}>

@@ -1,7 +1,10 @@
 import { useState, useEffect } from 'react';
 import { productService, companyService } from '../services/api';
 import { useLanguage, formatCurrency, formatNumber, formatDate } from '../context/LanguageContext';
-import { Plus, Search, Edit, Trash2, AlertTriangle, ChevronLeft, ChevronRight } from 'lucide-react';
+import DatePicker from '../components/common/DatePicker';
+import { X, Plus, Search, Edit, Trash2, AlertTriangle, ChevronLeft, ChevronRight, Save, Package, Building2, DollarSign, Box } from 'lucide-react';
+import ConfirmModal from '../components/common/ConfirmModal';
+import Toast from '../components/common/Toast';
 
 export default function Products() {
   const { t, language } = useLanguage();
@@ -9,6 +12,8 @@ export default function Products() {
   const [companies, setCompanies] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
+  const [deleteModal, setDeleteModal] = useState({ show: false, id: null });
+  const [toast, setToast] = useState({ show: false, message: '' });
   const [search, setSearch] = useState('');
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
@@ -76,13 +81,18 @@ export default function Products() {
   };
 
   const handleDelete = async (id) => {
-    if (confirm(t('ConfirmDelete'))) {
-      try {
-        await productService.delete(id);
-        fetchProducts();
-      } catch (error) {
-        alert(t('DeleteError'));
-      }
+    setDeleteModal({ show: true, id });
+  };
+
+  const confirmDelete = async () => {
+    try {
+      await productService.delete(deleteModal.id);
+      setDeleteModal({ show: false, id: null });
+      setToast({ show: true, message: t('DeleteSuccess') });
+      fetchProducts();
+    } catch (error) {
+      setToast({ show: true, message: t('DeleteError') });
+      setDeleteModal({ show: false, id: null });
     }
   };
 
@@ -125,7 +135,13 @@ export default function Products() {
               </tr>
             </thead>
             <tbody>
-              {products.map(product => {
+              {products.length === 0 ? (
+                <tr>
+                  <td colSpan={9} className="text-center" style={{ padding: '40px', color: 'var(--text-secondary)', textAlign: 'center' }}>
+                    {t('NoDataFound')}
+                  </td>
+                </tr>
+              ) : products.map(product => {
                 const isExpired = product.expiry_date && new Date(product.expiry_date) <= new Date() && product.stock_quantity > 0;
                 const isExpiringSoon = product.expiry_date && !isExpired && new Date(product.expiry_date) <= new Date(Date.now() + 30 * 24 * 60 * 60 * 1000) && product.stock_quantity > 0;
                 return (
@@ -195,129 +211,195 @@ export default function Products() {
         </div>
       </div>
 
+      <ConfirmModal
+        isOpen={deleteModal.show}
+        onClose={() => setDeleteModal({ show: false, id: null })}
+        onConfirm={confirmDelete}
+        title={t('ConfirmDelete')}
+        message={t('DeleteConfirmMessage')}
+        confirmText={t('Delete')}
+        cancelText={t('Cancel')}
+        confirmVariant="danger"
+      />
+
+      <Toast message={toast.message} onClose={() => setToast({ show: false, message: '' })} />
+
       {showModal && (
         <div className="modal-overlay" onClick={() => setShowModal(false)}>
           <div className="modal" onClick={e => e.stopPropagation()}>
             <div className="modal-header">
-              <h2 className="modal-title">{formData.id ? t('EditProduct') : t('AddProduct')}</h2>
-              <button className="modal-close" onClick={() => setShowModal(false)}>×</button>
+              <div className="modal-title-wrapper">
+                <Package size={24} className="modal-header-icon" />
+                <h3>{formData.id ? t('EditProduct') : t('AddProduct')}</h3>
+              </div>
+              <button className="modal-close" onClick={() => setShowModal(false)}>
+                <X size={20} />
+              </button>
             </div>
-            <form onSubmit={handleSubmit}>
-              <div className="modal-body">
-                <div className="grid-2">
+            <form onSubmit={handleSubmit} className="modal-body">
+              <div className="form-section">
+                <div className="form-section-title">{t('BasicInformation') || 'Basic Information'}</div>
+                <div className="form-row">
                   <div className="form-group">
-                    <label className="form-label">{t('ProductName')} *</label>
-                    <input
-                      type="text"
-                      className="form-input"
-                      value={formData.name}
-                      onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                      required
-                    />
+                    <label>{t('ProductName')} *</label>
+                    <div className="input-with-icon">
+                      <Package size={18} className="input-icon" />
+                      <input
+                        type="text"
+                        value={formData.name}
+                        onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                        required
+                        placeholder={t('ProductName')}
+                        className="form-input"
+                      />
+                    </div>
                   </div>
                   <div className="form-group">
-                    <label className="form-label">{t('Code')}</label>
-                    <input
-                      type="text"
-                      className="form-input"
-                      value={formData.code}
-                      onChange={(e) => setFormData({ ...formData, code: e.target.value })}
-                    />
+                    <label>{t('Code')}</label>
+                    <div className="input-with-icon">
+                      <span className="input-icon" style={{fontWeight: 'bold', fontSize: '14px'}}>#</span>
+                      <input
+                        type="text"
+                        value={formData.code}
+                        onChange={(e) => setFormData({ ...formData, code: e.target.value })}
+                        placeholder="Auto"
+                        className="form-input"
+                      />
+                    </div>
                   </div>
                 </div>
-
                 <div className="form-group">
-                  <label className="form-label">{t('Company')}</label>
-                  <select
-                    className="form-select"
-                    value={formData.company_id}
-                    onChange={(e) => setFormData({ ...formData, company_id: e.target.value })}
-                  >
-                    <option value="">{t('SelectCompany')}</option>
-                    {companies.map(c => (
-                      <option key={c.id} value={c.id}>{c.name}</option>
-                    ))}
-                  </select>
+                  <label>{t('Company')}</label>
+                  <div className="input-with-icon">
+                    <Building2 size={18} className="input-icon" />
+                    <select
+                      className="form-select"
+                      value={formData.company_id}
+                      onChange={(e) => setFormData({ ...formData, company_id: e.target.value })}
+                      style={{ paddingLeft: '40px' }}
+                    >
+                      <option value="">{t('SelectCompany')}</option>
+                      {companies.map(c => (
+                        <option key={c.id} value={c.id}>{c.name}</option>
+                      ))}
+                    </select>
+                  </div>
                 </div>
+              </div>
 
-                <div className="grid-3">
+              <div className="form-section">
+                <div className="form-section-title">{t('Pricing') || 'Pricing'}</div>
+                <div className="form-row">
                   <div className="form-group">
-                    <label className="form-label">{t('PurchasePrice')} *</label>
-                    <input
-                      type="number"
-                      step="0.01"
-                      className="form-input"
-                      value={formData.purchase_price}
-                      onChange={(e) => setFormData({ ...formData, purchase_price: e.target.value })}
-                      required
-                    />
+                    <label>{t('PurchasePrice')} *</label>
+                    <div className="input-with-icon">
+                      <DollarSign size={18} className="input-icon" />
+                      <input
+                        type="number"
+                        step="0.01"
+                        value={formData.purchase_price}
+                        onChange={(e) => setFormData({ ...formData, purchase_price: e.target.value })}
+                        required
+                        placeholder="0.00"
+                        className="form-input"
+                      />
+                    </div>
                   </div>
                   <div className="form-group">
-                    <label className="form-label">{t('DealerPrice')} *</label>
-                    <input
-                      type="number"
-                      step="0.01"
-                      className="form-input"
-                      value={formData.dealer_price}
-                      onChange={(e) => setFormData({ ...formData, dealer_price: e.target.value })}
-                      required
-                    />
+                    <label>{t('DealerPrice')} *</label>
+                    <div className="input-with-icon">
+                      <DollarSign size={18} className="input-icon" />
+                      <input
+                        type="number"
+                        step="0.01"
+                        value={formData.dealer_price}
+                        onChange={(e) => setFormData({ ...formData, dealer_price: e.target.value })}
+                        required
+                        placeholder="0.00"
+                        className="form-input"
+                      />
+                    </div>
                   </div>
-                  <div className="form-group">
-                    <label className="form-label">{t('MRP')} *</label>
+                </div>
+                <div className="form-group">
+                  <label>{t('MRP')} *</label>
+                  <div className="input-with-icon">
+                    <DollarSign size={18} className="input-icon" />
                     <input
                       type="number"
                       step="0.01"
-                      className="form-input"
                       value={formData.mrp}
                       onChange={(e) => setFormData({ ...formData, mrp: e.target.value })}
                       required
-                    />
-                  </div>
-                </div>
-
-                <div className="grid-3">
-                  <div className="form-group">
-                    <label className="form-label">{t('StockLabel')}</label>
-                    <input
-                      type="number"
+                      placeholder="0.00"
                       className="form-input"
-                      value={formData.stock_quantity}
-                      onChange={(e) => setFormData({ ...formData, stock_quantity: e.target.value })}
-                    />
-                  </div>
-                  <div className="form-group">
-                    <label className="form-label">{t('LowStockAlert')}</label>
-                    <input
-                      type="number"
-                      className="form-input"
-                      value={formData.low_stock_alert}
-                      onChange={(e) => setFormData({ ...formData, low_stock_alert: e.target.value })}
-                    />
-                  </div>
-                  <div className="form-group">
-                    <label className="form-label">{t('Unit')}</label>
-                    <input
-                      type="text"
-                      className="form-input"
-                      value={formData.unit}
-                      onChange={(e) => setFormData({ ...formData, unit: e.target.value })}
-                    />
-                  </div>
-                  <div className="form-group">
-                    <label className="form-label">{t('ExpiryDate')}</label>
-                    <input
-                      type="date"
-                      className="form-input"
-                      value={formData.expiry_date || ''}
-                      onChange={(e) => setFormData({ ...formData, expiry_date: e.target.value })}
                     />
                   </div>
                 </div>
               </div>
+
+              <div className="form-section">
+                <div className="form-section-title">{t('Inventory') || 'Inventory'}</div>
+                <div className="form-row">
+                  <div className="form-group">
+                    <label>{t('StockLabel')}</label>
+                    <div className="input-with-icon">
+                      <Box size={18} className="input-icon" />
+                      <input
+                        type="number"
+                        value={formData.stock_quantity}
+                        onChange={(e) => setFormData({ ...formData, stock_quantity: e.target.value })}
+                        placeholder="0"
+                        className="form-input"
+                      />
+                    </div>
+                  </div>
+                  <div className="form-group">
+                    <label>{t('LowStockAlert')}</label>
+                    <div className="input-with-icon">
+                      <AlertTriangle size={18} className="input-icon" />
+                      <input
+                        type="number"
+                        value={formData.low_stock_alert}
+                        onChange={(e) => setFormData({ ...formData, low_stock_alert: e.target.value })}
+                        placeholder="10"
+                        className="form-input"
+                      />
+                    </div>
+                  </div>
+                </div>
+                <div className="form-row">
+                  <div className="form-group">
+                    <label>{t('Unit')}</label>
+                    <div className="input-with-icon">
+                      <Box size={18} className="input-icon" />
+                      <input
+                        type="text"
+                        value={formData.unit}
+                        onChange={(e) => setFormData({ ...formData, unit: e.target.value })}
+                        placeholder="piece"
+                        className="form-input"
+                      />
+                    </div>
+                  </div>
+                  <div className="form-group">
+                    <label>{t('ExpiryDate')}</label>
+                    <DatePicker
+                      value={formData.expiry_date || ''}
+                      onChange={(v) => setFormData({ ...formData, expiry_date: v })}
+                      language={language}
+                    />
+                  </div>
+                </div>
+              </div>
+
               <div className="modal-footer">
-                <button type="button" className="btn btn-secondary" onClick={() => setShowModal(false)}>{t('Cancel')}</button>
-                <button type="submit" className="btn btn-primary">{t('Save')}</button>
+                <button type="button" className="btn btn-secondary" onClick={() => setShowModal(false)}>
+                  <X size={18} /> {t('Cancel')}
+                </button>
+                <button type="submit" className="btn btn-primary">
+                  <Save size={18} /> {t('Save')}
+                </button>
               </div>
             </form>
           </div>

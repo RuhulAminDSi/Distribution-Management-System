@@ -2,12 +2,16 @@ import { useState, useEffect } from 'react';
 import { useLanguage } from '../context/LanguageContext';
 import { companyService } from '../services/api';
 import { X, Plus, Pencil, Trash2, ChevronLeft, ChevronRight, Building2, User, Phone, MapPin, CreditCard, Save, Search } from 'lucide-react';
+import ConfirmModal from '../components/common/ConfirmModal';
+import Toast from '../components/common/Toast';
 
 export default function Companies() {
   const { t } = useLanguage();
   const [companies, setCompanies] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
+  const [deleteModal, setDeleteModal] = useState({ show: false, id: null });
+  const [toast, setToast] = useState('');
   const [editItem, setEditItem] = useState(null);
   const [formData, setFormData] = useState({});
   const [fieldErrors, setFieldErrors] = useState({});
@@ -61,12 +65,18 @@ export default function Companies() {
   };
 
   const handleDelete = async (id) => {
-    if (!confirm(t('ConfirmDelete'))) return;
+    setDeleteModal({ show: true, id });
+  };
+
+  const confirmDelete = async () => {
     try {
-      await companyService.deleteCompany(id);
+      await companyService.deleteCompany(deleteModal.id);
+      setDeleteModal({ show: false, id: null });
+      setToast(t('DeleteSuccess'));
       fetchCompanies();
     } catch (error) {
-      alert(t('DeleteError'));
+      setToast(t('DeleteError'));
+      setDeleteModal({ show: false, id: null });
     }
   };
 
@@ -114,7 +124,7 @@ export default function Companies() {
               {loading ? (
                 <tr><td colSpan="6">{t('Loading')}</td></tr>
               ) : !companies || companies.length === 0 ? (
-                <tr><td colSpan="6">{t('NoDataFound')}</td></tr>
+                <tr><td colSpan="6" className="text-center" style={{ padding: '40px', color: 'var(--text-secondary)', textAlign: 'center' }}>{t('NoDataFound')}</td></tr>
               ) : (
                 companies.map(c => (
                   <tr key={c.id}>
@@ -168,6 +178,19 @@ export default function Companies() {
           </button>
         </div>
       </div>
+
+      <ConfirmModal
+        isOpen={deleteModal.show}
+        onClose={() => setDeleteModal({ show: false, id: null })}
+        onConfirm={confirmDelete}
+        title={t('ConfirmDelete')}
+        message={t('DeleteConfirmMessage')}
+        confirmText={t('Delete')}
+        cancelText={t('Cancel')}
+        confirmVariant="danger"
+      />
+
+      <Toast message={toast} onClose={() => setToast('')} />
 
       {showModal && (
         <div className="modal-overlay" onClick={() => setShowModal(false)}>

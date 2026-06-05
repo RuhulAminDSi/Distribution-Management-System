@@ -1,8 +1,10 @@
 import { useState, useEffect } from 'react';
 import { retailerService } from '../services/api';
 import { useLanguage, formatCurrency } from '../context/LanguageContext';
-import { Plus, Search, Edit, Trash2, Phone, MapPin, ChevronLeft, ChevronRight } from 'lucide-react';
+import { X, Plus, Search, Edit, Trash2, Phone, MapPin, ChevronLeft, ChevronRight, Save, User, CreditCard, Building2 } from 'lucide-react';
 import { usePagination, useFormData, useAsyncError } from '../hooks';
+import ConfirmModal from '../components/common/ConfirmModal';
+import Toast from '../components/common/Toast';
 
 const initialFormData = {
   name: '', code: '', owner_name: '', phone: '', address: '', area: '', credit_limit: 0, due_limit: 0
@@ -13,6 +15,8 @@ export default function Retailers() {
   const [retailers, setRetailers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
+  const [deleteModal, setDeleteModal] = useState({ show: false, id: null });
+  const [toast, setToast] = useState('');
   const [search, setSearch] = useState('');
   const [fieldErrors, setFieldErrors] = useState({});
 
@@ -78,13 +82,18 @@ export default function Retailers() {
   };
 
   const handleDelete = async (id) => {
-    if (confirm(t('ConfirmDelete'))) {
-      try {
-        await retailerService.delete(id);
-        fetchRetailers();
-      } catch (error) {
-        alert(t('DeleteError'));
-      }
+    setDeleteModal({ show: true, id });
+  };
+
+  const confirmDelete = async () => {
+    try {
+      await retailerService.delete(deleteModal.id);
+      setDeleteModal({ show: false, id: null });
+      setToast(t('DeleteSuccess'));
+      fetchRetailers();
+    } catch (error) {
+      setToast(t('DeleteError'));
+      setDeleteModal({ show: false, id: null });
     }
   };
 
@@ -132,7 +141,13 @@ export default function Retailers() {
               </tr>
             </thead>
             <tbody>
-              {retailers.map(retailer => (
+              {retailers.length === 0 ? (
+                <tr>
+                  <td colSpan={8} className="text-center" style={{ padding: '40px', color: 'var(--text-secondary)', textAlign: 'center' }}>
+                    {t('NoDataFound')}
+                  </td>
+                </tr>
+              ) : retailers.map(retailer => (
                 <tr key={retailer.id}>
                   <td>{retailer.code}</td>
                   <td>{retailer.name}</td>
@@ -190,105 +205,165 @@ export default function Retailers() {
         </div>
       </div>
 
+      <ConfirmModal
+        isOpen={deleteModal.show}
+        onClose={() => setDeleteModal({ show: false, id: null })}
+        onConfirm={confirmDelete}
+        title={t('ConfirmDelete')}
+        message={t('DeleteConfirmMessage')}
+        confirmText={t('Delete')}
+        cancelText={t('Cancel')}
+        confirmVariant="danger"
+      />
+
+      <Toast message={toast} onClose={() => setToast('')} />
+
       {showModal && (
         <div className="modal-overlay" onClick={() => setShowModal(false)}>
           <div className="modal" onClick={e => e.stopPropagation()}>
             <div className="modal-header">
-              <h2 className="modal-title">{form.formData.id ? t('EditRetailer') : t('AddRetailer')}</h2>
-              <button className="modal-close" onClick={() => setShowModal(false)}>×</button>
+              <div className="modal-title-wrapper">
+                <Building2 size={24} className="modal-header-icon" />
+                <h3>{form.formData.id ? t('EditRetailer') : t('AddRetailer')}</h3>
+              </div>
+              <button className="modal-close" onClick={() => setShowModal(false)}>
+                <X size={20} />
+              </button>
             </div>
-            <form onSubmit={handleSubmit}>
-              <div className="modal-body">
-                <div className="grid-2">
+            <form onSubmit={handleSubmit} className="modal-body">
+              <div className="form-section">
+                <div className="form-section-title">{t('BasicInformation') || 'Basic Information'}</div>
+                <div className="form-row">
                   <div className="form-group">
-                    <label className="form-label">{t('ShopName')} *</label>
-                    <input
-                      type="text"
-                      className={`form-input ${fieldErrors.name ? 'input-error' : ''}`}
-                      value={form.formData.name}
-                      onChange={(e) => { form.updateField('name', e.target.value); setFieldErrors({...fieldErrors, name: null}); }}
-                      required
-                    />
+                    <label>{t('ShopName')} *</label>
+                    <div className="input-with-icon">
+                      <Building2 size={18} className="input-icon" />
+                      <input
+                        type="text"
+                        value={form.formData.name}
+                        onChange={(e) => { form.updateField('name', e.target.value); setFieldErrors({...fieldErrors, name: null}); }}
+                        required
+                        placeholder={t('ShopName')}
+                        className={`form-input ${fieldErrors.name ? 'input-error' : ''}`}
+                      />
+                    </div>
                     {fieldErrors.name && <div className="field-error">{fieldErrors.name}</div>}
                   </div>
                   <div className="form-group">
-                    <label className="form-label">{t('Code')}</label>
-                    <input
-                      type="text"
-                      className="form-input"
-                      value={form.formData.code}
-                      onChange={(e) => form.updateField('code', e.target.value)}
-                    />
+                    <label>{t('Code')}</label>
+                    <div className="input-with-icon">
+                      <span className="input-icon" style={{fontWeight: 'bold', fontSize: '14px'}}>#</span>
+                      <input
+                        type="text"
+                        value={form.formData.code}
+                        onChange={(e) => form.updateField('code', e.target.value)}
+                        placeholder="Auto"
+                        className="form-input"
+                      />
+                    </div>
                   </div>
                 </div>
+              </div>
 
-                <div className="grid-2">
+              <div className="form-section">
+                <div className="form-section-title">{t('ContactInformation') || 'Contact Information'}</div>
+                <div className="form-row">
                   <div className="form-group">
-                    <label className="form-label">{t('OwnerName')}</label>
-                    <input
-                      type="text"
-                      className="form-input"
-                      value={form.formData.owner_name}
-                      onChange={(e) => form.updateField('owner_name', e.target.value)}
-                    />
+                    <label>{t('OwnerName')}</label>
+                    <div className="input-with-icon">
+                      <User size={18} className="input-icon" />
+                      <input
+                        type="text"
+                        value={form.formData.owner_name}
+                        onChange={(e) => form.updateField('owner_name', e.target.value)}
+                        placeholder={t('OwnerName')}
+                        className="form-input"
+                      />
+                    </div>
                   </div>
                   <div className="form-group">
-                    <label className="form-label">{t('Phone')} *</label>
-                    <input
-                      type="text"
-                      className={`form-input ${fieldErrors.phone ? 'input-error' : ''}`}
-                      value={form.formData.phone}
-                      onChange={(e) => { form.updateField('phone', e.target.value); setFieldErrors({...fieldErrors, phone: null}); }}
-                      required
-                    />
+                    <label>{t('Phone')} *</label>
+                    <div className="input-with-icon">
+                      <Phone size={18} className="input-icon" />
+                      <input
+                        type="text"
+                        value={form.formData.phone}
+                        onChange={(e) => { form.updateField('phone', e.target.value); setFieldErrors({...fieldErrors, phone: null}); }}
+                        required
+                        placeholder={t('Phone')}
+                        className={`form-input ${fieldErrors.phone ? 'input-error' : ''}`}
+                      />
+                    </div>
                     {fieldErrors.phone && <div className="field-error">{fieldErrors.phone}</div>}
                   </div>
                 </div>
-
                 <div className="form-group">
-                  <label className="form-label">{t('Address')}</label>
-                  <input
-                    type="text"
-                    className="form-input"
-                    value={form.formData.address}
-                    onChange={(e) => form.updateField('address', e.target.value)}
-                  />
-                </div>
-
-                <div className="form-group">
-                  <label className="form-label">{t('Area')}</label>
-                  <input
-                    type="text"
-                    className="form-input"
-                    value={form.formData.area}
-                    onChange={(e) => form.updateField('area', e.target.value)}
-                  />
-                </div>
-
-                <div className="grid-2">
-                  <div className="form-group">
-                    <label className="form-label">{t('CreditLimit')}</label>
-                    <input
-                      type="number"
+                  <label>{t('Address')}</label>
+                  <div className="input-with-icon" style={{alignItems: 'flex-start'}}>
+                    <MapPin size={18} className="input-icon" style={{marginTop: '12px'}} />
+                    <textarea
+                      value={form.formData.address}
+                      onChange={(e) => form.updateField('address', e.target.value)}
+                      placeholder={t('Address')}
+                      rows={2}
                       className="form-input"
-                      value={form.formData.credit_limit}
-                      onChange={(e) => form.updateField('credit_limit', e.target.value)}
                     />
                   </div>
-                  <div className="form-group">
-                    <label className="form-label">{t('DueLimit')}</label>
+                </div>
+                <div className="form-group">
+                  <label>{t('Area')}</label>
+                  <div className="input-with-icon">
+                    <MapPin size={18} className="input-icon" />
                     <input
-                      type="number"
+                      type="text"
+                      value={form.formData.area}
+                      onChange={(e) => form.updateField('area', e.target.value)}
+                      placeholder={t('Area')}
                       className="form-input"
-                      value={form.formData.due_limit}
-                      onChange={(e) => form.updateField('due_limit', e.target.value)}
                     />
                   </div>
                 </div>
               </div>
+
+              <div className="form-section">
+                <div className="form-section-title">{t('CreditSettings') || 'Credit Settings'}</div>
+                <div className="form-row">
+                  <div className="form-group">
+                    <label>{t('CreditLimit')}</label>
+                    <div className="input-with-icon">
+                      <CreditCard size={18} className="input-icon" />
+                      <input
+                        type="number"
+                        value={form.formData.credit_limit}
+                        onChange={(e) => form.updateField('credit_limit', e.target.value)}
+                        placeholder="0.00"
+                        className="form-input"
+                      />
+                    </div>
+                  </div>
+                  <div className="form-group">
+                    <label>{t('DueLimit')}</label>
+                    <div className="input-with-icon">
+                      <CreditCard size={18} className="input-icon" />
+                      <input
+                        type="number"
+                        value={form.formData.due_limit}
+                        onChange={(e) => form.updateField('due_limit', e.target.value)}
+                        placeholder="0.00"
+                        className="form-input"
+                      />
+                    </div>
+                  </div>
+                </div>
+              </div>
+
               <div className="modal-footer">
-                <button type="button" className="btn btn-secondary" onClick={() => setShowModal(false)}>{t('Cancel')}</button>
-                <button type="submit" className="btn btn-primary">{t('Save')}</button>
+                <button type="button" className="btn btn-secondary" onClick={() => setShowModal(false)}>
+                  <X size={18} /> {t('Cancel')}
+                </button>
+                <button type="submit" className="btn btn-primary">
+                  <Save size={18} /> {t('Save')}
+                </button>
               </div>
             </form>
           </div>
