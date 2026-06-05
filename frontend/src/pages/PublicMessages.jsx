@@ -77,8 +77,11 @@ export default function PublicMessages() {
     try {
       const res = await api.get(`/public-messages/${encodeURIComponent(phone)}`);
       setMessages(res.data);
-      if (!isNearBottom.current && res.data.length > oldLen) {
-        setShowScrollBtn(true);
+      if (res.data.length > oldLen) {
+        setPublicTyping(false);
+        if (!isNearBottom.current) {
+          setShowScrollBtn(true);
+        }
       }
     } catch { /* ignore */ }
   }

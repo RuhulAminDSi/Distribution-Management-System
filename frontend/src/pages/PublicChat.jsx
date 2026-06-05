@@ -40,6 +40,7 @@ export default function PublicChat() {
   const typingTimerRef = useRef(null);
   const isNearBottom = useRef(true);
   const msgContainerRef = useRef(null);
+  const inputRef = useRef(null);
 
   useEffect(() => { setIsVisible(true); }, []);
 
@@ -71,7 +72,11 @@ export default function PublicChat() {
         const oldLen = messages.length;
         setMessages(res.data.messages);
         const s = res.data.session;
-        if (s && s.last_admin_typing_at) {
+        const msgs = res.data.messages;
+        const hasNewAdminMsg = msgs.length > oldLen && msgs.some((m, i) => i >= oldLen && !m.is_from_public);
+        if (hasNewAdminMsg) {
+          setAdminTyping(false);
+        } else if (s && s.last_admin_typing_at) {
           const elapsed = Date.now() - new Date(s.last_admin_typing_at).getTime();
           setAdminTyping(elapsed < 1000);
         } else {
@@ -187,6 +192,7 @@ export default function PublicChat() {
       // ignore
     } finally {
       setLoading(false);
+      setTimeout(() => inputRef.current?.focus(), 0);
     }
   }
 
@@ -323,7 +329,7 @@ export default function PublicChat() {
               <div className="logo-icon"><MessageSquare size={24} /></div>
               <h1>{t('MessageWithDealer')}</h1>
             </div>
-            <div style={{ fontSize: '0.82rem', color: 'rgba(255,255,255,0.5)', display: 'flex', alignItems: 'center', gap: 8, marginTop: 4 }}>
+            <div style={{ fontSize: '0.82rem', color: 'rgba(255,255,255,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, marginTop: 4 }}>
               <User size={13} /> {name} &nbsp;|&nbsp; <Phone size={13} /> {phone}
             </div>
             {token && (
@@ -370,6 +376,7 @@ export default function PublicChat() {
 
           <form onSubmit={handleSend} className="chat-input-row">
             <input
+              ref={inputRef}
               value={input}
               onChange={handleInputChange}
                 placeholder={t('TypeYourMessage')}
