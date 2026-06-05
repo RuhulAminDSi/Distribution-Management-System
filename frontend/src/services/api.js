@@ -141,4 +141,14 @@ export const notificationService = {
   delete: (id) => api.delete(`/notifications/${id}`)
 };
 
+export const noticeService = {
+  getAll: (params) => api.get('/notices', { params }),
+  getActive: () => api.get('/notices/active'),
+  getById: (id) => api.get(`/notices/${id}`),
+  create: (data) => api.post('/notices', data),
+  update: (id, data) => api.put(`/notices/${id}`, data),
+  delete: (id) => api.delete(`/notices/${id}`),
+  togglePublished: (id) => api.put(`/notices/${id}/toggle-publish`)
+};
+
 export default api;

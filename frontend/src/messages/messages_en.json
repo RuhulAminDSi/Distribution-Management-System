@@ -516,6 +516,18 @@
   "exploreFeatures": "Explore Features",
   "home": "Home",
   "markAllRead": "Mark all read",
+  "NoticeBoard": "Notice Board",
+  "Notices": "Notices",
+  "AddNotice": "Add Notice",
+  "EditNotice": "Edit Notice",
+  "SearchNotices": "Search by title or content",
+  "NoNoticesFound": "No notices found",
+  "NoticeTitlePlaceholder": "Enter notice title",
+  "NoticeContentPlaceholder": "Enter notice content",
+  "Activate": "Activate",
+  "Deactivate": "Deactivate",
+  "Update": "Update",
+
   "admin": "Admin",
   "demoTitle": "Demo View",
   "demoSubtitle": "Explore all features and functionality of the system"

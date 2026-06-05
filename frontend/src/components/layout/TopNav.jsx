@@ -2,6 +2,7 @@ import { useState, useRef, useEffect } from 'react';
 import { useNavigate, Link, useLocation } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { useLanguage } from '../../context/LanguageContext';
+import { noticeService } from '../../services/api';
 import { 
   Package,
   Bell,
@@ -12,7 +13,8 @@ import {
   Home,
   Settings,
   User,
-  Circle
+  Circle,
+  Megaphone
 } from 'lucide-react';
 
 export default function TopNav({ onSidebarToggle, sidebarOpen }) {
@@ -22,6 +24,7 @@ export default function TopNav({ onSidebarToggle, sidebarOpen }) {
   const location = useLocation();
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [notifOpen, setNotifOpen] = useState(false);
+  const [activeNotice, setActiveNotice] = useState(null);
   const dropdownRef = useRef(null);
   const notifRef = useRef(null);
 
@@ -56,6 +59,31 @@ export default function TopNav({ onSidebarToggle, sidebarOpen }) {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
+  useEffect(() => {
+    const fetchActive = async () => {
+      try {
+        const res = await noticeService.getActive();
+        setActiveNotice(res.data || null);
+      } catch {
+        setActiveNotice(null);
+      }
+    };
+    fetchActive();
+    const interval = setInterval(fetchActive, 15000);
+    const onNoticeChanged = (e) => {
+      if (e.detail !== undefined) {
+        setActiveNotice(e.detail);
+      } else {
+        fetchActive();
+      }
+    };
+    window.addEventListener('notice-changed', onNoticeChanged);
+    return () => {
+      clearInterval(interval);
+      window.removeEventListener('notice-changed', onNoticeChanged);
+    };
+  }, []);
+
   return (
     <header className="topnav-header">
       <div className="topnav-left">
@@ -82,6 +110,18 @@ export default function TopNav({ onSidebarToggle, sidebarOpen }) {
           <span className="current-page">{getPageTitle()}</span>
         </div>
       </div>
+
+        {activeNotice && (
+          <div className="notice-ticker">
+            <Megaphone size={16} className="notice-ticker-icon" />
+            <div className="notice-ticker-track">
+              <div key={activeNotice.id} className="notice-ticker-wrap">
+                <span className="notice-ticker-text"><b>বিশেষ বিজ্ঞপ্তিঃ</b> {activeNotice.title} — {activeNotice.content}</span>
+                <span className="notice-ticker-text"><b>বিশেষ বিজ্ঞপ্তিঃ</b> {activeNotice.title} — {activeNotice.content}</span>
+              </div>
+            </div>
+          </div>
+        )}
 
       <div className="topnav-right">
         <div className="topnav-actions">
@@ -666,7 +706,66 @@ export default function TopNav({ onSidebarToggle, sidebarOpen }) {
           background: rgba(239, 68, 68, 0.1);
         }
 
+        .notice-ticker {
+          flex: 1;
+          display: flex;
+          align-items: center;
+          gap: 10px;
+          margin: 0 24px;
+          overflow: hidden;
+          max-width: 500px;
+          min-width: 120px;
+          background: rgba(233, 69, 96, 0.1);
+          border: 1px solid rgba(233, 69, 96, 0.2);
+          border-radius: 10px;
+          padding: 6px 14px;
+          height: 36px;
+        }
+
+        .notice-ticker-icon {
+          flex-shrink: 0;
+          color: #e94560;
+          animation: pulse 2s ease-in-out infinite;
+        }
+
+        .notice-ticker-track {
+          flex: 1;
+          overflow: hidden;
+          height: 22px;
+        }
+
+        .notice-ticker-wrap {
+          display: inline-flex;
+          white-space: nowrap;
+          animation: scrollNotice 22s linear infinite;
+          will-change: transform;
+        }
+
+        .notice-ticker-text {
+          white-space: nowrap;
+          color: #f0c0c8;
+          font-size: 0.85rem;
+          font-weight: 400;
+          padding-right: 60px;
+        }
+
+        .notice-ticker:hover .notice-ticker-wrap {
+          animation-play-state: paused;
+        }
+
+        @keyframes scrollNotice {
+          0% { transform: translateX(0); }
+          100% { transform: translateX(-50%); }
+        }
+
         @media (max-width: 768px) {
+          .topnav-header {
+            flex-wrap: wrap;
+            height: auto;
+            padding: 8px 12px;
+            gap: 6px;
+          }
+
           .user-info {
             display: none;
           }
@@ -675,50 +774,83 @@ export default function TopNav({ onSidebarToggle, sidebarOpen }) {
             display: none;
           }
 
+          .brand-text {
+            display: none;
+          }
+
           .topnav-actions {
             gap: 4px;
           }
 
           .nav-icon-btn {
-            width: 36px;
-            height: 36px;
+            width: 32px;
+            height: 32px;
+            border-radius: 8px;
           }
-        }
 
-        @media (max-width: 480px) {
-          .topnav-header {
-            padding: 0 12px;
+          .lang-btn {
+            width: 32px !important;
+            padding: 0 !important;
           }
 
           .topnav-right {
-            gap: 8px;
+            gap: 6px;
           }
 
-          .home-btn {
+          .user-trigger {
+            padding: 2px 2px 2px 2px;
+            border-radius: 8px;
+            gap: 0;
+          }
+
+          .user-avatar {
+            width: 28px;
+            height: 28px;
+            border-radius: 8px;
+            font-size: 0.75rem;
+          }
+
+          .notif-badge {
+            width: 14px;
+            height: 14px;
+            font-size: 0.55rem;
+            top: 2px;
+            right: 2px;
+          }
+
+          .notice-ticker {
+            order: 3;
+            flex: 1 1 100%;
+            max-width: 100%;
+            min-width: 0;
+            margin: 0;
+            height: 32px;
+            padding: 4px 10px;
+            gap: 6px;
+          }
+
+          .notice-ticker-track {
+            height: 20px;
+          }
+
+          .notice-ticker-text {
+            font-size: 0.75rem;
+            padding-right: 40px;
+          }
+
+          .notice-ticker-icon {
+            width: 14px;
+            height: 14px;
+          }
+
+          .topnav-left {
+            flex: 1 1 auto;
+            min-width: 0;
+          }
+
+          .breadcrumb-separator,
+          .current-page {
             display: none;
-          }
-
-          .brand-text {
-            font-size: 1rem;
-          }
-
-          .user-section .user-trigger {
-            padding: 4px 6px 4px 4px;
-          }
-
-          .user-section .user-avatar {
-            width: 30px;
-            height: 30px;
-            font-size: 0.8rem;
-          }
-
-          .notif-dropdown {
-            width: 290px;
-            right: -60px;
-          }
-
-          .user-dropdown {
-            width: 220px;
           }
         }
       `}</style>
