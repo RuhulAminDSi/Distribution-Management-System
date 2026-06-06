@@ -140,7 +140,6 @@ export default function MainLayout({ children }) {
       <aside className={`sidebar ${isMobile ? (sidebarOpen ? 'show' : '') : (sidebarOpen ? '' : 'collapsed')}`}>
         <nav className="sidebar-nav">
           <div className="nav-section">
-            {/*<div className="nav-section-title">{t('Menu')}</div>*/}
             {visibleNavItems.map((item, index) => (
               <NavLink 
                 key={item.path} 

@@ -15,14 +15,15 @@ Deploy latest DMS code to Azure.
 
 When you say this, the expected workflow is:
 
-1. Build frontend from `frontend/`.
-2. Replace `backend/frontend-dist` with the latest `frontend/dist` output.
-3. Create clean deployment zip from `backend/` with `/` paths, excluding `node_modules` and `uploads`.
-4. Ensure Azure settings include `SCM_DO_BUILD_DURING_DEPLOYMENT=true` and `WEBSITES_PORT=8080`.
-5. Ensure Azure startup command is `node src/server.js`.
-6. Deploy zip to `dms-app-UHeY` in `dms-app-rg`.
-7. Restart app.
-8. Verify:
+1. `git checkout main && git pull origin main` (always deploy from main).
+2. Build frontend from `frontend/`.
+3. Replace `backend/frontend-dist` with the latest `frontend/dist` output.
+4. Create clean deployment zip by running `node create-zip.cjs` from `backend/` — uses adm-zip for POSIX paths, excludes `node_modules` and `uploads`.
+5. Ensure Azure settings include `SCM_DO_BUILD_DURING_DEPLOYMENT=true` and `WEBSITES_PORT=8080`.
+6. Ensure Azure startup command is `node src/server.js` (not `startup.sh`).
+7. Deploy zip to `dms-app-UHeY` in `dms-app-rg`.
+8. Restart app.
+9. Verify:
 
 ```text
 https://dms-app-uhey.azurewebsites.net/api/health

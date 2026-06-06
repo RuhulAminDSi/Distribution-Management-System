@@ -292,34 +292,3 @@ export class QueryBuilder {
     return executeQuery(sql, params);
   }
 }
-
-/**
- * Helper function: Build paginated response object
- * @param {array} data - Array of results
- * @param {number} total - Total count
- * @param {number} page - Current page
- * @param {number} limit - Items per page
- */
-export const buildPaginatedResponse = (data, total, page, limit) => {
-  const pages = Math.ceil(total / limit);
-  return {
-    data,
-    total,
-    page: parseInt(page),
-    limit: parseInt(limit),
-    pages,
-    hasMore: page < pages
-  };
-};
-
-/**
- * Helper function: Build filtered response
- * For endpoints that don't need pagination
- */
-export const buildFilteredResponse = (data) => {
-  return {
-    success: true,
-    data,
-    count: data.length
-  };
-};

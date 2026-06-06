@@ -6,6 +6,14 @@ Run these commands from the project root:
 cd /d "C:\Users\Ruhul Amin\Desktop\PROJECTS\Distribution Management"
 ```
 
+## Checkout Main Branch (Always Deploy From Main)
+
+```cmd
+cd /d "C:\Users\Ruhul Amin\Desktop\PROJECTS\Distribution Management"
+git checkout main
+git pull origin main
+```
+
 ## Login And Select Subscription
 
 ```cmd
@@ -45,16 +53,17 @@ xcopy "frontend\dist" "backend\frontend-dist" /E /I /Y
 
 ## Create Clean Deployment Zip
 
-PowerShell is safer for creating the zip because it can force forward-slash zip entries. Run this from Command Prompt:
+Use `create-zip.cjs` (adm-zip) which guarantees POSIX `/` paths. Run from the `backend` directory:
 
 ```cmd
-powershell -ExecutionPolicy Bypass -Command "$src='C:\Users\Ruhul Amin\Desktop\PROJECTS\Distribution Management\backend'; $zip='C:\Users\RUHULA~1\AppData\Local\Temp\opencode\dms-backend-clean.zip'; if(Test-Path -LiteralPath $zip){Remove-Item -LiteralPath $zip -Force}; Add-Type -AssemblyName System.IO.Compression; Add-Type -AssemblyName System.IO.Compression.FileSystem; $archive=[System.IO.Compression.ZipFile]::Open($zip,[System.IO.Compression.ZipArchiveMode]::Create); try{$base=(Resolve-Path -LiteralPath $src).Path.TrimEnd('\'); $files=[System.IO.Directory]::EnumerateFiles($base,'*',[System.IO.SearchOption]::AllDirectories); foreach($file in $files){$rel=$file.Substring($base.Length+1); if($rel -like 'node_modules\*' -or $rel -like 'uploads\*'){continue}; $entryName=$rel.Replace('\','/'); [System.IO.Compression.ZipFileExtensions]::CreateEntryFromFile($archive,$file,$entryName,[System.IO.Compression.CompressionLevel]::Optimal) | Out-Null}} finally{$archive.Dispose()}; Write-Host $zip"
+cd /d "C:\Users\Ruhul Amin\Desktop\PROJECTS\Distribution Management\backend"
+node create-zip.cjs
 ```
 
 ## Deploy Clean Zip
 
 ```cmd
-az webapp deploy --name "dms-app-UHeY" --resource-group "dms-app-rg" --src-path "C:\Users\RUHULA~1\AppData\Local\Temp\opencode\dms-backend-clean.zip" --type zip --clean true
+az webapp deploy --name "dms-app-UHeY" --resource-group "dms-app-rg" --src-path "C:\Users\Ruhul Amin\Desktop\PROJECTS\Distribution Management\backend\deploy.zip" --type zip --clean true
 ```
 
 ## Restart App

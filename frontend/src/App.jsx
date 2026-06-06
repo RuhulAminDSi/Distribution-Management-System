@@ -169,45 +169,12 @@ export default function App() {
 
 function LoginWithAnimation() {
   const fromLanding = sessionStorage.getItem('fromLanding') === 'true';
-  
-  if (fromLanding) {
-    sessionStorage.removeItem('fromLanding');
-    return (
-      <div className="page-transition">
-        <Login />
-        <style>{`
-          @keyframes pageIn {
-            from { opacity: 0; transform: translateY(15px); }
-            to { opacity: 1; transform: translateY(0); }
-          }
-          .page-transition {
-            animation: pageIn 0.35s ease-out forwards;
-          }
-        `}</style>
-      </div>
-    );
-  }
-  
-  return <Login />
+  if (fromLanding) sessionStorage.removeItem('fromLanding');
+  return fromLanding ? <div className="page-transition"><Login /></div> : <Login />;
 }
 
 function RegisterWithAnimation() {
   const fromLanding = sessionStorage.getItem('fromLanding') === 'true';
-  
-  if (fromLanding) {
-    sessionStorage.removeItem('fromLanding');
-    return (
-      <div className="page-transition">
-        <Register />
-        <style>{`
-          @keyframes pageIn {
-            from { opacity: 0; transform: translateY(15px); }
-            to { opacity: 1; transform: translateY(0); }
-          }
-        `}</style>
-      </div>
-    );
-  }
-  
-  return <Register />
+  if (fromLanding) sessionStorage.removeItem('fromLanding');
+  return fromLanding ? <div className="page-transition"><Register /></div> : <Register />;
 }
