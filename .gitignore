@@ -11,6 +11,7 @@ build/
 .playwright-mcp/
 .opencode/
 *.png
+!frontend/public/**/*.png
 .env.production
 *.zip
 frontend-dist/

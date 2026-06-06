@@ -2,6 +2,7 @@ import { Routes, Route, Navigate, useNavigate } from 'react-router-dom';
 import { useAuth } from './context/AuthContext';
 import { LanguageProvider } from './context/LanguageContext';
 import { useEffect } from 'react';
+import RouteSeo from './components/RouteSeo';
 import MainLayout from './components/layout/MainLayout';
 import Landing from './pages/Landing';
 import Demo from './pages/Demo';
@@ -83,6 +84,7 @@ export default function App() {
   return (
     <LanguageProvider>
       <UnauthorizedHandler />
+      <RouteSeo />
       <Routes>
         <Route path="/" element={<Landing />} />
         <Route path="/demo" element={<Demo />} />
@@ -169,45 +171,12 @@ export default function App() {
 
 function LoginWithAnimation() {
   const fromLanding = sessionStorage.getItem('fromLanding') === 'true';
-  
-  if (fromLanding) {
-    sessionStorage.removeItem('fromLanding');
-    return (
-      <div className="page-transition">
-        <Login />
-        <style>{`
-          @keyframes pageIn {
-            from { opacity: 0; transform: translateY(15px); }
-            to { opacity: 1; transform: translateY(0); }
-          }
-          .page-transition {
-            animation: pageIn 0.35s ease-out forwards;
-          }
-        `}</style>
-      </div>
-    );
-  }
-  
-  return <Login />
+  if (fromLanding) sessionStorage.removeItem('fromLanding');
+  return fromLanding ? <div className="page-transition"><Login /></div> : <Login />;
 }
 
 function RegisterWithAnimation() {
   const fromLanding = sessionStorage.getItem('fromLanding') === 'true';
-  
-  if (fromLanding) {
-    sessionStorage.removeItem('fromLanding');
-    return (
-      <div className="page-transition">
-        <Register />
-        <style>{`
-          @keyframes pageIn {
-            from { opacity: 0; transform: translateY(15px); }
-            to { opacity: 1; transform: translateY(0); }
-          }
-        `}</style>
-      </div>
-    );
-  }
-  
-  return <Register />
+  if (fromLanding) sessionStorage.removeItem('fromLanding');
+  return fromLanding ? <div className="page-transition"><Register /></div> : <Register />;
 }

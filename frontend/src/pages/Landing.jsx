@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
+import SEO from '../components/SEO';
 import {
   ArrowRight,
   BarChart3,
@@ -97,16 +98,12 @@ export default function Landing() {
   const { t, language, setLanguage } = useLanguage();
   const [scrolled, setScrolled] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const [expandedModule, setExpandedModule] = useState(null);
+  const [expandedModule, setExpandedModule] = useState(false);
   const [activeSection, setActiveSection] = useState('home');
   const [chatbotOpen, setChatbotOpen] = useState(false);
   const modules = moduleContent[language];
   const workflow = workflowContent[language];
   const security = securityContent[language];
-
-  useEffect(() => {
-    document.title = `DMS - ${t('brandSubtitle')}`;
-  }, [t]);
 
   useEffect(() => {
     const handleScroll = () => setScrolled(window.scrollY > 32);
@@ -146,8 +143,63 @@ export default function Landing() {
 
   const navTargets = ['home', 'modules', 'workflow', 'security', 'contact'];
 
+  const faqJsonLd = {
+    '@context': 'https://schema.org',
+    '@type': 'FAQPage',
+    mainEntity: [
+      {
+        '@type': 'Question',
+        name: 'What is DMS?',
+        acceptedAnswer: {
+          '@type': 'Answer',
+          text: 'DMS (Distribution Management System) is an all-in-one web application for wholesalers and distributors to manage companies, products, retailers, orders, sales, payments, stock and reports.',
+        },
+      },
+      {
+        '@type': 'Question',
+        name: 'Who is DMS for?',
+        acceptedAnswer: {
+          '@type': 'Answer',
+          text: 'DMS is built for wholesale distributors, suppliers and small-to-medium distribution businesses in Bangladesh and South Asia that need to track sales, stock, orders, retailer dues and reports in one place.',
+        },
+      },
+      {
+        '@type': 'Question',
+        name: 'Does DMS support multiple companies or branches?',
+        acceptedAnswer: {
+          '@type': 'Answer',
+          text: 'Yes. DMS supports multiple companies and branches from a single account, with role-based access for owners, managers and sales staff.',
+        },
+      },
+      {
+        '@type': 'Question',
+        name: 'Does DMS support Bangla?',
+        acceptedAnswer: {
+          '@type': 'Answer',
+          text: 'Yes. DMS provides a full Bangla (বাংলা) interface in addition to English.',
+        },
+      },
+      {
+        '@type': 'Question',
+        name: 'How do I get started with DMS?',
+        acceptedAnswer: {
+          '@type': 'Answer',
+          text: 'Create a free account at dms-live.azurewebsites.net/register, sign in and start adding your products, retailers and orders. You can also explore the demo before signing up.',
+        },
+      },
+    ],
+  };
+
   return (
-    <main className="landing-page">
+    <>
+      <SEO
+        title="DMS - Distribution Management System | Sales, Stock & Order Software"
+        description="DMS is an all-in-one Distribution Management System for wholesalers and distributors. Manage companies, products, retailers, orders, sales, payments, stock and reports in one place. Built for Bangladesh & South Asia."
+        keywords="distribution management system, DMS, wholesale distribution software, inventory management, retailer management, order management, sales tracking, stock management, Bangladesh DMS, Bangla ERP"
+        path="/"
+        jsonLd={faqJsonLd}
+      />
+      <main className="landing-page">
       <div className="ambient ambient-one"></div>
       <div className="ambient ambient-two"></div>
       <div className="ambient ambient-three"></div>
@@ -368,6 +420,7 @@ export default function Landing() {
         <span className="fab-tooltip">{t('MessageDealer')}</span>
       </Link>
       <ChatBot onToggle={setChatbotOpen} />
-    </main>
+      </main>
+    </>
   );
 }

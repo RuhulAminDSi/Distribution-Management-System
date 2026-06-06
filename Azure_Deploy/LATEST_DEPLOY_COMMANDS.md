@@ -2,10 +2,12 @@
 
 Run from Command Prompt.
 
-## Go To Project
+## Switch To Main Branch (Always Deploy From Main)
 
 ```cmd
 cd /d "C:\Users\Ruhul Amin\Desktop\PROJECTS\Distribution Management"
+git checkout main
+git pull origin main
 ```
 
 ## Build Frontend
@@ -36,18 +38,26 @@ az webapp config appsettings set --name "dms-app-UHeY" --resource-group "dms-app
 az webapp config set --name "dms-app-UHeY" --resource-group "dms-app-rg" --startup-file "node src/server.js"
 ```
 
-## Create Clean Deployment Zip
-
-This creates a clean zip with Linux/POSIX `/` paths and excludes `node_modules` and `uploads`.
+## Install Dependencies (only if missing)
 
 ```cmd
-powershell -ExecutionPolicy Bypass -Command "$src='C:\Users\Ruhul Amin\Desktop\PROJECTS\Distribution Management\backend'; $zip='C:\Users\RUHULA~1\AppData\Local\Temp\opencode\dms-backend-clean.zip'; if(Test-Path -LiteralPath $zip){Remove-Item -LiteralPath $zip -Force}; Add-Type -AssemblyName System.IO.Compression; Add-Type -AssemblyName System.IO.Compression.FileSystem; $archive=[System.IO.Compression.ZipFile]::Open($zip,[System.IO.Compression.ZipArchiveMode]::Create); try{$base=(Resolve-Path -LiteralPath $src).Path.TrimEnd('\'); $files=[System.IO.Directory]::EnumerateFiles($base,'*',[System.IO.SearchOption]::AllDirectories); foreach($file in $files){$rel=$file.Substring($base.Length+1); if($rel -like 'node_modules\*' -or $rel -like 'uploads\*'){continue}; $entryName=$rel.Replace('\','/'); [System.IO.Compression.ZipFileExtensions]::CreateEntryFromFile($archive,$file,$entryName,[System.IO.Compression.CompressionLevel]::Optimal) | Out-Null}} finally{$archive.Dispose()}; Write-Host $zip"
+cd /d "C:\Users\Ruhul Amin\Desktop\PROJECTS\Distribution Management\backend"
+npm install
+```
+
+## Create Clean Deployment Zip
+
+Uses `create-zip.cjs` (adm-zip) which guarantees POSIX `/` paths and excludes `node_modules`, `uploads`, etc.
+
+```cmd
+cd /d "C:\Users\Ruhul Amin\Desktop\PROJECTS\Distribution Management\backend"
+node create-zip.cjs
 ```
 
 ## Deploy Zip To Azure
 
 ```cmd
-az webapp deploy --name "dms-app-UHeY" --resource-group "dms-app-rg" --src-path "C:\Users\RUHULA~1\AppData\Local\Temp\opencode\dms-backend-clean.zip" --type zip --clean true
+az webapp deploy --name "dms-app-UHeY" --resource-group "dms-app-rg" --src-path "C:\Users\Ruhul Amin\Desktop\PROJECTS\Distribution Management\backend\deploy.zip" --type zip --clean true
 ```
 
 ## Restart App
@@ -82,6 +92,11 @@ az webapp log tail --name "dms-app-UHeY" --resource-group "dms-app-rg"
 CMD:
 ```
 cd /d "C:\Users\Ruhul Amin\Desktop\PROJECTS\Distribution Management"
+
+:: Always deploy from main branch
+git checkout main
+git pull origin main
+
 cd frontend
 npm.cmd install
 npm.cmd run build
@@ -90,13 +105,14 @@ cd ..
 if exist "backend\frontend-dist" rmdir /s /q "backend\frontend-dist"
 xcopy "frontend\dist" "backend\frontend-dist" /E /I /Y
 
-az webapp config appsettings set --name "dms-app-UHeY" --resource-group "dms-app-rg" --settings SCM_DO_BUILD_DURING_DEPLOYMENT=true WEBSITES_PORT=8080 NODE_ENV=production PORT=8080
+az webapp config appsettings set --name "dms-app-UHeY" --resource-group "dms-app-rg" --settings SCM_DO_BUILD_DURING_DEPLOYMENT=true WEBSITES_PORT=8080 NODE_ENV=production
 
 az webapp config set --name "dms-app-UHeY" --resource-group "dms-app-rg" --startup-file "node src/server.js"
 
-powershell -ExecutionPolicy Bypass -Command "$src='C:\Users\Ruhul Amin\Desktop\PROJECTS\Distribution Management\backend'; $zip='C:\Users\RUHULA~1\AppData\Local\Temp\opencode\dms-backend-clean.zip'; if(Test-Path -LiteralPath $zip){Remove-Item -LiteralPath $zip -Force}; Add-Type -AssemblyName System.IO.Compression; Add-Type -AssemblyName System.IO.Compression.FileSystem; $archive=[System.IO.Compression.ZipFile]::Open($zip,[System.IO.Compression.ZipArchiveMode]::Create); try{$base=(Resolve-Path -LiteralPath $src).Path.TrimEnd('\'); $files=[System.IO.Directory]::EnumerateFiles($base,'*',[System.IO.SearchOption]::AllDirectories); foreach($file in $files){$rel=$file.Substring($base.Length+1); if($rel -like 'node_modules\*' -or $rel -like 'uploads\*'){continue}; $entryName=$rel.Replace('\','/'); [System.IO.Compression.ZipFileExtensions]::CreateEntryFromFile($archive,$file,$entryName,[System.IO.Compression.CompressionLevel]::Optimal) | Out-Null}} finally{$archive.Dispose()}; Write-Host $zip"
+cd /d "C:\Users\Ruhul Amin\Desktop\PROJECTS\Distribution Management\backend"
+node create-zip.cjs
 
-az webapp deploy --name "dms-app-UHeY" --resource-group "dms-app-rg" --src-path "C:\Users\RUHULA~1\AppData\Local\Temp\opencode\dms-backend-clean.zip" --type zip --clean true
+az webapp deploy --name "dms-app-UHeY" --resource-group "dms-app-rg" --src-path "C:\Users\Ruhul Amin\Desktop\PROJECTS\Distribution Management\backend\deploy.zip" --type zip --clean true
 
 az webapp restart --name "dms-app-UHeY" --resource-group "dms-app-rg"
 ```
