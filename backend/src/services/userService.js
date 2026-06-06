@@ -445,7 +445,8 @@ export const userService = {
     // Send OTP via WhatsApp in production
     const waResult = await sendOtp(phone, otp);
     if (!waResult.success) {
-      console.log(`[OTP] User ${users[0].id}: ${otp} (WhatsApp unavailable)`);
+      console.log(`[OTP] User ${users[0].id}: ${otp} (WhatsApp unavailable)`, waResult.error || '');
+      return { success: true, message: 'OTP has been sent to your phone' };
     }
 
     return { success: true, message: 'OTP has been sent to your phone via WhatsApp' };

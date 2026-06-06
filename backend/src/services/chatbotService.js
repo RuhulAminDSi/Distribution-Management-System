@@ -303,10 +303,6 @@ function fuzzyThreshold(len) {
   return 3;
 }
 
-function detectLanguage(text) {
-  return 'bn';
-}
-
 function tokenize(text) {
   return text.toLowerCase().trim().split(/[\s,]+/).filter(Boolean);
 }
@@ -356,18 +352,6 @@ function matchIntent(text) {
   }
 
   return bestScore >= 10 ? bestIntent : null;
-}
-
-function getGreeting(lang) {
-  const greetings = {
-    bn: ['নমস্কার', 'হাই', 'হ্যালো', 'ওহে', 'কি অবস্থা'],
-    en: ['hi', 'hello', 'hey', 'hi there', 'hello there', 'greetings']
-  };
-  for (const g of greetings.bn) {
-    if (detectLanguage('bn') === 'bn' && g === 'নমস্কার') continue;
-  }
-  const lower = ''; // handled in greeting detection
-  return null;
 }
 
 function isGreeting(text) {
