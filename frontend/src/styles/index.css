@@ -2220,3 +2220,8 @@ textarea.form-input {
   color: white;
   font-weight: 600;
 }
+
+@keyframes slideIn {
+  from { transform: translateX(100%); opacity: 0; }
+  to { transform: translateX(0); opacity: 1; }
+}

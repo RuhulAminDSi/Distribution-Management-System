@@ -1,10 +1,10 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useLanguage } from '../context/LanguageContext';
 import { authService } from '../services/api';
 import { 
-  X, Package, Eye, EyeOff, ArrowLeft,
+  Package, Eye, EyeOff, ArrowLeft,
   TrendingUp, Users, CreditCard,
   ShoppingCart, BarChart3, Building2, Truck,
   Circle
@@ -21,6 +21,58 @@ const floatingIcons = [
   { icon: Truck, delay: 3.5, x: '75%', y: '85%' },
 ];
 
+function OtpTimer({ expiresAt, onExpire }) {
+  const [remaining, setRemaining] = useState(() =>
+    expiresAt ? Math.max(0, Math.floor((expiresAt - Date.now()) / 1000)) : 0
+  );
+  const called = useRef(false);
+
+  useEffect(() => {
+    if (!expiresAt) return;
+    const tick = () => {
+      const diff = Math.max(0, Math.floor((expiresAt - Date.now()) / 1000));
+      setRemaining(diff);
+      if (diff <= 0 && !called.current) {
+        called.current = true;
+        onExpire?.();
+      }
+    };
+    tick();
+    const id = setInterval(tick, 1000);
+    return () => clearInterval(id);
+  }, [expiresAt, onExpire]);
+
+  if (!expiresAt) return null;
+
+  const total = 60;
+  const pct = (remaining / total) * 100;
+  const mins = Math.floor(remaining / 60);
+  const secs = remaining % 60;
+  const color = remaining <= 10 ? '#e74c3c' : remaining <= 20 ? '#f39c12' : '#27ae60';
+  const dash = 2 * Math.PI * 44;
+  const offset = dash - (pct / 100) * dash;
+
+  return (
+    <div style={{ textAlign: 'center', marginTop: '8px' }}>
+      <svg width="72" height="72" viewBox="0 0 100 100" style={{ display: 'block', margin: '0 auto 4px' }}>
+        <circle cx="50" cy="50" r="44" fill="none" stroke="var(--border-color)" strokeWidth="8" />
+        <circle
+          cx="50" cy="50" r="44" fill="none"
+          stroke={color} strokeWidth="8" strokeLinecap="round"
+          strokeDasharray={dash} strokeDashoffset={offset}
+          transform="rotate(-90 50 50)"
+          style={{ transition: 'stroke-dashoffset 1s linear, stroke 1s linear' }}
+        />
+        <text x="50" y="55" textAnchor="middle" fontSize="16" fontWeight="bold" fill={color} fontFamily="monospace">
+          {remaining > 0
+            ? `${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`
+            : '✕'}
+        </text>
+      </svg>
+    </div>
+  );
+}
+
 export default function Login() {
   const { t, language, setLanguage } = useLanguage();
   const [username, setUsername] = useState('');
@@ -28,10 +80,27 @@ export default function Login() {
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
-  const [showForgotModal, setShowForgotModal] = useState(false);
+  const [showForgotForm, setShowForgotForm] = useState(false);
   const [forgotEmail, setForgotEmail] = useState('');
   const [forgotMessage, setForgotMessage] = useState('');
   const [forgotLoading, setForgotLoading] = useState(false);
+  const [forgotMethod, setForgotMethod] = useState('email');
+  const [otpStep, setOtpStep] = useState('request');
+  const [otp, setOtp] = useState('');
+  const [otpPhone, setOtpPhone] = useState('');
+  const [otpNewPassword, setOtpNewPassword] = useState('');
+  const [otpConfirmPassword, setOtpConfirmPassword] = useState('');
+  const [showOtpPassword, setShowOtpPassword] = useState(false);
+  const [otpExpiresAt, setOtpExpiresAt] = useState(null);
+  const [otpRequestPhone, setOtpRequestPhone] = useState('');
+  const [timerTick, setTimerTick] = useState(0);
+
+  useEffect(() => {
+    if (!otpExpiresAt) return;
+    if (Date.now() >= otpExpiresAt) return;
+    const id = setInterval(() => setTimerTick(t => t + 1), 1000);
+    return () => clearInterval(id);
+  }, [otpExpiresAt]);
   const [isVisible, setIsVisible] = useState(false);
   const { login, user } = useAuth();
   const navigate = useNavigate();
@@ -105,12 +174,18 @@ export default function Login() {
       const msg = response.data.message || '';
       
       if (response.data.resetLink) {
+        const link = response.data.resetLink;
         setForgotMessage(
           <div>
             <div>{msg}</div>
-            <div style={{ marginTop: '10px', fontSize: '12px', wordBreak: 'break-all' }}>
-              <strong>Reset Link:</strong><br/>
-              {response.data.resetLink}
+            <div style={{ marginTop: '14px', textAlign: 'center' }}>
+              <a
+                href={link}
+                className="btn btn-primary"
+                style={{ display: 'inline-block', padding: '10px 20px', fontSize: '0.85rem', textDecoration: 'none' }}
+              >
+                {t('ResetPassword')}
+              </a>
             </div>
           </div>
         );
@@ -119,6 +194,100 @@ export default function Login() {
       }
     } catch (error) {
         setForgotMessage(error.response?.data?.message || t('Error') + '. ' + t('TryAgain') + '.');
+    } finally {
+      setForgotLoading(false);
+    }
+  };
+
+  const handleRequestOtp = async (e) => {
+    e.preventDefault();
+
+    if (otpExpiresAt && Date.now() < otpExpiresAt && otpRequestPhone === otpPhone) {
+      setOtpStep('verify');
+      return;
+    }
+
+    setForgotMessage('');
+    setForgotLoading(true);
+
+    try {
+      const response = await authService.requestOtp({ phone: otpPhone });
+      if (response.data.success === false) {
+        setForgotMessage(<div className="alert alert-info">{response.data.message}</div>);
+        return;
+      }
+      setOtpStep('verify');
+      setOtpExpiresAt(Date.now() + 60 * 1000);
+      setOtpRequestPhone(otpPhone);
+      if (response.data.otp) {
+        setForgotMessage(
+          <div className="alert alert-success">
+            <div>{t('OtpSent')}</div>
+            <div style={{ marginTop: '8px', fontSize: '24px', fontWeight: 700, textAlign: 'center', letterSpacing: '8px' }}>{response.data.otp}</div>
+          </div>
+        );
+      } else {
+        setForgotMessage(<div className="alert alert-success">{response.data.message || t('OtpSent')}</div>);
+      }
+    } catch (error) {
+      setForgotMessage(error.response?.data?.message || t('Error') + '. ' + t('TryAgain') + '.');
+    } finally {
+      setForgotLoading(false);
+    }
+  };
+
+  const handleVerifyOtp = async (e) => {
+    e.preventDefault();
+    setForgotMessage('');
+    setForgotLoading(true);
+
+    try {
+      await authService.verifyOtp({ phone: otpPhone, otp });
+      setOtpStep('reset');
+    } catch (error) {
+      setForgotMessage(error.response?.data?.message || t('InvalidOtp'));
+    } finally {
+      setForgotLoading(false);
+    }
+  };
+
+  const handleResetWithOtp = async (e) => {
+    e.preventDefault();
+    setForgotMessage('');
+
+    if (otpNewPassword !== otpConfirmPassword) {
+      setForgotMessage(t('PasswordMismatch'));
+      return;
+    }
+    if (otpNewPassword.length < 6) {
+      setForgotMessage(t('PasswordTooShort'));
+      return;
+    }
+
+    setForgotLoading(true);
+
+    try {
+      await authService.resetPasswordWithOtp({ phone: otpPhone, otp, newPassword: otpNewPassword });
+      setForgotMessage(
+        <div className="alert alert-success">
+          <div>{t('PasswordChanged')}</div>
+        </div>
+      );
+      setTimeout(() => {
+        setShowForgotForm(false);
+        setForgotMethod('email');
+        setOtpStep('request');
+        setForgotMessage('');
+        setOtpPhone('');
+        setOtp('');
+        setOtpNewPassword('');
+        setOtpConfirmPassword('');
+        setOtpExpiresAt(null);
+        setOtpRequestPhone('');
+        setForgotEmail('');
+      }, 2000);
+    } catch (error) {
+      setForgotMessage(error.response?.data?.message || t('SaveError'));
     } finally {
       setForgotLoading(false);
     }
@@ -150,143 +319,275 @@ export default function Login() {
 
       <div className={`login-container ${isVisible ? 'visible' : ''}`}>
         <div className="login-card">
-          <div className="login-header">
-            <div className="login-logo">
-              <div className="logo-icon">
-                <Package size={32} />
-              </div>
-              <h1>DMS</h1>
-            </div>
-            <p className="login-subtitle">{t('WelcomeSubtitle')}</p>
-          </div>
-
-          {error && <div className="alert alert-danger">{error}</div>}
-
-          <form onSubmit={handleSubmit}>
-            <div className="form-group">
-              <label className="form-label">{t('Username')}, {t('Email')}, {t('Phone')}</label>
-              <input
-                type="text"
-                className="form-input"
-                value={username}
-                onChange={(e) => setUsername(e.target.value)}
-                placeholder={t('Username') + ', ' + t('Email') + ', ' + t('Phone')}
-                required
-              />
-            </div>
-
-            <div className="form-group">
-              <label className="form-label">{t('Password')}</label>
-              <div style={{ position: 'relative' }}>
-                <input
-                  type={showPassword ? 'text' : 'password'}
-                  className="form-input"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  placeholder={t('Password')}
-                  required
-                  style={{ paddingRight: '40px' }}
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowPassword(!showPassword)}
-                  className="password-toggle"
-                >
-                  {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
-                </button>
-              </div>
-            </div>
-
-            <button type="submit" className="btn btn-primary login-btn" disabled={loading}>
-              {loading ? t('Loading') + '...' : t('Login')}
-              {!loading && <ArrowLeft size={18} className="btn-arrow" />}
-            </button>
-
-            <button
-              type="button"
-              className="btn btn-secondary forgot-btn"
-              onClick={() => setShowForgotModal(true)}
-            >
-              {t('ForgotPassword')}
-            </button>
-          </form>
-
-          <p className="login-link">
-            {t('NoAccount')}{' '}
-            <button
-              type="button"
-              className="link-btn"
-              onClick={() => navigate('/register')}
-            >
-              {t('CreateAccount')}
-            </button>
-          </p>
-
-          <p className="helpline">
-            {t('Helpline')}: <b>+880-173-8957729</b>
-          </p>
-
-          <div className="card-bottom-bar">
-            <button
-              type="button"
-              className="card-bottom-btn"
-              onClick={() => navigate('/')}
-            >
-              <ArrowLeft size={15} />
-              {t('Back')}
-            </button>
-            <button
-              type="button"
-              className="card-bottom-btn"
-              onClick={toggleLanguage}
-            >
-              {language === 'en' ? 'বাংলা' : 'English'}
-            </button>
-          </div>
-        </div>
-      </div>
-
-      {showForgotModal && (
-        <div className="modal-overlay" onClick={() => setShowForgotModal(false)}>
-          <div className="modal" onClick={e => e.stopPropagation()}>
-            <div className="modal-header">
-              <h3>{t('ResetPassword')}</h3>
-              <button type="button" className="modal-close" onClick={() => setShowForgotModal(false)}><X size={18} /></button>
-            </div>
-            <form onSubmit={handleForgotPassword}>
-              <div className="modal-body">
-                <p style={{ marginBottom: '16px', color: 'var(--text-secondary)' }}>
-                  {t('EnterAmount')} your {t('Email')} or {t('Phone')} and we'll send you a link to reset your {t('Password')}.
-                </p>
-                {forgotMessage && (
-                  <div className={`alert ${typeof forgotMessage === 'string' && (forgotMessage.includes('sent') || forgotMessage.includes('success') || forgotMessage.includes('link')) ? 'alert-success' : 'alert-danger'}`}>
-                    {forgotMessage}
+          {!showForgotForm ? (
+            <>
+              <div className="login-header">
+                <div className="login-logo">
+                  <div className="logo-icon">
+                    <Package size={32} />
                   </div>
-                )}
+                  <h1>DMS</h1>
+                </div>
+                <p className="login-subtitle">{t('WelcomeSubtitle')}</p>
+              </div>
+
+              {error && <div className="alert alert-danger">{error}</div>}
+
+              <form onSubmit={handleSubmit}>
                 <div className="form-group">
-                  <label className="form-label">{t('Email')} {t('Or')} {t('Phone')}</label>
+                  <label className="form-label">{t('Username')}, {t('Email')}, {t('Phone')}</label>
                   <input
                     type="text"
                     className="form-input"
-                    value={forgotEmail}
-                    onChange={(e) => setForgotEmail(e.target.value)}
-                    placeholder={t('Email') + ' ' + t('Or') + ' ' + t('Phone')}
+                    value={username}
+                    onChange={(e) => setUsername(e.target.value)}
+                    placeholder={t('Username') + ', ' + t('Email') + ', ' + t('Phone')}
                     required
                   />
                 </div>
-              </div>
-              <div className="modal-footer">
-                <button type="button" className="btn btn-secondary" onClick={() => setShowForgotModal(false)}>
-                  {t('Cancel')}
+
+                <div className="form-group">
+                  <label className="form-label">{t('Password')}</label>
+                  <div style={{ position: 'relative' }}>
+                    <input
+                      type={showPassword ? 'text' : 'password'}
+                      className="form-input"
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                      placeholder={t('Password')}
+                      required
+                      style={{ paddingRight: '40px' }}
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword(!showPassword)}
+                      className="password-toggle"
+                    >
+                      {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                    </button>
+                  </div>
+                </div>
+
+                <button type="submit" className="btn btn-primary login-btn" disabled={loading}>
+                  {loading ? t('Loading') + '...' : t('Login')}
+                  {!loading && <ArrowLeft size={18} className="btn-arrow" />}
                 </button>
-                <button type="submit" className="btn btn-primary" disabled={forgotLoading}>
-                  {forgotLoading ? t('Loading') + '...' : t('SendResetLink')}
+
+                <div style={{ textAlign: 'center', marginTop: '12px' }}>
+                  <button
+                    type="button"
+                    className="link-btn"
+                    onClick={() => setShowForgotForm(true)}
+                    style={{ color: 'rgba(255,255,255,0.6)', fontSize: '0.9rem' }}
+                  >
+                    {t('ForgotPassword')}
+                  </button>
+                </div>
+              </form>
+
+              <p className="login-link">
+                {t('NoAccount')}{' '}
+                <button
+                  type="button"
+                  className="link-btn"
+                  onClick={() => navigate('/register')}
+                >
+                  {t('CreateAccount')}
+                </button>
+              </p>
+
+              <p className="helpline">
+                {t('Helpline')}: <b>+880-173-8957729</b>
+              </p>
+
+              <div className="card-bottom-bar">
+                <button
+                  type="button"
+                  className="card-bottom-btn"
+                  onClick={() => navigate('/')}
+                >
+                  <ArrowLeft size={15} />
+                  {t('Back')}
+                </button>
+                <button
+                  type="button"
+                  className="card-bottom-btn"
+                  onClick={toggleLanguage}
+                >
+                  {language === 'en' ? 'বাংলা' : 'English'}
                 </button>
               </div>
-            </form>
-          </div>
+            </>
+          ) : (
+            <>
+              <div className="login-header">
+                <div className="login-logo">
+                  <div className="logo-icon">
+                    <Package size={32} />
+                  </div>
+                  <h1>{t('ResetPassword')}</h1>
+                </div>
+                <p className="login-subtitle">{t('ForgotPasswordDesc')}</p>
+              </div>
+
+              {forgotMessage && (
+                <div className={`alert ${typeof forgotMessage === 'string' ? (forgotMessage.includes('sent') || forgotMessage.includes('success') || forgotMessage.includes('link') ? 'alert-success' : 'alert-danger') : 'alert-success'}`}>
+                  {forgotMessage}
+                </div>
+              )}
+
+              <div style={{ display: 'flex', gap: '8px', marginBottom: '20px' }}>
+                <button
+                  type="button"
+                  className={`btn ${forgotMethod === 'email' ? 'btn-primary' : 'btn-secondary'}`}
+                  style={{ flex: 1, fontSize: '0.85rem' }}
+                  onClick={() => { setForgotMethod('email'); setForgotMessage(''); setOtpStep('request'); }}
+                >
+                  {t('Email')}
+                </button>
+                <button
+                  type="button"
+                  className={`btn ${forgotMethod === 'phone' ? 'btn-primary' : 'btn-secondary'}`}
+                  style={{ flex: 1, fontSize: '0.85rem' }}
+                  onClick={() => { setForgotMethod('phone'); setForgotMessage(''); }}
+                >
+                  {t('Phone')} (OTP)
+                </button>
+              </div>
+
+              {forgotMethod === 'email' ? (
+                <form onSubmit={handleForgotPassword}>
+                  <div className="form-group">
+                    <label className="form-label">{t('Email')}</label>
+                    <input
+                      type="email"
+                      className="form-input"
+                      value={forgotEmail}
+                      onChange={(e) => setForgotEmail(e.target.value)}
+                      placeholder={t('Email')}
+                      required
+                    />
+                  </div>
+
+                  <button type="submit" className="btn btn-primary login-btn" disabled={forgotLoading}>
+                    {forgotLoading ? t('Loading') + '...' : t('SendResetLink')}
+                  </button>
+                </form>
+              ) : otpStep === 'request' ? (
+                <form onSubmit={handleRequestOtp}>
+                  <div className="form-group">
+                    <label className="form-label">{t('Phone')}</label>
+                    <input
+                      type="tel"
+                      className="form-input"
+                      value={otpPhone}
+                      onChange={(e) => setOtpPhone(e.target.value)}
+                      placeholder={t('Phone')}
+                      required
+                    />
+                  </div>
+
+                  <button type="submit" className="btn btn-primary login-btn" disabled={forgotLoading}>
+                    {forgotLoading ? t('Loading') + '...' : t('SendOtp')}
+                  </button>
+                </form>
+              ) : otpStep === 'verify' ? (
+                <form onSubmit={handleVerifyOtp}>
+                  <div className="form-group">
+                    <label className="form-label">OTP</label>
+                    <input
+                      type="text"
+                      className="form-input"
+                      value={otp}
+                      onChange={(e) => setOtp(e.target.value)}
+                      placeholder="000000"
+                      maxLength={6}
+                      required
+                      style={{ textAlign: 'center', fontSize: '1.2rem', letterSpacing: '6px' }}
+                    />
+                    <OtpTimer expiresAt={otpExpiresAt} onExpire={() => setOtpStep('request')} />
+                  </div>
+                  <div style={{ textAlign: 'center', marginBottom: '12px' }}>
+                    <button
+                      type="button"
+                      className="link-btn"
+                      onClick={() => setOtpStep('request')}
+                      disabled={otpExpiresAt && Date.now() < otpExpiresAt}
+                      style={{ fontSize: '0.8rem', opacity: otpExpiresAt && Date.now() < otpExpiresAt ? 0.4 : 1, cursor: otpExpiresAt && Date.now() < otpExpiresAt ? 'not-allowed' : 'pointer' }}
+                    >
+                      {t('ResendOtp')}
+                    </button>
+                  </div>
+
+                  <button type="submit" className="btn btn-primary login-btn" disabled={forgotLoading}>
+                    {forgotLoading ? t('Loading') + '...' : t('VerifyOtp')}
+                  </button>
+                </form>
+              ) : (
+                <form onSubmit={handleResetWithOtp}>
+                  <div className="form-group">
+                    <label className="form-label">{t('NewPassword')}</label>
+                    <div style={{ position: 'relative' }}>
+                      <input
+                        type={showOtpPassword ? 'text' : 'password'}
+                        className="form-input"
+                        value={otpNewPassword}
+                        onChange={(e) => setOtpNewPassword(e.target.value)}
+                        placeholder={t('NewPassword')}
+                        required
+                        style={{ paddingRight: '40px' }}
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowOtpPassword(!showOtpPassword)}
+                        style={{ position: 'absolute', right: '10px', top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-secondary)', padding: '4px' }}
+                      >
+                        {showOtpPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                      </button>
+                    </div>
+                  </div>
+                  <div className="form-group">
+                    <label className="form-label">{t('ConfirmPassword')}</label>
+                    <div style={{ position: 'relative' }}>
+                      <input
+                        type={showOtpPassword ? 'text' : 'password'}
+                        className="form-input"
+                        value={otpConfirmPassword}
+                        onChange={(e) => setOtpConfirmPassword(e.target.value)}
+                        placeholder={t('ConfirmPassword')}
+                        required
+                        style={{ paddingRight: '40px' }}
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowOtpPassword(!showOtpPassword)}
+                        style={{ position: 'absolute', right: '10px', top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-secondary)', padding: '4px' }}
+                      >
+                        {showOtpPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                      </button>
+                    </div>
+                  </div>
+
+                  <button type="submit" className="btn btn-primary login-btn" disabled={forgotLoading}>
+                    {forgotLoading ? t('Loading') + '...' : t('ResetPassword')}
+                  </button>
+                </form>
+              )}
+
+              <div style={{ textAlign: 'center', marginTop: '12px' }}>
+                <button
+                  type="button"
+                  className="link-btn"
+                  onClick={() => { setShowForgotForm(false); setForgotMessage(''); setForgotEmail(''); setForgotMethod('email'); setOtpStep('request'); setOtpPhone(''); setOtp(''); setOtpNewPassword(''); setOtpConfirmPassword(''); }}
+                  style={{ color: 'rgba(255,255,255,0.6)', fontSize: '0.9rem' }}
+                >
+                  {t('BackToLogin')}
+                </button>
+              </div>
+            </>
+          )}
         </div>
-      )}
+      </div>
 
       <style>{`
         .login-page {

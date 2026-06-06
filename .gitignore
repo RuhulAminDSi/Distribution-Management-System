@@ -11,3 +11,7 @@ build/
 .playwright-mcp/
 .opencode/
 *.png
+.env.production
+*.zip
+frontend-dist/
+backend/create-zip.*
