@@ -18,7 +18,9 @@ import {
   Key,
   Bell,
   MessageSquare,
-  Megaphone
+  Megaphone,
+  Eye,
+  EyeOff
 } from 'lucide-react';
 
 const navItems = [
@@ -47,7 +49,10 @@ export default function MainLayout({ children }) {
   const [passwordModalOpen, setPasswordModalOpen] = useState(false);
   const [passwordData, setPasswordData] = useState({ currentPassword: '', newPassword: '', confirmPassword: '' });
   const [passwordError, setPasswordError] = useState('');
-  const [passwordSuccess, setPasswordSuccess] = useState('');
+  const [successToast, setSuccessToast] = useState('');
+  const [showCurrentPassword, setShowCurrentPassword] = useState(false);
+  const [showNewPassword, setShowNewPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
 
   useEffect(() => {
@@ -98,7 +103,6 @@ export default function MainLayout({ children }) {
   const handlePasswordChange = async (e) => {
     e.preventDefault();
     setPasswordError('');
-    setPasswordSuccess('');
     
     if (passwordData.newPassword !== passwordData.confirmPassword) {
       setPasswordError(t('PasswordMismatch'));
@@ -113,14 +117,16 @@ export default function MainLayout({ children }) {
     try {
       await authService.changePassword({
         currentPassword: passwordData.currentPassword,
-        newPassword: passwordData.newPassword
+        newPassword: passwordData.newPassword,
+        confirmPassword: passwordData.confirmPassword
       });
-      setPasswordSuccess(t('PasswordChanged'));
+      setPasswordModalOpen(false);
       setPasswordData({ currentPassword: '', newPassword: '', confirmPassword: '' });
-      setTimeout(() => {
-        setPasswordModalOpen(false);
-        setPasswordSuccess('');
-      }, 1500);
+      setShowCurrentPassword(false);
+      setShowNewPassword(false);
+      setShowConfirmPassword(false);
+      setSuccessToast(t('PasswordChanged'));
+      setTimeout(() => setSuccessToast(''), 3000);
     } catch (error) {
       setPasswordError(error.response?.data?.message || t('SaveError'));
     }
@@ -172,36 +178,65 @@ export default function MainLayout({ children }) {
             <form onSubmit={handlePasswordChange}>
               <div className="modal-body">
                 {passwordError && <div className="alert alert-danger">{passwordError}</div>}
-                {passwordSuccess && <div className="alert alert-success">{passwordSuccess}</div>}
                 <div className="form-group">
                   <label className="form-label">{t('CurrentPassword')}</label>
-                  <input
-                    type="password"
-                    className="form-input"
-                    value={passwordData.currentPassword}
-                    onChange={e => setPasswordData({ ...passwordData, currentPassword: e.target.value })}
-                    required
-                  />
+                  <div style={{ position: 'relative' }}>
+                    <input
+                      type={showCurrentPassword ? 'text' : 'password'}
+                      className="form-input"
+                      value={passwordData.currentPassword}
+                      onChange={e => setPasswordData({ ...passwordData, currentPassword: e.target.value })}
+                      required
+                      style={{ paddingRight: '40px' }}
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowCurrentPassword(!showCurrentPassword)}
+                      style={{ position: 'absolute', right: '10px', top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-secondary)', padding: '4px' }}
+                    >
+                      {showCurrentPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                    </button>
+                  </div>
                 </div>
                 <div className="form-group">
                   <label className="form-label">{t('NewPassword')}</label>
-                  <input
-                    type="password"
-                    className="form-input"
-                    value={passwordData.newPassword}
-                    onChange={e => setPasswordData({ ...passwordData, newPassword: e.target.value })}
-                    required
-                  />
+                  <div style={{ position: 'relative' }}>
+                    <input
+                      type={showNewPassword ? 'text' : 'password'}
+                      className="form-input"
+                      value={passwordData.newPassword}
+                      onChange={e => setPasswordData({ ...passwordData, newPassword: e.target.value })}
+                      required
+                      style={{ paddingRight: '40px' }}
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowNewPassword(!showNewPassword)}
+                      style={{ position: 'absolute', right: '10px', top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-secondary)', padding: '4px' }}
+                    >
+                      {showNewPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                    </button>
+                  </div>
                 </div>
                 <div className="form-group">
                   <label className="form-label">{t('ConfirmPassword')}</label>
-                  <input
-                    type="password"
-                    className="form-input"
-                    value={passwordData.confirmPassword}
-                    onChange={e => setPasswordData({ ...passwordData, confirmPassword: e.target.value })}
-                    required
-                  />
+                  <div style={{ position: 'relative' }}>
+                    <input
+                      type={showConfirmPassword ? 'text' : 'password'}
+                      className="form-input"
+                      value={passwordData.confirmPassword}
+                      onChange={e => setPasswordData({ ...passwordData, confirmPassword: e.target.value })}
+                      required
+                      style={{ paddingRight: '40px' }}
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                      style={{ position: 'absolute', right: '10px', top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-secondary)', padding: '4px' }}
+                    >
+                      {showConfirmPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                    </button>
+                  </div>
                 </div>
               </div>
               <div className="modal-footer">
@@ -214,6 +249,25 @@ export default function MainLayout({ children }) {
               </div>
             </form>
           </div>
+        </div>
+      )}
+
+      {successToast && (
+        <div style={{
+          position: 'fixed',
+          bottom: '24px',
+          right: '24px',
+          background: '#22c55e',
+          color: '#fff',
+          padding: '12px 24px',
+          borderRadius: '8px',
+          boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
+          zIndex: 9999,
+          fontSize: '14px',
+          fontWeight: 500,
+          animation: 'slideIn 0.3s ease'
+        }}>
+          {successToast}
         </div>
       )}
     </div>

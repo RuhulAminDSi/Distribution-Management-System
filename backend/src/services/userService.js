@@ -8,6 +8,7 @@ import bcrypt from 'bcryptjs';
 import { query } from '../config/database.js';
 import { QueryBuilder } from '../utils/QueryBuilder.js';
 import { ApiError } from '../utils/ApiError.js';
+import { sendOtp } from './whatsappService.js';
 
 export const userService = {
   /**
@@ -420,5 +421,73 @@ export const userService = {
     }
 
     return this.getUserById(result[0].id);
+  },
+
+  async requestOtp(phone) {
+    const users = await query('SELECT id, otp, otp_expires FROM users WHERE phone = ?', [phone]);
+    if (users.length === 0) {
+      return { success: false, message: 'If an account exists with this phone, an OTP will be sent' };
+    }
+
+    if (users[0].otp_expires && new Date(users[0].otp_expires) > new Date()) {
+      return { success: true, alreadySent: true, message: 'An OTP has already been sent. Please wait for it to expire before requesting a new one.' };
+    }
+
+    const otp = process.env.NODE_ENV === 'production' ? String(Math.floor(100000 + Math.random() * 900000)) : '8888';
+    const expires = new Date(Date.now() + 60 * 1000);
+
+    await query('UPDATE users SET otp = ?, otp_expires = ? WHERE id = ?', [otp, expires, users[0].id]);
+
+    if (process.env.NODE_ENV !== 'production') {
+      return { success: true, otp, message: 'Dev OTP: 8888' };
+    }
+
+    // Send OTP via WhatsApp in production
+    const waResult = await sendOtp(phone, otp);
+    if (!waResult.success) {
+      console.log(`[OTP] User ${users[0].id}: ${otp} (WhatsApp unavailable)`);
+    }
+
+    return { success: true, message: 'OTP has been sent to your phone via WhatsApp' };
+  },
+
+  async verifyOtp(phone, otp) {
+    const users = await query(
+      'SELECT id, otp, otp_expires FROM users WHERE phone = ?',
+      [phone]
+    );
+
+    if (users.length === 0) {
+      throw new ApiError(400, 'Invalid request');
+    }
+
+    const user = users[0];
+    if (!user.otp || !user.otp_expires) {
+      throw new ApiError(400, 'No OTP requested');
+    }
+
+    if (new Date() > new Date(user.otp_expires)) {
+      throw new ApiError(400, 'OTP has expired');
+    }
+
+    if (user.otp !== otp) {
+      throw new ApiError(400, 'Invalid OTP');
+    }
+
+    return { success: true, message: 'OTP verified successfully' };
+  },
+
+  async verifyOtpAndReset(phone, otp, newPassword) {
+    await this.verifyOtp(phone, otp);
+
+    const users = await query('SELECT id FROM users WHERE phone = ?', [phone]);
+    const password_hash = await bcrypt.hash(newPassword, 10);
+
+    await query(
+      'UPDATE users SET password_hash = ?, otp = NULL, otp_expires = NULL WHERE id = ?',
+      [password_hash, users[0].id]
+    );
+
+    return { message: 'Password reset successfully' };
   }
 };

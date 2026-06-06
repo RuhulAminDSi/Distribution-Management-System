@@ -2,13 +2,15 @@ import { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useLanguage } from '../context/LanguageContext';
 import { authService } from '../services/api';
-import { Warehouse, Eye, EyeOff } from 'lucide-react';
+import { Warehouse, Eye, EyeOff, ArrowLeft } from 'lucide-react';
 
 export default function ResetPassword() {
+  const { t, language, setLanguage } = useLanguage();
+  const toggleLanguage = () => setLanguage(language === 'en' ? 'bn' : 'en');
+
   useEffect(() => {
     document.title = `${t('ResetPassword') || 'Reset Password'} - DMS`;
   }, [t]);
-  const { t } = useLanguage();
   const [searchParams] = useSearchParams();
   const token = searchParams.get('token');
   const navigate = useNavigate();
@@ -70,7 +72,7 @@ export default function ResetPassword() {
         <div className="login-logo">
           <Warehouse size={48} />
           <h1>{t('ResetPassword')}</h1>
-          <p style={{ color: 'var(--text-secondary)' }}>{t('EnterAmount')} your new {t('Password')}</p>
+          <p style={{ color: 'var(--text-secondary)' }}>{t('EnterNewPassword')}</p>
         </div>
 
         {error && <div className="alert alert-danger">{error}</div>}

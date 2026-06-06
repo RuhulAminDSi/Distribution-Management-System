@@ -1,19 +1,27 @@
 import nodemailer from 'nodemailer';
 
-const transporter = nodemailer.createTransport({
+const isSmtpConfigured = () => {
+  const user = process.env.SMTP_USER;
+  const pass = process.env.SMTP_PASS;
+  return user && pass && user !== 'your-email@gmail.com' && pass !== 'your-app-password';
+};
+
+const transporter = isSmtpConfigured() ? nodemailer.createTransport({
   host: process.env.SMTP_HOST || 'smtp.gmail.com',
   port: process.env.SMTP_PORT || 587,
   secure: false,
-  auth: {
-    user: process.env.SMTP_USER,
-    pass: process.env.SMTP_PASS
-  }
-});
+  auth: { user: process.env.SMTP_USER, pass: process.env.SMTP_PASS }
+}) : null;
 
 export const sendPasswordResetEmail = async (email, resetToken) => {
   const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
   const resetLink = `${frontendUrl}/reset-password?token=${resetToken}`;
-  
+
+  // Dev fallback: return link directly without email attempt
+  if (!isSmtpConfigured() || process.env.NODE_ENV === 'development') {
+    return { success: false, resetLink };
+  }
+
   const mailOptions = {
     from: process.env.SMTP_FROM || 'DMS <noreply@dms.com>',
     to: email,
@@ -36,10 +44,6 @@ export const sendPasswordResetEmail = async (email, resetToken) => {
     return { success: true };
   } catch (error) {
     console.error('Email send error:', error);
-    return { 
-      success: false, 
-      error: error.message,
-      resetLink // Return link as fallback
-    };
+    return { success: false, error: error.message, resetLink };
   }
 };

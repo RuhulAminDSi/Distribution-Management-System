@@ -24,10 +24,12 @@ import uploadRoutes from './routes/uploadRoutes.js';
 import chatbotRoutes from './routes/chatbotRoutes.js';
 import publicMessageRoutes from './routes/publicMessageRoutes.js';
 import noticeRoutes from './routes/noticeRoutes.js';
+import previewRoutes from './routes/previewRoutes.js';
+import ogImageRoutes from './routes/ogImageRoutes.js';
 
 import { errorHandler, notFound } from './middleware/errorHandler.js';
 
-dotenv.config();
+dotenv.config({ path: `.env${process.env.NODE_ENV === 'production' ? '.production' : ''}` });
 
 const app = express();
 
@@ -42,13 +44,15 @@ app.use(express.urlencoded({ extended: true }));
 
 app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
 
-// Rate limiter disabled for development
-// const limiter = rateLimit({
-//   windowMs: 15 * 60 * 1000,
-//   max: 100,
-//   message: { message: 'Too many requests, please try again later' }
-// });
-// app.use('/api/', limiter);
+// Rate limiter — enabled only in production
+if (process.env.NODE_ENV === 'production') {
+  const limiter = rateLimit({
+    windowMs: 15 * 60 * 1000,
+    max: 100,
+    message: { message: 'Too many requests, please try again later' }
+  });
+  app.use('/api/', limiter);
+}
 
 app.use('/api/auth', authRoutes);
 app.use('/api/products', productRoutes);
@@ -66,6 +70,9 @@ app.use('/api', uploadRoutes);
 app.use('/api/chatbot', chatbotRoutes);
 app.use('/api/public-messages', publicMessageRoutes);
 app.use('/api', noticeRoutes);
+
+// Link preview for social media crawlers — must be before the SPA catch-all
+app.use(previewRoutes);
 
 app.get('/api/health', (req, res) => {
   res.json({ status: 'OK', timestamp: new Date().toISOString() });

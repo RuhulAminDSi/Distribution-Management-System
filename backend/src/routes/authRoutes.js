@@ -16,6 +16,9 @@ router.delete('/users/:id', authenticate, permit('users_delete'), authController
 router.post('/change-password', authenticate, validateChangePassword, authController.changePassword);
 router.post('/forgot-password', authController.forgotPassword);
 router.post('/reset-password', validateResetPassword, authController.resetPassword);
+router.post('/request-otp', authController.requestOtp);
+router.post('/verify-otp', authController.verifyOtp);
+router.post('/reset-password-with-otp', authController.resetPasswordWithOtp);
 router.post('/shopkeeper-register', validateShopkeeperRegister, authController.shopkeeperRegister);
 
 export default router;

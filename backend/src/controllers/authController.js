@@ -173,8 +173,9 @@ export const authController = {
         if (emailResult.success) {
           res.json({ message: 'Password reset link has been sent to your email' });
         } else if (emailResult.resetLink) {
-          res.json({ 
-            message: 'Email service not configured. Use the link below:',
+          const isDev = process.env.NODE_ENV === 'development';
+          res.json({
+            message: isDev ? 'Use the button below to reset your password:' : 'Email service not configured. Use the link below:',
             resetLink: emailResult.resetLink
           });
         } else {
@@ -197,6 +198,55 @@ export const authController = {
       }
 
       const result = await userService.resetPassword(token, newPassword);
+      res.json(result);
+    } catch (error) {
+      next(error);
+    }
+  },
+
+  async requestOtp(req, res, next) {
+    try {
+      const { phone } = req.body;
+      if (!phone) throw new ApiError(400, 'Phone number is required');
+
+      const result = await userService.requestOtp(phone);
+
+      res.json({
+        success: result.success !== false,
+        message: result.message,
+        ...(result.otp && { otp: result.otp }),
+        ...(result.alreadySent && { alreadySent: true })
+      });
+    } catch (error) {
+      next(error);
+    }
+  },
+
+  async verifyOtp(req, res, next) {
+    try {
+      const { phone, otp } = req.body;
+      if (!phone || !otp) {
+        throw new ApiError(400, 'Phone and OTP are required');
+      }
+
+      const result = await userService.verifyOtp(phone, otp);
+      res.json(result);
+    } catch (error) {
+      next(error);
+    }
+  },
+
+  async resetPasswordWithOtp(req, res, next) {
+    try {
+      const { phone, otp, newPassword } = req.body;
+      if (!phone || !otp || !newPassword) {
+        throw new ApiError(400, 'Phone, OTP, and new password are required');
+      }
+      if (newPassword.length < 6) {
+        throw new ApiError(400, 'Password must be at least 6 characters');
+      }
+
+      const result = await userService.verifyOtpAndReset(phone, otp, newPassword);
       res.json(result);
     } catch (error) {
       next(error);

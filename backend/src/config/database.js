@@ -3,7 +3,7 @@ const { Pool } = pkg;
 import bcrypt from 'bcryptjs';
 import dotenv from 'dotenv';
 
-dotenv.config();
+dotenv.config({ path: `.env${process.env.NODE_ENV === 'production' ? '.production' : ''}` });
 
 const pool = new Pool({
   host: process.env.DB_HOST || 'localhost',
@@ -14,7 +14,7 @@ const pool = new Pool({
   max: 10,
   idleTimeoutMillis: 10000,
   connectionTimeoutMillis: 30000,
-  ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false
+  ssl: process.env.NODE_ENV === 'production' && process.env.DB_HOST !== 'localhost' ? { rejectUnauthorized: false } : false
 });
 
 function convertPlaceholders(sql) {
@@ -92,6 +92,8 @@ export const initializeDatabase = async () => {
           profile_picture VARCHAR(255),
           reset_token VARCHAR(255),
           reset_expires TIMESTAMP,
+          otp VARCHAR(6),
+          otp_expires TIMESTAMP,
           created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
           updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         )
@@ -629,6 +631,18 @@ export const initializeDatabase = async () => {
           WHERE table_name = 'users' AND column_name = 'profile_picture'
         ) THEN
           ALTER TABLE users ADD COLUMN profile_picture VARCHAR(255);
+        END IF;
+      END $$;
+    `);
+
+    await client.query(`
+      DO $$ BEGIN
+        IF NOT EXISTS (
+          SELECT 1 FROM information_schema.columns
+          WHERE table_name = 'users' AND column_name = 'otp'
+        ) THEN
+          ALTER TABLE users ADD COLUMN otp VARCHAR(6);
+          ALTER TABLE users ADD COLUMN otp_expires TIMESTAMP;
         END IF;
       END $$;
     `);
