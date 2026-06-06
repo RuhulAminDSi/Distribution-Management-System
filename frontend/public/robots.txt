@@ -1,0 +1,27 @@
+User-agent: *
+Allow: /
+Disallow: /api/
+Disallow: /dashboard
+Disallow: /dashboard/
+Disallow: /companies
+Disallow: /products
+Disallow: /retailers
+Disallow: /orders
+Disallow: /sales
+Disallow: /payments
+Disallow: /stock
+Disallow: /reports
+Disallow: /users
+Disallow: /settings
+Disallow: /messages
+Disallow: /notices
+
+User-agent: Googlebot
+Allow: /
+Disallow: /api/
+
+User-agent: Bingbot
+Allow: /
+Disallow: /api/
+
+Sitemap: https://dms-live.azurewebsites.net/sitemap.xml

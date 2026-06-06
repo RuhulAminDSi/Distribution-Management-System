@@ -2,6 +2,7 @@ import { Routes, Route, Navigate, useNavigate } from 'react-router-dom';
 import { useAuth } from './context/AuthContext';
 import { LanguageProvider } from './context/LanguageContext';
 import { useEffect } from 'react';
+import RouteSeo from './components/RouteSeo';
 import MainLayout from './components/layout/MainLayout';
 import Landing from './pages/Landing';
 import Demo from './pages/Demo';
@@ -83,6 +84,7 @@ export default function App() {
   return (
     <LanguageProvider>
       <UnauthorizedHandler />
+      <RouteSeo />
       <Routes>
         <Route path="/" element={<Landing />} />
         <Route path="/demo" element={<Demo />} />
